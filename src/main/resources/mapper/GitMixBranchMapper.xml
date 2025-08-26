@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.feeltens.git.mapper.GitMixBranchMapper">
+    <resultMap id="BaseResultMap" type="com.feeltens.git.entity.GitMixBranchDO">
+        <id column="mix_branch_id" jdbcType="BIGINT" property="mixBranchId"/>
+        <result column="mix_branch_name" jdbcType="VARCHAR" property="mixBranchName"/>
+        <result column="env" jdbcType="VARCHAR" property="env"/>
+        <result column="project_id" jdbcType="BIGINT" property="projectId"/>
+        <result column="all_merge_flag" jdbcType="TINYINT" property="allMergeFlag"/>
+        <result column="merge_request_id" jdbcType="BIGINT" property="mergeRequestId"/>
+        <result column="create_by" jdbcType="VARCHAR" property="createBy"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="mix_branch_ext" jdbcType="LONGVARCHAR" property="mixBranchExt"/>
+        <result column="deleted" jdbcType="BIGINT" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        mix_branch_id,
+        mix_branch_name,
+        env,
+        project_id,
+        all_merge_flag,
+        merge_request_id,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        mix_branch_ext,
+        deleted
+    </sql>
+
+    <insert id="insertList" keyColumn="mix_branch_id" keyProperty="mixBranchId" useGeneratedKeys="true">
+        insert into git_mix_branch (mix_branch_name, env, project_id, all_merge_flag, merge_request_id, create_by, create_time, update_by,
+                                update_time, mix_branch_ext, deleted)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.mixBranchName}, #{item.env}, #{item.projectId}, #{item.allMergeFlag}, #{item.mergeRequestId}, #{item.createBy},
+             #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.mixBranchExt}, #{item.deleted})
+        </foreach>
+    </insert>
+
+    <select id="countMixBranch" resultType="java.lang.Long">
+        select count(1)
+        from git_mix_branch
+        <where>
+            <include refid="condition" />
+        </where>
+    </select>
+
+    <sql id="condition">
+        <if test="req.gitProjectId != null">
+            and project_id = #{req.gitProjectId}
+        </if>
+        <if test="req.mixBranchName != null">
+            and mix_branch_name like concat('%', #{req.mixBranchName}, '%')
+        </if>
+        and deleted = 0
+    </sql>
+
+    <select id="pageMixBranch" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_mix_branch
+        <where>
+            <include refid="condition" />
+            order by mix_branch_id desc
+            <if test="limitSize != null and pageSize != null">
+                limit #{limitSize}, #{pageSize}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryByMixBranchId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_mix_branch
+        where mix_branch_id = #{mixBranchId}
+        and deleted = 0
+    </select>
+
+    <select id="queryByProjectIdAndEnv" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_mix_branch
+        where project_id = #{projectId}
+        and env = #{env}
+        and deleted = 0
+    </select>
+
+    <update id="updateAllMergeFlag">
+        update git_mix_branch
+        set all_merge_flag = #{allMergeFlag},
+            update_by      = #{operator},
+            update_time    = now()
+        where mix_branch_id = #{mixBranchId}
+          and deleted = 0
+    </update>
+
+    <update id="updateMergeRequestId">
+        update git_mix_branch
+        set merge_request_id = #{mergeRequestId},
+            update_time    = now()
+        where mix_branch_id = #{mixBranchId}
+          and deleted = 0
+    </update>
+
+    <update id="updateExt">
+        update git_mix_branch
+        set mix_branch_ext = #{ext},
+            update_time    = now()
+        where mix_branch_id = #{mixBranchId}
+          and deleted = 0
+    </update>
+
+    <update id="deleteByMixBranchId">
+        update git_mix_branch
+        set deleted = mix_branch_id,
+            update_time    = now()
+        where mix_branch_id = #{mixBranchId}
+    </update>
+
+    <update id="deleteByProjectId">
+        update git_mix_branch
+        set deleted     = mix_branch_id,
+            update_time = now()
+        where project_id = #{projectId}
+    </update>
+
+</mapper>

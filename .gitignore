@@ -1,0 +1,21 @@
+### Java ###
+target
+*.log
+
+### IntelliJ IDEA ###
+*.iml
+.idea
+
+### VS Code ###
+.vscode/
+
+### Maven ###
+*.ipr
+*.iws
+.mvn
+mvnw
+mvnw.cmd
+
+### JRebel ###
+rebel.xml
+rebel-remote.xml

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.feeltens.git.mapper.GitProjectMapper">
+    <resultMap id="BaseResultMap" type="com.feeltens.git.entity.GitProjectDO">
+        <id column="project_id" jdbcType="BIGINT" property="projectId"/>
+        <result column="project_name" jdbcType="VARCHAR" property="projectName"/>
+        <result column="repository_url" jdbcType="VARCHAR" property="repositoryUrl"/>
+        <result column="organization_id" jdbcType="VARCHAR" property="organizationId"/>
+        <result column="repository_id" jdbcType="BIGINT" property="repositoryId"/>
+        <result column="project_username" jdbcType="VARCHAR" property="projectUsername"/>
+        <result column="project_email" jdbcType="VARCHAR" property="projectEmail"/>
+        <result column="default_branch" jdbcType="VARCHAR" property="defaultBranch"/>
+        <result column="web_url" jdbcType="VARCHAR" property="webUrl"/>
+        <result column="create_by" jdbcType="VARCHAR" property="createBy"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="deleted" jdbcType="BIGINT" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        project_id,
+        project_name,
+        repository_url,
+        organization_id,
+        repository_id,
+        project_username,
+        project_email,
+        default_branch,
+        web_url,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        deleted
+    </sql>
+
+    <insert id="insert" keyColumn="project_id" keyProperty="projectId" useGeneratedKeys="true">
+        insert into git_project (project_name, repository_url, organization_id, repository_id, project_username,
+                                 project_email, default_branch, web_url, create_by, create_time, update_by, update_time,
+                                 deleted)
+        values (#{projectName}, #{repositoryUrl}, #{organizationId}, #{repositoryId}, #{projectUsername},
+                #{projectEmail}, #{defaultBranch}, #{webUrl}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime},
+                #{deleted})
+    </insert>
+
+    <select id="selectByProjectId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from git_project
+        where project_id = #{gitProjectId}
+        and deleted = 0
+    </select>
+
+
+    <select id="countProject" resultType="java.lang.Long">
+        select count(1)
+        from git_project
+        <where>
+            <include refid="condition">
+            </include>
+        </where>
+    </select>
+
+    <sql id="condition">
+        <if test="req.gitProjectName != null and req.gitProjectName != ''">
+            and project_name like concat('%', #{req.gitProjectName}, '%')
+        </if>
+        and deleted = 0
+    </sql>
+
+    <select id="pageProject" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_project
+        <where>
+            <include refid="condition">
+            </include>
+            order by project_id desc
+            <if test="limitSize != null and pageSize != null">
+                limit #{limitSize}, #{pageSize}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryByProjectName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from git_project
+        where project_name = #{projectName}
+        and deleted = 0
+        limit 1
+    </select>
+
+    <select id="queryByProjectId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from git_project
+        where project_id = #{projectId}
+        and deleted = 0
+        limit 1
+    </select>
+
+    <update id="deleteByProjectId">
+        update git_project
+        set deleted = project_id,
+        update_time = now()
+        where project_id = #{projectId}
+    </update>
+
+</mapper>

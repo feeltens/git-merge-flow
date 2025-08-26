@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.feeltens.git.mapper.GitMixBranchItemMapper">
+    <resultMap id="BaseResultMap" type="com.feeltens.git.entity.GitMixBranchItemDO">
+        <id column="mix_branch_item_id" jdbcType="BIGINT" property="mixBranchItemId"/>
+        <result column="mix_branch_id" jdbcType="BIGINT" property="mixBranchId"/>
+        <result column="branch_name" jdbcType="VARCHAR" property="branchName"/>
+        <result column="merge_flag" jdbcType="TINYINT" property="mergeFlag"/>
+        <result column="create_by" jdbcType="VARCHAR" property="createBy"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="deleted" jdbcType="BIGINT" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        mix_branch_item_id,
+        mix_branch_id,
+        branch_name,
+        merge_flag,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        deleted
+    </sql>
+
+    <insert id="insertList" keyColumn="mix_branch_item_id" keyProperty="mixBranchItemId" useGeneratedKeys="true">
+        insert into git_mix_branch_item (mix_branch_id, branch_name, merge_flag, create_by, create_time, update_by,
+                                         update_time, deleted)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.mixBranchId}, #{item.branchName}, #{item.mergeFlag}, #{item.createBy}, #{item.createTime},
+             #{item.updateBy}, #{item.updateTime}, #{item.deleted})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateByBranchName">
+        insert into git_mix_branch_item
+        (mix_branch_id, branch_name, merge_flag, create_by, create_time, update_by,
+         update_time, deleted)
+        values (#{item.mixBranchId}, #{item.branchName}, #{item.mergeFlag}, #{item.createBy}, #{item.createTime},
+                #{item.updateBy}, #{item.updateTime}, #{item.deleted}) ON DUPLICATE KEY
+        UPDATE
+            update_time = now()
+    </insert>
+
+    <select id="queryByMixBranchId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from git_mix_branch_item
+        where mix_branch_id = #{mixBranchId}
+          and deleted = 0
+        order by mix_branch_item_id
+    </select>
+
+    <update id="deleteByMixBranchIdAndBranchNameList">
+        update git_mix_branch_item
+        set deleted     = mix_branch_item_id,
+            update_time = now()
+        where mix_branch_id = #{mixBranchId}
+          and branch_name in
+        <foreach item="item" collection="branchNameList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="deleteByMixBranchId">
+        update git_mix_branch_item
+        set deleted     = mix_branch_item_id,
+            update_time = now()
+        where mix_branch_id = #{mixBranchId}
+    </update>
+
+    <update id="deleteByMixBranchIds">
+        update git_mix_branch_item
+        set deleted     = mix_branch_item_id,
+            update_time = now()
+        where mix_branch_id in
+        <foreach item="item" collection="mixBranchIdList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateMergeFlag">
+        update git_mix_branch_item
+        set merge_flag  = #{mergeFlag},
+            update_by   = #{operator},
+            update_time = now()
+        where mix_branch_id = #{mixBranchId}
+          and branch_name = #{branchName}
+    </update>
+</mapper>

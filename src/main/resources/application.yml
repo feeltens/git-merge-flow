@@ -1,0 +1,59 @@
+server:
+  port: 18081
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: git-merge-flow
+  
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.111.11:3306/git_merge_flow?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+  
+  thymeleaf:
+    mode: HTML
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.feeltens.git.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.feeltens.git: DEBUG
+    root: INFO
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n'
+
+merge-flow:
+  # git服务提供方：gitlab、codeup
+  gitService: gitlab
+  # gitService: codeup
+
+# GitLab API 配置
+gitlab:
+  api:
+    # gitlab api 基础url
+    # baseUrl: http://192.168.111.221
+    baseUrl: set-your-gitlab-base-url
+    # gitlab api 访问令牌
+    accessToken: set-your-gitlab-access-token
+
+# CodeUp API 配置
+codeup:
+  api:
+    # codeup api 基础url
+    baseUrl: https://openapi-rdc.aliyuncs.com
+    # codeup api 访问令牌
+    accessToken: set-your-codeup-access-token

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.feeltens.git.mapper.GitOrganizationMapper">
+    <resultMap id="BaseResultMap" type="com.feeltens.git.entity.GitOrganizationDO">
+        <id column="org_inner_id" jdbcType="BIGINT" property="orgInnerId"/>
+        <result column="organization_id" jdbcType="VARCHAR" property="organizationId"/>
+        <result column="organization_name" jdbcType="VARCHAR" property="organizationName"/>
+        <result column="description" jdbcType="VARCHAR" property="description"/>
+        <result column="web_url" jdbcType="VARCHAR" property="webUrl"/>
+        <result column="create_by" jdbcType="VARCHAR" property="createBy"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="deleted" jdbcType="BIGINT" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        `org_inner_id`,
+        `organization_id`,
+        `organization_name`,
+        `description`,
+        `web_url`,
+        `create_by`,
+        `create_time`,
+        `update_by`,
+        `update_time`,
+        `deleted`
+    </sql>
+
+    <insert id="insert" keyColumn="organization_id" keyProperty="organizationId" useGeneratedKeys="true">
+        insert into git_organization (`organization_id`, `organization_name`, `description`, `web_url`,
+                                      `create_by`, `create_time`, `update_by`, `update_time`, `deleted`)
+        values (#{organizationId}, #{organizationName}, #{description},
+                #{webUrl}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime},
+                #{deleted})
+    </insert>
+
+    <select id="queryByOrganizationId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from git_organization
+        where organization_id = #{organizationId}
+        and deleted = 0
+    </select>
+
+    <select id="countOrganization" resultType="java.lang.Long">
+        select count(1)
+        from git_organization
+        <where>
+            <include refid="condition" />
+        </where>
+    </select>
+
+    <sql id="condition">
+        <if test="req.gitOrganizationName != null and req.gitOrganizationName != ''">
+            and organization_name like concat('%', #{req.gitOrganizationName}, '%')
+        </if>
+        and deleted = 0
+    </sql>
+
+    <select id="pageOrganization" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from git_organization
+        <where>
+            <include refid="condition" />
+            order by organization_id desc
+            <if test="limitSize != null and pageSize != null">
+                limit #{limitSize}, #{pageSize}
+            </if>
+        </where>
+    </select>
+
+    <select id="listOrganization" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from git_organization
+        where deleted = 0
+        order by org_inner_id
+    </select>
+
+</mapper>

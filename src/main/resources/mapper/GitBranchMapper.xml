@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.feeltens.git.mapper.GitBranchMapper">
+    <resultMap id="BaseResultMap" type="com.feeltens.git.entity.GitBranchDO">
+        <id column="branch_id" jdbcType="BIGINT" property="branchId"/>
+        <result column="branch_name" jdbcType="VARCHAR" property="branchName"/>
+        <result column="project_id" jdbcType="BIGINT" property="projectId"/>
+        <result column="branch_desc" jdbcType="VARCHAR" property="branchDesc"/>
+        <result column="default_branch_flag" jdbcType="TINYINT" property="defaultBranchFlag"/>
+        <result column="merged_master_flag" jdbcType="TINYINT" property="mergedMasterFlag"/>
+        <result column="source_branch" jdbcType="VARCHAR" property="sourceBranch"/>
+        <result column="create_by" jdbcType="VARCHAR" property="createBy"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_by" jdbcType="VARCHAR" property="updateBy"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="last_commit_time" jdbcType="TIMESTAMP" property="lastCommitTime"/>
+        <result column="last_commit_user" jdbcType="VARCHAR" property="lastCommitUser"/>
+        <result column="last_commit_email" jdbcType="VARCHAR" property="lastCommitEmail"/>
+        <result column="last_commit_id" jdbcType="VARCHAR" property="lastCommitId"/>
+        <result column="last_commit_short_id" jdbcType="VARCHAR" property="lastCommitShortId"/>
+        <result column="last_commit_message" jdbcType="VARCHAR" property="lastCommitMessage"/>
+        <result column="branch_ext" jdbcType="LONGVARCHAR" property="branchExt"/>
+        <result column="deleted" jdbcType="BIGINT" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        branch_id,
+        branch_name,
+        project_id,
+        branch_desc,
+        default_branch_flag,
+        merged_master_flag,
+        source_branch,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        last_commit_time,
+        last_commit_user,
+        last_commit_email,
+        last_commit_id,
+        last_commit_short_id,
+        last_commit_message,
+        branch_ext,
+        deleted
+    </sql>
+
+    <insert id="insertList" keyColumn="branch_id" keyProperty="branchId" useGeneratedKeys="true">
+        insert into git_branch (branch_name, project_id, branch_desc, default_branch_flag, merged_master_flag,
+                                source_branch,
+                                create_by, create_time, update_by, update_time, last_commit_time, last_commit_user,
+                                last_commit_email,
+                                last_commit_id, last_commit_short_id, last_commit_message, branch_ext, deleted)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.branchName}, #{item.projectId}, #{item.branchDesc}, #{item.defaultBranchFlag},
+             #{item.mergedMasterFlag}, #{item.sourceBranch},
+             #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.lastCommitTime},
+             #{item.lastCommitUser}, #{item.lastCommitEmail}, #{item.lastCommitId}, #{item.lastCommitShortId},
+             #{item.lastCommitMessage}, #{item.branchExt}, #{item.deleted})
+        </foreach>
+    </insert>
+
+    <select id="countBranch" resultType="java.lang.Long">
+        select count(1)
+        from git_branch
+        <where>
+            <include refid="condition">
+            </include>
+        </where>
+    </select>
+
+    <sql id="condition">
+        <if test="req.gitProjectId != null">
+            and project_id = #{req.gitProjectId}
+        </if>
+        <if test="req.branchName != null">
+            and branch_name like concat('%', #{req.branchName}, '%')
+        </if>
+        and deleted = 0
+    </sql>
+
+    <select id="pageBranch" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_branch
+        <where>
+            <include refid="condition">
+            </include>
+            order by branch_id desc
+            <if test="limitSize != null and pageSize != null">
+                limit #{limitSize}, #{pageSize}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryByBranchName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_branch
+        where branch_name = #{gitBranchName}
+          and deleted = 0 limit 1
+    </select>
+
+    <select id="queryByProjectId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_branch
+        where project_id = #{projectId}
+          and deleted = 0
+        order by branch_id
+    </select>
+
+    <insert id="insertOrUpdateByBranchName">
+        insert into git_branch
+        (branch_name, project_id, branch_desc, default_branch_flag, merged_master_flag, source_branch,
+         create_by, create_time, update_by, update_time, last_commit_time, last_commit_user,
+         last_commit_email,
+         last_commit_id, last_commit_short_id, last_commit_message, branch_ext, deleted)
+        values (#{item.branchName}, #{item.projectId}, #{item.branchDesc}, #{item.defaultBranchFlag},
+                #{item.mergedMasterFlag}, #{item.sourceBranch},
+                #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.lastCommitTime},
+                #{item.lastCommitUser}, #{item.lastCommitEmail}, #{item.lastCommitId}, #{item.lastCommitShortId},
+                #{item.lastCommitMessage}, #{item.branchExt}, #{item.deleted})
+        ON DUPLICATE KEY
+        UPDATE
+            branch_name = #{item.branchName},
+            project_id = #{item.projectId},
+        <!--branch_desc = #{item.branchDesc},-->
+        default_branch_flag = #{item.defaultBranchFlag},
+            merged_master_flag = #{item.mergedMasterFlag},
+        <!--source_branch = #{item.sourceBranch},-->
+        create_by = #{item.createBy},
+            create_time = #{item.createTime},
+            update_by = #{item.updateBy},
+            update_time = #{item.updateTime},
+            last_commit_time = #{item.lastCommitTime},
+            last_commit_user = #{item.lastCommitUser},
+            last_commit_email = #{item.lastCommitEmail},
+            last_commit_id = #{item.lastCommitId},
+            last_commit_short_id = #{item.lastCommitShortId},
+            last_commit_message = #{item.lastCommitMessage},
+            branch_ext = #{item.branchExt},
+            deleted = #{item.deleted}
+    </insert>
+
+    <update id="deleteByProjectIdAndBranchNameList">
+        update git_branch
+        set deleted     = branch_id,
+            update_time = now(),
+            update_by   = #{operator}
+        where project_id = #{projectId}
+          and branch_name in
+        <foreach item="item" collection="branchNameList" open="(" separator="," close=")" index="">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="deleteByProjectId">
+        update git_branch
+        set deleted     = branch_id,
+            update_time = now()
+        where project_id = #{projectId}
+    </update>
+
+</mapper>
