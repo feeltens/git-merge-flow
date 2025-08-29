@@ -3,6 +3,7 @@ package com.feeltens.git.converter;
 import cn.hutool.core.collection.CollUtil;
 import com.feeltens.git.entity.GitBranchDO;
 import com.feeltens.git.vo.resp.GitBranchRespVO;
+import com.feeltens.git.vo.resp.ListGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.google.common.collect.Lists;
 
@@ -101,4 +102,37 @@ public class GitBranchConverter {
         }
         return resultList;
     }
+
+    public static List<ListGitBranchRespVO> toListVos(List<GitBranchDO> list) {
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+
+        List<ListGitBranchRespVO> resultList = Lists.newArrayList();
+        for (GitBranchDO item : list) {
+            ListGitBranchRespVO vo = ListGitBranchRespVO.builder()
+                    .branchId(item.getBranchId())
+                    .branchName(item.getBranchName())
+                    .projectId(item.getProjectId())
+                    .branchDesc(item.getBranchDesc())
+                    .defaultBranchFlag(item.getDefaultBranchFlag())
+                    .sourceBranch(item.getSourceBranch())
+                    .createBy(item.getCreateBy())
+                    .createTime(item.getCreateTime())
+                    .updateBy(item.getUpdateBy())
+                    .updateTime(item.getUpdateTime())
+                    .lastCommitTime(item.getLastCommitTime())
+                    .lastCommitUser(item.getLastCommitUser())
+                    .lastCommitEmail(item.getLastCommitEmail())
+                    .lastCommitId(item.getLastCommitId())
+                    .lastCommitShortId(item.getLastCommitShortId())
+                    .lastCommitMessage(item.getLastCommitMessage())
+                    .mergeStatus(-1)
+                    .build();
+            resultList.add(vo);
+        }
+
+        return resultList;
+    }
+
 }

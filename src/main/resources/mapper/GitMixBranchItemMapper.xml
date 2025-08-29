@@ -90,4 +90,17 @@
         where mix_branch_id = #{mixBranchId}
           and branch_name = #{branchName}
     </update>
+
+    <select id="queryByMixBranchIdAndBranchName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_mix_branch_item
+        where mix_branch_id = #{req.mixBranchId}
+        <if test="req.branchName != null">
+            and branch_name like concat('%', #{req.branchName}, '%')
+        </if>
+        and deleted = 0
+        order by mix_branch_item_id
+    </select>
+
 </mapper>

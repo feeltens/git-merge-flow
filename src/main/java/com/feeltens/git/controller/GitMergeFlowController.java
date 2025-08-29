@@ -10,6 +10,7 @@ import com.feeltens.git.vo.req.AddGitProjectReqVO;
 import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
+import com.feeltens.git.vo.req.ListGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -20,6 +21,7 @@ import com.feeltens.git.vo.req.RemoveFromMixBranchReqVO;
 import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
+import com.feeltens.git.vo.resp.ListGitBranchRespVO;
 import com.feeltens.git.vo.resp.ListOrganizationsRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
@@ -53,7 +55,7 @@ public class GitMergeFlowController {
     private GitFlowService gitFlowService;
 
     /**
-     * 查询组织列表
+     * 查询组织列表 (from open api)
      */
     @GetMapping("/listOrganizations")
     public CloudResponse<List<ListOrganizationsRespVO>> listOrganizations() {
@@ -76,7 +78,7 @@ public class GitMergeFlowController {
     }
 
     /**
-     * 列表查询git组织
+     * 列表查询git组织 (from db)
      */
     @PostMapping("/listGitOrganization")
     public CloudResponse<List<PageGitOrganizationRespVO>> listGitOrganization() {
@@ -125,12 +127,32 @@ public class GitMergeFlowController {
     }
 
     /**
+     * 列表查询git工程
+     */
+    @PostMapping("/listGitProject")
+    public CloudResponse<List<PageGitProjectRespVO>> listGitProject() {
+        List<PageGitProjectRespVO> res = gitFlowService.listGitProject();
+        log.info("listGitProject hasResult, result:{}", JSON.toJSONString(res));
+        return CloudResponse.success(res);
+    }
+
+    /**
      * 分页查询git原始分支
      */
     @PostMapping("/pageGitBranch")
     public CloudResponse<PageResponse<PageGitBranchRespVO>> pageGitBranch(@RequestBody PageRequest<PageGitBranchReqVO> req) {
         PageResponse<PageGitBranchRespVO> res = gitFlowService.pageGitBranch(req);
         log.info("pageGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        return CloudResponse.success(res);
+    }
+
+    /**
+     * 列表查询git原始分支
+     */
+    @PostMapping("/listGitBranch")
+    public CloudResponse<List<ListGitBranchRespVO>> listGitBranch(@RequestBody ListGitBranchReqVO req) {
+        List<ListGitBranchRespVO> res = gitFlowService.listGitBranch(req);
+        log.info("listGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 

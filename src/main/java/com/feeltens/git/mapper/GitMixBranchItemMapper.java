@@ -1,6 +1,7 @@
 package com.feeltens.git.mapper;
 
 import com.feeltens.git.entity.GitMixBranchItemDO;
+import com.feeltens.git.vo.req.ListGitBranchReqVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -26,5 +27,7 @@ public interface GitMixBranchItemMapper {
                         @Param("branchName") String branchName,
                         @Param("mergeFlag") Integer mergeFlag,
                         @Param("operator") String operator);
+
+    List<GitMixBranchItemDO> queryByMixBranchIdAndBranchName(@Param("req") ListGitBranchReqVO req);
 
 }

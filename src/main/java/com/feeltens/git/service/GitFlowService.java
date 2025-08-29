@@ -8,6 +8,7 @@ import com.feeltens.git.vo.req.AddGitProjectReqVO;
 import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
+import com.feeltens.git.vo.req.ListGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -18,6 +19,7 @@ import com.feeltens.git.vo.req.RemoveFromMixBranchReqVO;
 import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
+import com.feeltens.git.vo.resp.ListGitBranchRespVO;
 import com.feeltens.git.vo.resp.ListOrganizationsRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
@@ -73,6 +75,11 @@ public interface GitFlowService {
     PageResponse<PageGitProjectRespVO> pageGitProject(PageRequest<PageGitProjectReqVO> req);
 
     /**
+     * 列表查询git工程
+     */
+    List<PageGitProjectRespVO> listGitProject();
+
+    /**
      * 分页查询git中间分支
      */
     PageResponse<PageMixBranchRespVO> pageMixBranch(PageRequest<PageMixBranchReqVO> req);
@@ -81,6 +88,11 @@ public interface GitFlowService {
      * 分页查询git原始分支
      */
     PageResponse<PageGitBranchRespVO> pageGitBranch(PageRequest<PageGitBranchReqVO> req);
+
+    /**
+     * 列表查询git原始分支
+     */
+    List<ListGitBranchRespVO> listGitBranch(ListGitBranchReqVO req);
 
     /**
      * 查询git中间分支详情

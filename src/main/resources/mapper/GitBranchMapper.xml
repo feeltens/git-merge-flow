@@ -65,8 +65,7 @@
         select count(1)
         from git_branch
         <where>
-            <include refid="condition">
-            </include>
+            <include refid="condition" />
         </where>
     </select>
 
@@ -85,8 +84,7 @@
         <include refid="Base_Column_List"></include>
         from git_branch
         <where>
-            <include refid="condition">
-            </include>
+            <include refid="condition" />
             order by branch_id desc
             <if test="limitSize != null and pageSize != null">
                 limit #{limitSize}, #{pageSize}
@@ -162,5 +160,14 @@
             update_time = now()
         where project_id = #{projectId}
     </update>
+
+    <select id="queryByProjectIdAndBranchName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_branch
+        <where>
+            <include refid="condition" />
+        </where>
+    </select>
 
 </mapper>

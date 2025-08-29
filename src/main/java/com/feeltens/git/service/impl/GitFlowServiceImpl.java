@@ -62,6 +62,7 @@ import com.feeltens.git.vo.req.AddGitProjectReqVO;
 import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
+import com.feeltens.git.vo.req.ListGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -72,6 +73,7 @@ import com.feeltens.git.vo.req.RemoveFromMixBranchReqVO;
 import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
+import com.feeltens.git.vo.resp.ListGitBranchRespVO;
 import com.feeltens.git.vo.resp.ListOrganizationsRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
@@ -539,6 +541,12 @@ public class GitFlowServiceImpl implements GitFlowService {
     }
 
     @Override
+    public List<PageGitProjectRespVO> listGitProject() {
+        List<GitProjectDO> list = gitProjectMapper.pageProject(new PageGitProjectReqVO(), null, null);
+        return GitProjectConverter.toPageVos(list);
+    }
+
+    @Override
     public PageResponse<PageMixBranchRespVO> pageMixBranch(PageRequest<PageMixBranchReqVO> req) {
         if (req.getCurrentPage() < 0) {
             req.setCurrentPage(1);
@@ -602,6 +610,45 @@ public class GitFlowServiceImpl implements GitFlowService {
         }
         List<GitBranchDO> list = gitBranchMapper.pageBranch(req.getItem(), limitSize, pageSize);
         return PageResponse.build(GitBranchConverter.toPageVos(list), req.getCurrentPage(), req.getPageSize(), totalCount);
+    }
+
+    @Override
+    public List<ListGitBranchRespVO> listGitBranch(ListGitBranchReqVO req) {
+        // 校验入参
+        if (null == req || null == req.getGitProjectId()) {
+            throw new BizException("工程id必填");
+        }
+        req.setBranchName(StrUtil.trim(req.getBranchName()));
+
+        List<GitBranchDO> list = gitBranchMapper.queryByProjectIdAndBranchName(req);
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+
+        // 不需要匹配中间分支id
+        if (null == req.getMixBranchId()) {
+            return GitBranchConverter.toListVos(list);
+        }
+
+        // 需要匹配中间分支id
+        List<GitMixBranchItemDO> mixBranchItemDOList = gitMixBranchItemMapper.queryByMixBranchIdAndBranchName(req);
+        if (CollUtil.isEmpty(mixBranchItemDOList)) {
+            return Collections.emptyList();
+        }
+
+        // Map<分支名称, 是否合并的标识>
+        Map<String, Integer> branckName2MergeFlagMap = mixBranchItemDOList.stream()
+                .collect(Collectors.toMap(GitMixBranchItemDO::getBranchName, GitMixBranchItemDO::getMergeFlag));
+        list = list.stream().filter(each -> branckName2MergeFlagMap.containsKey(each.getBranchName())).collect(Collectors.toList());
+        List<ListGitBranchRespVO> resultList = GitBranchConverter.toListVos(list);
+        if (CollUtil.isEmpty(resultList)) {
+            return resultList;
+        }
+        // 已集成，则以 合并标识 为准
+        for (ListGitBranchRespVO vo : resultList) {
+            vo.setMergeStatus(branckName2MergeFlagMap.get(vo.getBranchName()));
+        }
+        return resultList;
     }
 
     @Override
@@ -858,7 +905,8 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null == req || null == req.getMixBranchId()) {
             throw new BizException("未找到中间分支，请联系管理员");
         }
-        req.setOperator(StrUtil.trim(req.getOperator()));
+        // req.setOperator(StrUtil.trim(req.getOperator()));
+        req.setOperator(GitConstant.SYSTEM_NAME);
         if (StrUtil.isEmptyIfStr(req.getOperator())) {
             throw new BizException("操作人不能为空");
         }
@@ -912,7 +960,8 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null == req) {
             throw new BizException("参数错误");
         }
-        req.setOperator(StrUtil.trim(req.getOperator()));
+        // req.setOperator(StrUtil.trim(req.getOperator()));
+        req.setOperator(GitConstant.SYSTEM_NAME);
         if (StrUtil.isEmptyIfStr(req.getOperator())) {
             throw new BizException("操作人不能为空");
         }
