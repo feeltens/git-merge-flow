@@ -255,9 +255,11 @@ public class GitFlowServiceImpl implements GitFlowService {
         gitOrganizationDO.setDescription(organizationsVO.getDescription());
         gitOrganizationDO.setWebUrl(null);
         gitOrganizationDO.setCreateBy(req.getOperator());
-        gitOrganizationDO.setCreateTime(organizationsVO.getCreateTime());
+        // gitOrganizationDO.setCreateTime(organizationsVO.getCreateTime());
+        gitOrganizationDO.setCreateTime(new Date());
         gitOrganizationDO.setUpdateBy(req.getOperator());
-        gitOrganizationDO.setUpdateTime(organizationsVO.getUpdateTime());
+        // gitOrganizationDO.setUpdateTime(organizationsVO.getUpdateTime());
+        gitOrganizationDO.setUpdateTime(new Date());
         gitOrganizationDO.setDeleted(0L);
 
         gitOrganizationMapper.insert(gitOrganizationDO);
@@ -340,7 +342,7 @@ public class GitFlowServiceImpl implements GitFlowService {
                 return CloudResponse.fail("未找到对应的仓库信息:" + req.getProjectName());
             }
 
-            GitProjectDO gitProjectDO = buildGitProject(repository, req.getOrganizationId(), req.getOperator());
+            GitProjectDO gitProjectDO = buildGitProject(repository, req.getOrganizationId(), req.getProjectName(), req.getOperator());
             // 提前落库，后续会用到 gitProjectId
             int insertRow = gitProjectMapper.insert(gitProjectDO);
             if (insertRow <= 0) {
@@ -666,12 +668,19 @@ public class GitFlowServiceImpl implements GitFlowService {
 
         List<GitBranchDO> list = Lists.newArrayList();
         for (GitBranchDO gitBranchDO : branchList) {
+            // 不包含默认分支，则跳过默认分支
+            if (null != req.getIncludeDefaultBranch()
+                    && !req.getIncludeDefaultBranch()) {
+                if (StrUtil.equals(gitBranchDO.getBranchName(), gitProjectDb.getDefaultBranch())) {
+                    continue;
+                }
+            }
             // 中间分支，则跳过
-            if (GitConstant.EXCLUDE_BRANCH_NAME_LIST.contains(gitBranchDO.getBranchName())) {
+            if (GitConstant.EXCLUDE_MIX_BRANCH_NAME_LIST.contains(gitBranchDO.getBranchName())) {
                 continue;
             }
             // 备份分支，则跳过
-            if (gitBranchDO.getBranchName().contains("gitbackup_xim")) {
+            if (gitBranchDO.getBranchName().contains(GitConstant.BACKUP_MIX_BRANCH_NAME_LIKE)) {
                 continue;
             }
 
@@ -761,11 +770,11 @@ public class GitFlowServiceImpl implements GitFlowService {
                 continue;
             }
             // 中间分支，则跳过
-            if (GitConstant.EXCLUDE_BRANCH_NAME_LIST.contains(gitBranchDO.getBranchName())) {
+            if (GitConstant.EXCLUDE_MIX_BRANCH_NAME_LIST.contains(gitBranchDO.getBranchName())) {
                 continue;
             }
             // 备份分支，则跳过
-            if (gitBranchDO.getBranchName().contains("gitbackup_xim")) {
+            if (gitBranchDO.getBranchName().contains(GitConstant.BACKUP_MIX_BRANCH_NAME_LIKE)) {
                 continue;
             }
             if (mixBranchName2MergeFlagMap.containsKey(gitBranchDO.getBranchName())) {
@@ -1435,9 +1444,10 @@ public class GitFlowServiceImpl implements GitFlowService {
     }
 
     private String getUserMergeShell(String sourceBranchName, String targetBranchName) {
-        String shellTemplate = "自动集成失败，请手动处理冲突，再重新集成\n" +
-                "git fetch origin; git checkout -b %s origin/%s; git checkout %s; git pull\n" +
-                "git merge origin/%s";
+        String shellTemplate =
+                // "自动集成失败，请手动处理冲突，再重新集成\n" +
+                "git pull; git fetch origin; git checkout -b %s origin/%s; git checkout %s; git pull\n" +
+                        "git merge origin/%s";
         return String.format(shellTemplate, targetBranchName, targetBranchName, targetBranchName, sourceBranchName);
     }
 
@@ -1500,10 +1510,11 @@ public class GitFlowServiceImpl implements GitFlowService {
 
     private GitProjectDO buildGitProject(GetRepositoryResp repository,
                                          String organizationId,
+                                         String projectName,
                                          String operator) {
         GitProjectDO gitProjectDO = new GitProjectDO();
         // gitProjectDO.setProjectId(); // auto-incr
-        gitProjectDO.setProjectName(repository.getName());
+        gitProjectDO.setProjectName(projectName);
         gitProjectDO.setRepositoryUrl(repository.getHttpUrlToRepo());
         gitProjectDO.setOrganizationId(organizationId);
         gitProjectDO.setRepositoryId(repository.getId());
