@@ -9,6 +9,7 @@ import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
 import com.feeltens.git.vo.req.ListGitBranchReqVO;
+import com.feeltens.git.vo.req.ListGitRepositoryNameReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -73,6 +74,11 @@ public interface GitFlowService {
      * 分页查询git工程
      */
     PageResponse<PageGitProjectRespVO> pageGitProject(PageRequest<PageGitProjectReqVO> req);
+
+    /**
+     * 列表查询git远程仓库名称 (open api)
+     */
+    List<String> listGitRepositoryNameByOpenApi(ListGitRepositoryNameReqVO req);
 
     /**
      * 列表查询git工程
