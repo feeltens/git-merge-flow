@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中间分支详情 - Git合流管理系统</title>
+    <!-- Element UI CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+        
+        #app {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        [v-cloak] {
+            display: none !important;
+        }
+
+        .page-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: #409eff;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #409eff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .commit-message-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            max-width: 100%;
+        }
+
+        .commit-message-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            line-height: 1.4;
+            max-height: 4.2em;
+        }
+
+        .commit-message-icon {
+            margin-left: 8px;
+            cursor: pointer;
+            color: #409eff;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .commit-message-icon:hover {
+            color: #66b1ff;
+        }
+
+        .header {
+            background-color: #545c64;
+            color: #fff;
+            line-height: 60px;
+            padding: 0 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #324157;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 10px;
+            background-color: #f5f5f5;
+            overflow-y: auto;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 20px 20px 10px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .page-title {
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #303133;
+        }
+
+        .status-item {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .status-label {
+            width: 80px;
+            font-weight: bold;
+        }
+
+        .status-success {
+            color: #67c23a;
+        }
+
+        .status-fail {
+            color: #f56c6c;
+        }
+
+        .search-form {
+            padding: 20px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .shell-dialog .el-dialog__body {
+            padding: 0;
+        }
+
+        .shell-content {
+            background: #2d3748;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            padding: 0;
+            margin: 0;
+            border-radius: 4px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .shell-header {
+            background: #f56c6c;
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 4px 4px 0 0;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .shell-header i {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+        
+        .shell-commands {
+            padding: 20px;
+        }
+
+        .shell-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: #1a202c;
+            border-radius: 6px;
+            border-left: 3px solid #4299e1;
+            transition: all 0.2s ease;
+        }
+        
+        .shell-line:hover {
+            background: #2d3748;
+            transform: translateX(2px);
+        }
+
+        .shell-text {
+            flex: 1;
+            margin-right: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: #4299e1;
+            border: none;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn i {
+            margin-right: 4px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0aec0;
+        }
+        
+        .empty-state i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .empty-state p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .commit-info {
+            font-size: 12px;
+            color: #909399;
+            line-height: 1.5;
+        }
+
+        .commit-info .commit-message-container {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 2px;
+        }
+
+        .commit-info .commit-message-container span {
+            flex-shrink: 0;
+            margin-right: 4px;
+        }
+
+        .commit-info .commit-message-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .merge-status-success {
+            color: #67c23a;
+        }
+
+        .merge-status-fail {
+            color: #f56c6c;
+        }
+    </style>
+</head>
+<body>
+<!-- 初始加载页面 -->
+<div id="page-loading" class="page-loading">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div>正在加载页面...</div>
+    </div>
+</div>
+
+<div id="app" v-cloak>
+    <!-- 头部 -->
+    <div class="header">
+        <span>Git合流管理系统</span>
+        <div style="float: right;">
+            <el-button type="primary" @click="handleOperatorLogin">{{operatorButtonText}}</el-button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <el-menu
+                    default-active="1"
+                    class="el-menu-vertical"
+                    background-color="#324157"
+                    text-color="#bfcbd9"
+                    active-text-color="#409EFF"
+                    @select="handleMenuSelect">
+                <el-menu-item index="1">
+                    <i class="el-icon-files"></i>
+                    <span slot="title">Git工程管理</span>
+                </el-menu-item>
+                <el-menu-item index="2">
+                    <i class="el-icon-office-building"></i>
+                    <span slot="title">Git组织管理</span>
+                </el-menu-item>
+            </el-menu>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content" v-loading="pageLoading" element-loading-text="正在加载页面数据..."
+             element-loading-spinner="el-icon-loading">
+            <div class="page-title">{{pageTitle}}中间分支</div>
+
+            <!-- 集成状态 -->
+            <div class="content-card">
+                <div class="section-title">集成状态</div>
+                <div class="section-content">
+                    <div style="display: flex;">
+                        <div style="flex: 1; margin-right: 40px;">
+                            <div class="status-item">
+                                <span class="status-label">集成分支：</span>
+                                <span>{{branchDetail.mixBranchName}}</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">集成状态：</span>
+                                <span v-if="branchDetail.allMergeFlag === 1" class="status-success">自动集成成功</span>
+                                <span v-else>
+                                        <span class="status-fail">自动集成失败</span>
+                                        <el-button type="primary" size="mini" @click="showConflictShell"
+                                                   style="margin-left: 10px;">手动处理冲突</el-button>
+                                    </span>
+                            </div>
+                        </div>
+                        <div style="flex: 1; margin-right: 40px;">
+                            <div class="status-item">
+                                <span class="status-label">集成时间：</span>
+                                <span>{{branchDetail.updateTime}}</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">集成人：</span>
+                                <span>{{branchDetail.updateBy}}</span>
+                            </div>
+                        </div>
+                        <div style="flex: 0 0 auto;">
+                            <el-button type="primary" @click="handleRemerge" :loading="remergeLoading">重新集成
+                            </el-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 当前集成分支 -->
+            <div class="content-card">
+                <div class="section-title">当前集成分支</div>
+                <div class="search-form">
+                    <el-form :inline="true" :model="mixedSearchForm">
+                        <el-form-item label="分支名">
+                            <el-input v-model="mixedSearchForm.branchName" placeholder="请输入分支名"
+                                      clearable></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="searchMixedBranches">搜索</el-button>
+                            <el-button type="danger" @click="handleBatchRemove"
+                                       :disabled="selectedMixedBranches.length === 0" 
+                                       :loading="batchRemoveLoading"
+                                       style="margin-left: 10px;">批量退出</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <div class="section-content">
+                    <el-table
+                            :data="mixedBranches"
+                            v-loading="mixedBranchesLoading"
+                            @selection-change="handleMixedSelectionChange"
+                            style="width: 100%"
+                            element-loading-text="正在加载中..."
+                            element-loading-spinner="el-icon-loading">
+                        <el-table-column type="selection" width="55"></el-table-column>
+                        <el-table-column prop="branchName" label="分支名" width="180"></el-table-column>
+                        <el-table-column prop="branchDesc" label="分支描述" min-width="150"></el-table-column>
+                        <el-table-column prop="createBy" label="创建人" width="100"></el-table-column>
+                        <el-table-column label="集成状态" width="100">
+                            <template slot-scope="scope">
+                                <span v-if="scope.row.mergeStatus === 1" class="merge-status-success">成功</span>
+                                <span v-else class="merge-status-fail">失败</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="最近提交信息" min-width="200">
+                            <template slot-scope="scope">
+                                <div class="commit-info">
+                                    <div>时间：{{scope.row.lastCommitTime}}</div>
+                                    <div>ID：{{scope.row.lastCommitShortId}}</div>
+                                    <div>提交人：{{scope.row.lastCommitUser}}</div>
+                                    <div class="commit-message-container">
+                                        <span>内容：</span>
+                                        <div class="commit-message-text">{{scope.row.lastCommitMessage}}</div>
+                                        <el-tooltip v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120" 
+                                                   :content="scope.row.lastCommitMessage" 
+                                                   placement="top" 
+                                                   effect="dark">
+                                            <i class="el-icon-info commit-message-icon"></i>
+                                        </el-tooltip>
+                                    </div>
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="100">
+                            <template slot-scope="scope">
+                                <el-button size="mini" type="danger" @click="handleRemoveBranch(scope.row)">退出
+                                </el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+            </div>
+
+            <!-- 待集成分支 -->
+            <div class="content-card">
+                <div class="section-title">待集成分支</div>
+                <div class="search-form">
+                    <el-form :inline="true" :model="toMixSearchForm">
+                        <el-form-item label="分支名">
+                            <el-input v-model="toMixSearchForm.branchName" placeholder="请输入分支名"
+                                      clearable></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="searchToMixBranches">搜索</el-button>
+                            <el-button type="success" @click="handleBatchAdd"
+                                       :disabled="selectedToMixBranches.length === 0" :loading="batchAddLoading">批量加入
+                            </el-button>
+                            <el-button type="primary" @click="handleCreateBranch">新建分支</el-button>
+                            <el-button type="danger" @click="handleBatchClean"
+                                       :disabled="selectedToMixBranches.length === 0" :loading="batchCleanLoading">分支清理
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <div class="section-content">
+                    <el-table
+                            :data="toMixBranches"
+                            v-loading="toMixBranchesLoading"
+                            @selection-change="handleToMixSelectionChange"
+                            style="width: 100%"
+                            element-loading-text="正在加载中..."
+                            element-loading-spinner="el-icon-loading">
+                        <el-table-column type="selection" width="55"></el-table-column>
+                        <el-table-column prop="branchName" label="分支名" width="180"></el-table-column>
+                        <el-table-column prop="branchDesc" label="分支描述" min-width="150"></el-table-column>
+                        <el-table-column prop="createBy" label="创建人" width="100"></el-table-column>
+                        <el-table-column label="最近提交信息" min-width="200">
+                            <template slot-scope="scope">
+                                <div class="commit-info">
+                                    <div>时间：{{scope.row.lastCommitTime}}</div>
+                                    <div>ID：{{scope.row.lastCommitShortId}}</div>
+                                    <div>提交人：{{scope.row.lastCommitUser}}</div>
+                                    <div class="commit-message-container">
+                                        <span>内容：</span>
+                                        <div class="commit-message-text">{{scope.row.lastCommitMessage}}</div>
+                                        <el-tooltip v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120" 
+                                                   :content="scope.row.lastCommitMessage" 
+                                                   placement="top" 
+                                                   effect="dark">
+                                            <i class="el-icon-info commit-message-icon"></i>
+                                        </el-tooltip>
+                                    </div>
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="200">
+                            <template slot-scope="scope">
+                                <el-button size="mini" type="primary" @click="handleAddBranch(scope.row)">加入
+                                </el-button>
+                                <el-button size="mini" type="danger" @click="handleCleanBranch(scope.row)">清理分支
+                                </el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 冲突处理Shell命令弹窗 -->
+    <el-dialog title="手动处理冲突命令" :visible.sync="shellVisible" width="80%" class="shell-dialog">
+        <div class="shell-content">
+            <!-- 提示信息 -->
+            <div class="shell-header">
+                <i class="el-icon-warning"></i>
+                自动集成失败，请手动处理冲突，再重新集成
+            </div>
+            
+            <!-- 命令列表 -->
+            <div class="shell-commands">
+                <div v-for="(line, index) in shellLines" :key="index" class="shell-line">
+                    <div class="shell-text">{{line}}</div>
+                    <button class="copy-btn" @click="copyToClipboard(line)">
+                        <i class="el-icon-document-copy"></i> 复制
+                    </button>
+                </div>
+                
+                <!-- 空状态提示 -->
+                <div v-if="!shellLines || shellLines.length === 0" class="empty-state">
+                    <i class="el-icon-info"></i>
+                    <p>暂无冲突处理命令</p>
+                </div>
+            </div>
+        </div>
+    </el-dialog>
+
+    <!-- 新建分支弹窗 -->
+    <el-dialog title="新建分支" :visible.sync="createBranchVisible" width="500px">
+        <el-form :model="createBranchForm" :rules="createBranchRules" ref="createBranchForm" label-width="100px">
+            <el-form-item label="Git工程">
+                <el-input :value="projectName" disabled></el-input>
+            </el-form-item>
+            <el-form-item label="来源分支" prop="sourceBranch">
+                <el-select v-model="createBranchForm.sourceBranch" placeholder="请选择来源分支" style="width: 100%">
+                    <el-option
+                            v-for="branch in sourceBranches"
+                            :key="branch.branchName"
+                            :label="branch.branchName"
+                            :value="branch.branchName">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="分支名称" prop="branchName">
+                <el-input v-model="createBranchForm.branchName" placeholder="请输入分支名称" maxlength="100"></el-input>
+            </el-form-item>
+            <el-form-item label="分支描述" prop="branchDesc">
+                <el-input v-model="createBranchForm.branchDesc" placeholder="请输入分支描述" maxlength="200"
+                          type="textarea"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="createBranchVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleSaveBranch" :loading="saveBranchLoading">保存</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 操作人登录弹窗 -->
+    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px">
+        <el-form :model="operatorForm" :rules="operatorRules" ref="operatorForm" label-width="80px">
+            <el-form-item label="操作人" prop="operator">
+                <el-input v-model="operatorForm.operator" placeholder="请输入操作人"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="operatorLoginVisible = false">关闭</el-button>
+            <el-button type="primary" @click="handleSaveOperator">保存</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+<!-- Vue和Element UI -->
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                mixBranchId: null,
+                projectId: null,
+                projectName: '',
+                env: '',
+                pageTitle: '',
+                branchDetail: {},
+                mixedBranches: null,
+                toMixBranches: null,
+                selectedMixedBranches: [],
+                selectedToMixBranches: [],
+                mixedSearchForm: {
+                    branchName: ''
+                },
+                toMixSearchForm: {
+                    branchName: ''
+                },
+                shellVisible: false,
+                shellLines: [],
+                remergeLoading: false,
+                mixedBranchesLoading: false,
+                toMixBranchesLoading: false,
+                pageLoading: false,
+                removeBranchLoading: false,
+                batchRemoveLoading: false,
+                addBranchLoading: false,
+                batchAddLoading: false,
+                cleanBranchLoading: false,
+                batchCleanLoading: false,
+                saveBranchLoading: false,
+                createBranchVisible: false,
+                createBranchForm: {
+                    sourceBranch: '',
+                    branchName: '',
+                    branchDesc: ''
+                },
+                createBranchRules: {
+                    sourceBranch: [
+                        {required: true, message: '请选择来源分支', trigger: 'change'}
+                    ],
+                    branchName: [
+                        {required: true, message: '请输入分支名称', trigger: 'blur'},
+                        {max: 100, message: '长度不能超过100字符', trigger: 'blur'}
+                    ],
+                    branchDesc: [
+                        {max: 200, message: '长度不能超过200字符', trigger: 'blur'}
+                    ]
+                },
+                sourceBranches: [],
+                // 操作人相关
+                operatorLoginVisible: false,
+                operatorForm: {
+                    operator: ''
+                },
+                operatorRules: {
+                    operator: [
+                        {required: true, message: '请输入操作人', trigger: 'blur'}
+                    ]
+                },
+                operatorButtonText: '登录'
+            }
+        },
+        mounted() {
+            // 隐藏初始loading页面
+            const pageLoading = document.getElementById('page-loading');
+            if (pageLoading) {
+                pageLoading.style.display = 'none';
+            }
+
+            this.initOperator();
+            this.initPage();
+            this.loadData();
+        },
+        methods: {
+            // 初始化页面
+            initPage() {
+                const urlParams = new URLSearchParams(window.location.search);
+                this.mixBranchId = urlParams.get('mixBranchId');
+                this.projectId = urlParams.get('projectId');
+                this.projectName = urlParams.get('projectName') || '';
+                this.env = urlParams.get('env') || '';
+                this.pageTitle = `${this.projectName}-${this.env}`;
+            },
+
+            // 加载数据
+            loadData() {
+                if (!this.mixBranchId) {
+                    this.$message.error('中间分支ID不能为空');
+                    return;
+                }
+
+                this.pageLoading = true;
+                this.mixedBranchesLoading = true;
+                this.toMixBranchesLoading = true;
+
+                const params = {
+                    mixBranchId: this.mixBranchId
+                };
+
+                axios.post('/api/v1/git-merge-flow/queryMixBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.branchDetail = response.data.data;
+                            this.mixedBranches = response.data.data.mixedBranchVoList || [];
+                            this.toMixBranches = response.data.data.toMixBranchVoList || [];
+                        } else {
+                            this.$message.error(response.data.message || '查询失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.pageLoading = false;
+                        this.mixedBranchesLoading = false;
+                        this.toMixBranchesLoading = false;
+                    });
+            },
+
+            // 菜单选择
+            handleMenuSelect(key) {
+                if (key === '1') {
+                    window.location.href = '/project';
+                } else if (key === '2') {
+                    window.location.href = '/organization';
+                }
+            },
+
+            // 显示冲突处理命令
+            showConflictShell() {
+                if (this.branchDetail.userMergeShell) {
+                    // 过滤掉空行和只包含空白字符的行
+                    this.shellLines = this.branchDetail.userMergeShell
+                        .split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line.length > 0);
+                    this.shellVisible = true;
+                } else {
+                    this.$message.warning('暂无冲突处理命令');
+                }
+            },
+
+            // 复制到剪贴板
+            copyToClipboard(text) {
+                if (!text || text.trim() === '') {
+                    this.$message.warning('复制内容为空');
+                    return;
+                }
+                
+                if (navigator.clipboard && window.isSecureContext) {
+                    // 现代浏览器API
+                    navigator.clipboard.writeText(text.trim()).then(() => {
+                        this.$message({
+                            message: '命令已复制到剪贴板',
+                            type: 'success',
+                            duration: 2000,
+                            showClose: true
+                        });
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        this.$message.error('复制失败，请手动复制');
+                    });
+                } else {
+                    // 兼容旧浏览器
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text.trim();
+                        textArea.style.position = 'fixed';
+                        textArea.style.opacity = '0';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        
+                        const successful = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        if (successful) {
+                            this.$message({
+                                message: '命令已复制到剪贴板',
+                                type: 'success',
+                                duration: 2000,
+                                showClose: true
+                            });
+                        } else {
+                            throw new Error('execCommand failed');
+                        }
+                    } catch (err) {
+                        console.error('复制失败:', err);
+                        this.$message.error('复制失败，请手动复制');
+                    }
+                }
+            },
+
+            // 重新集成
+            handleRemerge() {
+                const operator = localStorage.getItem('operator');
+                if (!operator) {
+                    this.$message.error('请先登录设置操作人');
+                    return;
+                }
+
+                this.remergeLoading = true;
+                const params = {
+                    mixBranchId: this.mixBranchId,
+                    operator: operator
+                };
+
+                axios.post('/api/v1/git-merge-flow/remergeMixBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            const responseData = response.data.data;
+                            
+                            // 检查flag字段判断集成结果
+                            console.log('重新集成响应数据:', responseData);
+                            
+                            if (responseData && responseData.flag === true) {
+                                // 自动集成成功
+                                console.log('重新集成成功，刷新页面数据');
+                                this.$message.success('重新集成成功');
+                                this.loadData();
+                            } else if (responseData && responseData.flag === false) {
+                                // 自动集成失败，需要手动处理冲突
+                                console.log('重新集成失败，显示冲突处理命令');
+                                // this.$message.warning('自动集成失败，请手动处理冲突');
+                                
+                                // 更新branchDetail中的userMergeShell，然后显示冲突处理命令
+                                if (responseData.userMergeShell) {
+                                    // 临时更新branchDetail以便showConflictShell方法使用
+                                    if (!this.branchDetail) {
+                                        this.branchDetail = {};
+                                    }
+                                    this.branchDetail.userMergeShell = responseData.userMergeShell;
+                                    console.log('更新userMergeShell:', responseData.userMergeShell);
+                                }
+                                
+                                // 显示冲突处理命令弹窗
+                                this.showConflictShell();
+                            } else {
+                                // 未知状态
+                                console.log('重新集成状态未知:', responseData);
+                                this.$message.error(response.data.message || '重新集成状态未知');
+                            }
+                        } else {
+                            this.$message.error(response.data.message || '重新集成失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.remergeLoading = false;
+                    });
+            },
+
+            // 搜索已集成分支
+            searchMixedBranches() {
+                this.mixedBranchesLoading = true;
+
+                const params = {
+                    gitProjectId: this.projectId,
+                    mixBranchId: this.mixBranchId,
+                    branchName: this.mixedSearchForm.branchName || null
+                };
+
+                axios.post('/api/v1/git-merge-flow/listGitBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.mixedBranches = response.data.data;
+                        } else {
+                            this.$message.error('搜索失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.mixedBranchesLoading = false;
+                    });
+            },
+
+            // 搜索待集成分支
+            searchToMixBranches() {
+                this.toMixBranchesLoading = true;
+
+                const params = {
+                    gitProjectId: this.projectId,
+                    branchName: this.toMixSearchForm.branchName || null
+                };
+
+                axios.post('/api/v1/git-merge-flow/listGitBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.toMixBranches = response.data.data;
+                        } else {
+                            this.$message.error('搜索失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.toMixBranchesLoading = false;
+                    });
+            },
+
+            // 已集成分支选择改变
+            handleMixedSelectionChange(val) {
+                this.selectedMixedBranches = val;
+            },
+
+            // 待集成分支选择改变
+            handleToMixSelectionChange(val) {
+                this.selectedToMixBranches = val;
+            },
+
+            // 移除单个分支
+            handleRemoveBranch(row) {
+                this.$confirm('确认将该分支从中间分支中退出吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    const operator = localStorage.getItem('operator');
+                    if (!operator) {
+                        this.$message.error('请先登录设置操作人');
+                        return;
+                    }
+
+                    const params = {
+                        mixBranchId: this.mixBranchId,
+                        gitBranchNameList: [row.branchName],
+                        operator: operator
+                    };
+
+                    axios.post('/api/v1/git-merge-flow/removeFromMixBranch', params)
+                        .then(response => {
+                            if (response?.data?.code === 200) {
+                                // 更新mixBranchId
+                                if (response.data.data && response.data.data.mixBranchId) {
+                                    this.mixBranchId = response.data.data.mixBranchId;
+                                    this.updateUrlMixBranchId(this.mixBranchId);
+                                    console.log('更新mixBranchId:', this.mixBranchId);
+                                }
+                                this.$message.success('退出成功');
+                                this.loadData();
+                            } else {
+                                this.$message.error(response.data.message || '退出失败');
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error('网络请求失败');
+                            console.error(error);
+                        });
+                });
+            },
+
+            // 批量移除分支
+            handleBatchRemove() {
+                if (this.selectedMixedBranches.length === 0) {
+                    this.$message.warning('请选择要退出的分支');
+                    return;
+                }
+
+                this.$confirm(`确认将选中的${this.selectedMixedBranches.length}个分支从中间分支中退出吗？`, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    const operator = localStorage.getItem('operator');
+                    if (!operator) {
+                        this.$message.error('请先登录设置操作人');
+                        return;
+                    }
+
+                    this.batchRemoveLoading = true;
+
+                    const params = {
+                        mixBranchId: this.mixBranchId,
+                        gitBranchNameList: this.selectedMixedBranches.map(b => b.branchName),
+                        operator: operator
+                    };
+
+                    axios.post('/api/v1/git-merge-flow/removeFromMixBranch', params)
+                        .then(response => {
+                            if (response?.data?.code === 200) {
+                                // 更新mixBranchId
+                                if (response.data.data && response.data.data.mixBranchId) {
+                                    this.mixBranchId = response.data.data.mixBranchId;
+                                    this.updateUrlMixBranchId(this.mixBranchId);
+                                    console.log('更新mixBranchId:', this.mixBranchId);
+                                }
+                                this.$message.success('批量退出成功');
+                                this.loadData();
+                            } else {
+                                this.$message.error(response.data.message || '批量退出失败');
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error('网络请求失败');
+                            console.error(error);
+                        })
+                        .finally(() => {
+                            this.batchRemoveLoading = false;
+                        });
+                });
+            },
+
+            // 加入单个分支
+            handleAddBranch(row) {
+                const operator = localStorage.getItem('operator');
+                if (!operator) {
+                    this.$message.error('请先登录设置操作人');
+                    return;
+                }
+
+                const params = {
+                    mixBranchId: this.mixBranchId,
+                    gitBranchNameList: [row.branchName],
+                    operator: operator
+                };
+
+                axios.post('/api/v1/git-merge-flow/addIntoMixBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.$message.success('加入成功');
+                            this.loadData();
+                        } else {
+                            this.$message.error(response.data.message || '加入失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    });
+            },
+
+            // 批量加入分支
+            handleBatchAdd() {
+                if (this.selectedToMixBranches.length === 0) {
+                    this.$message.warning('请选择要加入的分支');
+                    return;
+                }
+
+                const operator = localStorage.getItem('operator');
+                if (!operator) {
+                    this.$message.error('请先登录设置操作人');
+                    return;
+                }
+
+                this.batchAddLoading = true;
+
+                const params = {
+                    mixBranchId: this.mixBranchId,
+                    gitBranchNameList: this.selectedToMixBranches.map(b => b.branchName),
+                    operator: operator
+                };
+
+                axios.post('/api/v1/git-merge-flow/addIntoMixBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.$message.success('批量加入成功');
+                            this.loadData();
+                        } else {
+                            this.$message.error(response.data.message || '批量加入失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.batchAddLoading = false;
+                    });
+            },
+
+            // 清理单个分支
+            handleCleanBranch(row) {
+                this.$confirm('确认删除该分支吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    const operator = localStorage.getItem('operator');
+                    if (!operator) {
+                        this.$message.error('请先登录设置操作人');
+                        return;
+                    }
+
+                    const params = {
+                        projectId: this.projectId,
+                        gitBranchNameList: [row.branchName],
+                        operator: operator
+                    };
+
+                    axios.post('/api/v1/git-merge-flow/deleteGitBranch', params)
+                        .then(response => {
+                            if (response?.data?.code === 200) {
+                                this.$message.success('删除成功');
+                                this.loadData();
+                            } else {
+                                this.$message.error(response.data.message || '删除失败');
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error('网络请求失败');
+                            console.error(error);
+                        });
+                });
+            },
+
+            // 批量清理分支
+            handleBatchClean() {
+                if (this.selectedToMixBranches.length === 0) {
+                    this.$message.warning('请选择要清理的分支');
+                    return;
+                }
+
+                this.$confirm(`确认删除选中的${this.selectedToMixBranches.length}个分支吗？`, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    const operator = localStorage.getItem('operator');
+                    if (!operator) {
+                        this.$message.error('请先登录设置操作人');
+                        return;
+                    }
+
+                    this.batchCleanLoading = true;
+
+                    const params = {
+                        projectId: this.projectId,
+                        gitBranchNameList: this.selectedToMixBranches.map(b => b.branchName),
+                        operator: operator
+                    };
+
+                    axios.post('/api/v1/git-merge-flow/deleteGitBranch', params)
+                        .then(response => {
+                            if (response?.data?.code === 200) {
+                                this.$message.success('批量删除成功');
+                                this.loadData();
+                            } else {
+                                this.$message.error(response.data.message || '批量删除失败');
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error('网络请求失败');
+                            console.error(error);
+                        })
+                        .finally(() => {
+                            this.batchCleanLoading = false;
+                        });
+                });
+            },
+
+            // 新建分支
+            handleCreateBranch() {
+                this.loadSourceBranches();
+                this.createBranchVisible = true;
+            },
+
+            // 加载来源分支
+            loadSourceBranches() {
+                const params = {
+                    gitProjectId: this.projectId,
+                    includeDefaultBranch: true // 包含默认分支
+                };
+
+                axios.post('/api/v1/git-merge-flow/listGitBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.sourceBranches = response.data.data;
+                            // 默认选中默认分支
+                            const defaultBranch = this.sourceBranches.find(b => b.defaultBranchFlag === 1);
+                            if (defaultBranch) {
+                                this.createBranchForm.sourceBranch = defaultBranch.branchName;
+                            }
+                        } else {
+                            this.$message.error('获取来源分支失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    });
+            },
+
+            // 保存分支
+            handleSaveBranch() {
+                this.$refs.createBranchForm.validate((valid) => {
+                    if (valid) {
+                        const operator = localStorage.getItem('operator');
+                        if (!operator) {
+                            this.$message.error('请先登录设置操作人');
+                            return;
+                        }
+
+                        this.saveBranchLoading = true;
+
+                        const params = {
+                            gitProjectId: this.projectId,
+                            sourceBranch: this.createBranchForm.sourceBranch,
+                            gitBranchName: this.createBranchForm.branchName,
+                            branchDesc: this.createBranchForm.branchDesc,
+                            operator: operator
+                        };
+
+                        axios.post('/api/v1/git-merge-flow/createGitBranch', params)
+                            .then(response => {
+                                if (response?.data?.code === 200) {
+                                    this.$message.success('创建成功');
+                                    this.createBranchVisible = false;
+                                    this.createBranchForm = {
+                                        sourceBranch: '',
+                                        branchName: '',
+                                        branchDesc: ''
+                                    };
+                                    this.loadData();
+                                } else {
+                                    this.$message.error(response.data.message || '创建失败');
+                                }
+                            })
+                            .catch(error => {
+                                this.$message.error('网络请求失败');
+                                console.error(error);
+                            })
+                            .finally(() => {
+                                this.saveBranchLoading = false;
+                            });
+                    }
+                });
+            },
+
+            // 初始化操作人
+            initOperator() {
+                const operator = localStorage.getItem('operator');
+                if (operator) {
+                    this.operatorButtonText = operator;
+                } else {
+                    this.operatorButtonText = '登录';
+                }
+            },
+
+            // 操作人登录
+            handleOperatorLogin() {
+                const operator = localStorage.getItem('operator');
+                this.operatorForm.operator = operator || '';
+                this.operatorLoginVisible = true;
+            },
+
+            // 保存操作人
+            handleSaveOperator() {
+                this.$refs.operatorForm.validate((valid) => {
+                    if (valid) {
+                        localStorage.setItem('operator', this.operatorForm.operator);
+                        this.operatorButtonText = this.operatorForm.operator;
+                        this.operatorLoginVisible = false;
+                        this.$message.success('操作人设置成功');
+                    }
+                });
+            },
+            
+            // 更新URL中的mixBranchId参数
+            updateUrlMixBranchId(newMixBranchId) {
+                try {
+                    const url = new URL(window.location);
+                    url.searchParams.set('mixBranchId', newMixBranchId);
+                    window.history.replaceState({}, '', url);
+                    console.log('URL已更新，新的mixBranchId:', newMixBranchId);
+                } catch (error) {
+                    console.error('更新URL失败:', error);
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
