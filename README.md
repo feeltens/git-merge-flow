@@ -35,7 +35,7 @@
 - 自动同步分支提交信息
 
 ### 4. 中间分支管理
-- 支持Dev/Test/Pre三个环境的中间分支管理
+- 支持dev/test/pre三个环境的中间分支管理
 - 分支合并状态跟踪
 - 支持手动合并冲突解决
 - 批量操作支持
@@ -105,7 +105,7 @@ java -jar app.jar \
 
 ### 访问地址
 
-项目启动后，访问：http://localhost:8080
+项目启动后，访问：http://localhost:18081
 
 ## 系统界面
 
@@ -131,16 +131,6 @@ java -jar app.jar \
 - 批量操作支持
 
 ## API文档
-
-### Git工程管理
-
-- `GET /api/project/page` - 分页查询工程
-- `GET /api/project/all` - 查询所有工程
-- `GET /api/project/{id}` - 根据ID查询工程
-- `POST /api/project` - 新增工程
-- `PUT /api/project` - 更新工程
-- `DELETE /api/project/{id}` - 删除工程
-- `POST /api/project/{id}/sync` - 同步工程分支
 
 ## 配置说明
 
@@ -177,10 +167,11 @@ codeup:
 
 项目包含以下核心表：
 
-1. `git_project` - Git工程表
-2. `git_branch` - Git分支表
-3. `git_mix_branch` - 中间分支表
-4. `git_mix_branch_item` - 中间分支条目表
+1. `git_organization` - git组织表
+2. `git_project` - git工程表
+3. `git_branch` - git原始分支表
+4. `git_mix_branch` - git中间分支表
+5. `git_mix_branch_item` - git中间分支条目表
 
 详细表结构请参考 `src/main/resources/sql/init.sql`
 

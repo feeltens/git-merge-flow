@@ -1,6 +1,7 @@
 package com.feeltens.git.mapper;
 
 import com.feeltens.git.entity.GitBranchDO;
+import com.feeltens.git.vo.req.ListGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -29,5 +30,10 @@ public interface GitBranchMapper {
                                            @Param("operator") String operator);
 
     int deleteByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 根据项目id和分支名称查询
+     */
+    List<GitBranchDO> queryByProjectIdAndBranchName(@Param("req") ListGitBranchReqVO req);
 
 }
