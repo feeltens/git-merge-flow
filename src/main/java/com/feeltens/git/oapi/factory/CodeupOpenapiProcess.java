@@ -126,7 +126,11 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
         Map<String, Object> formMap = new HashMap<>();
-        formMap.put(ListRepositoriesReq.Fields.search, req.getSearch());
+        if (StrUtil.isNotEmpty(req.getSearch())) {
+            formMap.put(ListRepositoriesReq.Fields.search, req.getSearch());
+        }
+        formMap.put("page", 1); // 页码，默认从 1 开始，一般不要超过 150 页。
+        formMap.put("perPage", 100); // 每页大小，默认 20，取值范围【1，100】。
 
         String url = "{baseUrl}/oapi/v1/codeup/organizations/{organizationId}/repositories";
         url = url.replace("{baseUrl}", req.getBaseUrl());

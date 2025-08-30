@@ -27,6 +27,11 @@ public class AddGitProjectReqVO implements Serializable {
     private String organizationId;
 
     /**
+     * 仓库名称
+     */
+    private String repositoryName;
+
+    /**
      * 工程名称
      */
     private String projectName;

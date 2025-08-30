@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git组织管理 - Git合流管理系统</title>
+    <!-- Element UI CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+        
+        #app {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        [v-cloak] {
+            display: none !important;
+        }
+
+        .page-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: #409eff;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #409eff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .header {
+            background-color: #545c64;
+            color: #fff;
+            line-height: 60px;
+            padding: 0 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #324157;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
+        }
+
+        .search-form {
+            padding: 20px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .table-container {
+            padding: 20px;
+        }
+
+        .page-title {
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #303133;
+        }
+    </style>
+</head>
+<body>
+<!-- 初始加载页面 -->
+<div id="page-loading" class="page-loading">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div>正在加载页面...</div>
+    </div>
+</div>
+
+<div id="app" v-cloak>
+    <!-- 头部 -->
+    <div class="header">
+        <span>Git合流管理系统</span>
+        <div style="float: right;">
+            <el-button type="primary" @click="handleOperatorLogin">{{operatorButtonText}}</el-button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <el-menu
+                    default-active="2"
+                    class="el-menu-vertical"
+                    background-color="#324157"
+                    text-color="#bfcbd9"
+                    active-text-color="#409EFF"
+                    @select="handleMenuSelect">
+                <el-menu-item index="1">
+                    <i class="el-icon-files"></i>
+                    <span slot="title">Git工程管理</span>
+                </el-menu-item>
+                <el-menu-item index="2">
+                    <i class="el-icon-office-building"></i>
+                    <span slot="title">Git组织管理</span>
+                </el-menu-item>
+            </el-menu>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <div class="page-title">Git组织管理</div>
+
+            <div class="content-card">
+                <!-- 操作栏 -->
+                <div class="search-form">
+                    <el-button type="success" @click="handleAddOrganization">添加组织</el-button>
+                </div>
+
+                <!-- 表格 -->
+                <div class="table-container">
+                    <el-table
+                            :data="tableData"
+                            v-loading="loading"
+                            style="width: 100%"
+                            element-loading-text="正在加载中..."
+                            element-loading-spinner="el-icon-loading">
+                        <el-table-column prop="organizationName" label="组织名称" width="200"></el-table-column>
+                        <el-table-column prop="description" label="组织描述" min-width="200"></el-table-column>
+                        <el-table-column prop="webUrl" label="Web地址" min-width="200"></el-table-column>
+                        <el-table-column prop="createBy" label="创建人" width="120"></el-table-column>
+                        <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                    </el-table>
+
+                    <!-- 分页 -->
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.current"
+                            :page-sizes="[10, 20, 50, 100]"
+                            :page-size="pagination.size"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="pagination.total"
+                            style="margin-top: 20px; text-align: right;">
+                    </el-pagination>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加组织弹窗 -->
+    <el-dialog title="添加组织" :visible.sync="addOrgVisible" width="500px">
+        <el-form :model="addOrgForm" :rules="addOrgRules" ref="addOrgForm" label-width="100px">
+            <el-form-item label="组织" prop="organizationId">
+                <el-select v-model="addOrgForm.organizationId" placeholder="请选择组织" style="width: 100%">
+                    <el-option
+                            v-for="org in allOrganizations"
+                            :key="org.organizationId"
+                            :label="org.organizationName"
+                            :value="org.organizationId">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <!--<el-form-item label="操作人" prop="operator">
+                <el-input v-model="addOrgForm.operator" placeholder="请输入操作人"></el-input>
+            </el-form-item>-->
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="addOrgVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleSaveOrganization" :loading="saveOrgLoading">保存</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 操作人登录弹窗 -->
+    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px">
+        <el-form :model="operatorForm" :rules="operatorRules" ref="operatorForm" label-width="80px">
+            <el-form-item label="操作人" prop="operator">
+                <el-input v-model="operatorForm.operator" placeholder="请输入操作人"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="operatorLoginVisible = false">关闭</el-button>
+            <el-button type="primary" @click="handleSaveOperator">保存</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+<!-- Vue和Element UI -->
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                loading: false,
+                saveOrgLoading: false,
+                tableData: [],
+                pagination: {
+                    current: 1,
+                    size: 10,
+                    total: 0
+                },
+                addOrgVisible: false,
+                addOrgForm: {
+                    organizationId: ''
+                },
+                addOrgRules: {
+                    organizationId: [
+                        {required: true, message: '请选择组织', trigger: 'change'}
+                    ]
+                },
+                allOrganizations: [],
+                // 操作人相关
+                operatorLoginVisible: false,
+                operatorForm: {
+                    operator: ''
+                },
+                operatorRules: {
+                    operator: [
+                        {required: true, message: '请输入操作人', trigger: 'blur'}
+                    ]
+                },
+                operatorButtonText: '登录'
+            }
+        },
+        mounted() {
+            // 隐藏初始loading页面
+            const pageLoading = document.getElementById('page-loading');
+            if (pageLoading) {
+                pageLoading.style.display = 'none';
+            }
+
+            this.initOperator();
+            this.loadData();
+        },
+        methods: {
+            // 加载数据
+            loadData() {
+                this.loading = true;
+                const params = {
+                    currentPage: this.pagination.current,
+                    pageSize: this.pagination.size,
+                    param: {}
+                };
+
+                axios.post('/api/v1/git-merge-flow/pageGitOrganization', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.tableData = response.data.data.records;
+                            this.pagination.total = response.data.data.total;
+                        } else {
+                            this.$message.error(response.data.message || '查询失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            },
+
+            // 分页大小改变
+            handleSizeChange(val) {
+                this.pagination.size = val;
+                this.pagination.current = 1;
+                this.loadData();
+            },
+
+            // 当前页改变
+            handleCurrentChange(val) {
+                this.pagination.current = val;
+                this.loadData();
+            },
+
+            // 菜单选择
+            handleMenuSelect(key) {
+                if (key === '1') {
+                    window.location.href = '/project';
+                } else if (key === '2') {
+                    window.location.href = '/organization';
+                }
+            },
+
+            // 添加组织
+            handleAddOrganization() {
+                this.loadAllOrganizations();
+                this.addOrgVisible = true;
+            },
+
+            // 加载所有组织列表
+            loadAllOrganizations() {
+                axios.get('/api/v1/git-merge-flow/listOrganizations')
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            console.log("response: " + JSON.stringify(response.data.data))
+                            this.allOrganizations = response.data.data;
+                        } else {
+                            this.$message.error('获取组织列表失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    });
+            },
+
+            // 保存组织
+            handleSaveOrganization() {
+                this.$refs.addOrgForm.validate((valid) => {
+                    if (valid) {
+                        const operator = localStorage.getItem('operator');
+                        if (!operator) {
+                            this.$message.error('请先登录设置操作人');
+                            return;
+                        }
+
+                        this.saveOrgLoading = true;
+
+                        const params = {
+                            ...this.addOrgForm,
+                            operator: operator
+                        };
+
+                        axios.post('/api/v1/git-merge-flow/addGitOrganization', params)
+                            .then(response => {
+                                if (response?.data?.code === 200) {
+                                    this.$message.success('添加成功');
+                                    this.addOrgVisible = false;
+                                    this.addOrgForm = {
+                                        organizationId: ''
+                                    };
+                                    this.loadData();
+                                } else {
+                                    this.$message.error(response.data.message || '添加失败');
+                                }
+                            })
+                            .catch(error => {
+                                this.$message.error('网络请求失败');
+                                console.error(error);
+                            })
+                            .finally(() => {
+                                this.saveOrgLoading = false;
+                            });
+                    }
+                });
+            },
+
+            // 初始化操作人
+            initOperator() {
+                const operator = localStorage.getItem('operator');
+                if (operator) {
+                    this.operatorButtonText = operator;
+                } else {
+                    this.operatorButtonText = '登录';
+                }
+            },
+
+            // 操作人登录
+            handleOperatorLogin() {
+                const operator = localStorage.getItem('operator');
+                this.operatorForm.operator = operator || '';
+                this.operatorLoginVisible = true;
+            },
+
+            // 保存操作人
+            handleSaveOperator() {
+                this.$refs.operatorForm.validate((valid) => {
+                    if (valid) {
+                        localStorage.setItem('operator', this.operatorForm.operator);
+                        this.operatorButtonText = this.operatorForm.operator;
+                        this.operatorLoginVisible = false;
+                        this.$message.success('操作人设置成功');
+                    }
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

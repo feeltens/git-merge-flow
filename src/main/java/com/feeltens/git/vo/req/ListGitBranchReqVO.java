@@ -29,4 +29,11 @@ public class ListGitBranchReqVO {
      */
     private String branchName;
 
+    /**
+     * 是否包含默认分支
+     * true代表包含默认分支
+     * false代表不包含默认分支
+     */
+    private Boolean includeDefaultBranch = false;
+
 }

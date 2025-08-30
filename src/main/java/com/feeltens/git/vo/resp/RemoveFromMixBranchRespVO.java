@@ -23,7 +23,7 @@ public class RemoveFromMixBranchRespVO implements Serializable {
     private static final long serialVersionUID = 8736276804358365385L;
 
     /**
-     * 中间分支id
+     * (新的)中间分支id
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long mixBranchId;

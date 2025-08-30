@@ -92,7 +92,10 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
         Map<String, Object> formMap = new HashMap<>();
-        formMap.put(ListRepositoriesReq.Fields.search, req.getSearch());
+        if (StrUtil.isNotEmpty(req.getSearch())) {
+            formMap.put(ListRepositoriesReq.Fields.search, req.getSearch());
+        }
+        formMap.put("order_by", "created_at");
 
         String url = "{baseUrl}/api/v4/projects";
         url = url.replace("{baseUrl}", req.getBaseUrl());

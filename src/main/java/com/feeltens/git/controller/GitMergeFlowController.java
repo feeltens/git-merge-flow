@@ -11,6 +11,7 @@ import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
 import com.feeltens.git.vo.req.ListGitBranchReqVO;
+import com.feeltens.git.vo.req.ListGitRepositoryNameReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -127,7 +128,17 @@ public class GitMergeFlowController {
     }
 
     /**
-     * 列表查询git工程
+     * 列表查询git远程仓库名称 (open api)
+     */
+    @PostMapping("/listGitRepositoryNameByOpenApi")
+    public CloudResponse<List<String>> listGitRepositoryNameByOpenApi(@RequestBody ListGitRepositoryNameReqVO req) {
+        List<String> res = gitFlowService.listGitRepositoryNameByOpenApi(req);
+        log.info("listGitRepositoryNameByOpenApi hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        return CloudResponse.success(res);
+    }
+
+    /**
+     * 列表查询git工程 (db)
      */
     @PostMapping("/listGitProject")
     public CloudResponse<List<PageGitProjectRespVO>> listGitProject() {

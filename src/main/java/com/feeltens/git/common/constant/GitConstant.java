@@ -28,9 +28,14 @@ public class GitConstant {
     public static final String SYSTEM_NAME = "GitMergeFlow";
 
     /**
-     * 排除的git分支名列表
+     * 排除的git中间分支名列表
      * todo 暂时先写死
      */
-    public static final List<String> EXCLUDE_BRANCH_NAME_LIST = Lists.newArrayList("master", "main", "dev_mix", "test_mix", "pre_mix");
+    public static final List<String> EXCLUDE_MIX_BRANCH_NAME_LIST = Lists.newArrayList("dev_mix", "test_mix", "pre_mix");
+
+    /**
+     * 备份的git中间分支名 片段
+     */
+    public static final String BACKUP_MIX_BRANCH_NAME_LIKE = "gitbackup_xim";
 
 }

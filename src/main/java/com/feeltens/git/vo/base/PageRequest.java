@@ -25,6 +25,6 @@ public class PageRequest<T> implements Serializable {
      */
     private Integer pageSize = 10;
 
-    private T item;
+    private T param;
 
 }

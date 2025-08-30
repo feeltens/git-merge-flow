@@ -29,7 +29,7 @@ public class PageResponse<T> implements Serializable {
     /**
      * 当前数据
      */
-    private List<T> items;
+    private List<T> records;
 
     /**
      * 当前页数
@@ -44,16 +44,16 @@ public class PageResponse<T> implements Serializable {
     public PageResponse() {
     }
 
-    public PageResponse(Long total, List<T> items) {
+    /*public PageResponse(Long total, List<T> records) {
         this.total = total;
-        this.items = items;
-    }
+        this.records = records;
+    }*/
 
-    public PageResponse(Long total, Integer totalPage, List<T> items) {
+    /*public PageResponse(Long total, Integer totalPage, List<T> records) {
         this.total = total;
         this.totalPage = totalPage;
-        this.items = items;
-    }
+        this.records = records;
+    }*/
 
     /**
      * 有参总数，当前页，每页数量的构造方法
@@ -63,19 +63,20 @@ public class PageResponse<T> implements Serializable {
      * @param currentPage 当前页
      * @param pageSize    每页数量
      */
-    public PageResponse(Long total, Integer currentPage, Integer pageSize) {
+    /*public PageResponse(Long total, Integer currentPage, Integer pageSize) {
         this.total = total;
         this.totalPage = (total.intValue() - 1) / pageSize + 1;
         this.currentPage = currentPage;
         this.pageSize = pageSize;
-    }
+    }*/
 
     public static <T> PageResponse build(List<T> items, Integer currentPage, Integer pageSize, Long total) {
         PageResponse response = new PageResponse();
         response.setCurrentPage(currentPage);
         response.setPageSize(pageSize);
         response.setTotal(total);
-        response.setItems(items);
+        response.setTotalPage((total.intValue() - 1) / pageSize + 1);
+        response.setRecords(items);
         return response;
     }
 
