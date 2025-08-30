@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>分支管理 - Git合流管理系统</title>
+    <title>{{documentTitle}}</title>
     <!-- Element UI CSS -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <style>
@@ -338,6 +338,7 @@
                 selectedBranches: [],
                 projectId: null,
                 pageTitle: '',
+                documentTitle: '分支管理 - Git合流管理系统',
                 createBranchVisible: false,
                 createBranchForm: {
                     sourceBranch: '',
@@ -370,6 +371,17 @@
                 operatorButtonText: '登录'
             }
         },
+        watch: {
+            // 监听文档标题变化
+            documentTitle: {
+                handler(newTitle) {
+                    if (newTitle) {
+                        document.title = newTitle;
+                    }
+                },
+                immediate: true
+            }
+        },
         mounted() {
             // 隐藏初始loading页面
             const pageLoading = document.getElementById('page-loading');
@@ -387,6 +399,13 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 this.projectId = urlParams.get('projectId');
                 this.pageTitle = urlParams.get('projectName') || '';
+                
+                // 更新页面标题
+                if (this.pageTitle) {
+                    this.documentTitle = `${this.pageTitle}-分支管理 - Git合流管理系统`;
+                    // 同时更新浏览器标题
+                    document.title = this.documentTitle;
+                }
             },
 
             // 加载数据
