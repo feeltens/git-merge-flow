@@ -164,10 +164,14 @@ public class GitFlowServiceImpl implements GitFlowService {
             req.setPageSize(200);
         }
 
-        // 处理参数：去除字符串左右空格
-        req.getItem().setGitOrganizationName(StrUtil.trim(req.getItem().getGitOrganizationName()));
+        if (null == req.getParam()) {
+            req.setParam(new PageGitOrganizationReqVO());
+        }
 
-        Long totalCount = gitOrganizationMapper.countOrganization(req.getItem());
+        // 处理参数：去除字符串左右空格
+        req.getParam().setGitOrganizationName(StrUtil.trim(req.getParam().getGitOrganizationName()));
+
+        Long totalCount = gitOrganizationMapper.countOrganization(req.getParam());
         if (totalCount <= 0) {
             return PageResponse.build(Collections.emptyList(), req.getCurrentPage(), req.getPageSize(), 0L);
         }
@@ -179,7 +183,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null != currentPage && null != pageSize) {
             limitSize = (currentPage - 1) * pageSize;
         }
-        List<GitOrganizationDO> list = gitOrganizationMapper.pageOrganization(req.getItem(), limitSize, pageSize);
+        List<GitOrganizationDO> list = gitOrganizationMapper.pageOrganization(req.getParam(), limitSize, pageSize);
         return PageResponse.build(GitOrganizationConverter.toPageVos(list), req.getCurrentPage(), req.getPageSize(), totalCount);
     }
 
@@ -495,10 +499,14 @@ public class GitFlowServiceImpl implements GitFlowService {
             req.setPageSize(200);
         }
 
-        // 处理参数：去除字符串左右空格
-        req.getItem().setGitProjectName(StrUtil.trim(req.getItem().getGitProjectName()));
+        if (null == req.getParam()) {
+            req.setParam(new PageGitProjectReqVO());
+        }
 
-        Long totalCount = gitProjectMapper.countProject(req.getItem());
+        // 处理参数：去除字符串左右空格
+        req.getParam().setGitProjectName(StrUtil.trim(req.getParam().getGitProjectName()));
+
+        Long totalCount = gitProjectMapper.countProject(req.getParam());
         if (totalCount <= 0) {
             return PageResponse.build(Collections.emptyList(), req.getCurrentPage(), req.getPageSize(), 0L);
         }
@@ -510,7 +518,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null != currentPage && null != pageSize) {
             limitSize = (currentPage - 1) * pageSize;
         }
-        List<GitProjectDO> list = gitProjectMapper.pageProject(req.getItem(), limitSize, pageSize);
+        List<GitProjectDO> list = gitProjectMapper.pageProject(req.getParam(), limitSize, pageSize);
         List<PageGitProjectRespVO> pageVoList = GitProjectConverter.toPageVos(list);
         if (CollUtil.isNotEmpty(pageVoList)) {
             List<GitMixBranchDO> gitMixBranchList = gitMixBranchMapper.pageMixBranch(new PageMixBranchReqVO(), null, null);
@@ -555,15 +563,19 @@ public class GitFlowServiceImpl implements GitFlowService {
             req.setPageSize(200);
         }
 
+        if (null == req.getParam()) {
+            req.setParam(new PageMixBranchReqVO());
+        }
+
         // 处理参数：去除字符串左右空格
-        req.getItem().setMixBranchName(StrUtil.trim(req.getItem().getMixBranchName()));
+        req.getParam().setMixBranchName(StrUtil.trim(req.getParam().getMixBranchName()));
 
         // 参数校验
-        if (null == req.getItem().getGitProjectId()) {
+        if (null == req.getParam().getGitProjectId()) {
             throw new BizException("参数错误：git工程id不能为空");
         }
 
-        Long totalCount = gitMixBranchMapper.countMixBranch(req.getItem());
+        Long totalCount = gitMixBranchMapper.countMixBranch(req.getParam());
         if (totalCount <= 0) {
             return PageResponse.build(Collections.emptyList(), req.getCurrentPage(), req.getPageSize(), 0L);
         }
@@ -575,7 +587,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null != currentPage && null != pageSize) {
             limitSize = (currentPage - 1) * pageSize;
         }
-        List<GitMixBranchDO> list = gitMixBranchMapper.pageMixBranch(req.getItem(), limitSize, pageSize);
+        List<GitMixBranchDO> list = gitMixBranchMapper.pageMixBranch(req.getParam(), limitSize, pageSize);
         return PageResponse.build(GitMixBranchConverter.toPageVos(list), req.getCurrentPage(), req.getPageSize(), totalCount);
     }
 
@@ -588,15 +600,19 @@ public class GitFlowServiceImpl implements GitFlowService {
             req.setPageSize(200);
         }
 
+        if (null == req.getParam()) {
+            req.setParam(new PageGitBranchReqVO());
+        }
+
         // 处理参数：去除字符串左右空格
-        req.getItem().setBranchName(StrUtil.trim(req.getItem().getBranchName()));
+        req.getParam().setBranchName(StrUtil.trim(req.getParam().getBranchName()));
 
         // 参数校验
-        if (null == req.getItem().getGitProjectId()) {
+        if (null == req.getParam().getGitProjectId()) {
             throw new BizException("参数错误：git工程id不能为空");
         }
 
-        Long totalCount = gitBranchMapper.countBranch(req.getItem());
+        Long totalCount = gitBranchMapper.countBranch(req.getParam());
         if (totalCount <= 0) {
             return PageResponse.build(Collections.emptyList(), req.getCurrentPage(), req.getPageSize(), 0L);
         }
@@ -608,7 +624,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null != currentPage && null != pageSize) {
             limitSize = (currentPage - 1) * pageSize;
         }
-        List<GitBranchDO> list = gitBranchMapper.pageBranch(req.getItem(), limitSize, pageSize);
+        List<GitBranchDO> list = gitBranchMapper.pageBranch(req.getParam(), limitSize, pageSize);
         return PageResponse.build(GitBranchConverter.toPageVos(list), req.getCurrentPage(), req.getPageSize(), totalCount);
     }
 
@@ -620,7 +636,31 @@ public class GitFlowServiceImpl implements GitFlowService {
         }
         req.setBranchName(StrUtil.trim(req.getBranchName()));
 
-        List<GitBranchDO> list = gitBranchMapper.queryByProjectIdAndBranchName(req);
+        GitProjectDO gitProjectDb = gitProjectMapper.queryByProjectId(req.getGitProjectId());
+
+        List<GitBranchDO> branchList = gitBranchMapper.queryByProjectIdAndBranchName(req);
+        if (CollUtil.isEmpty(branchList)) {
+            return Collections.emptyList();
+        }
+
+        List<GitBranchDO> list = Lists.newArrayList();
+        for (GitBranchDO gitBranchDO : branchList) {
+            // 默认分支，则跳过
+            if (gitProjectDb.getDefaultBranch().equals(gitBranchDO.getBranchName())) {
+                continue;
+            }
+            // 中间分支，则跳过
+            if (GitConstant.EXCLUDE_BRANCH_NAME_LIST.contains(gitBranchDO.getBranchName())) {
+                continue;
+            }
+            // 备份分支，则跳过
+            if (gitBranchDO.getBranchName().contains("gitbackup_xim")) {
+                continue;
+            }
+
+            list.add(gitBranchDO);
+        }
+
         if (CollUtil.isEmpty(list)) {
             return Collections.emptyList();
         }
@@ -758,9 +798,9 @@ public class GitFlowServiceImpl implements GitFlowService {
 
         // 当前集成分支
         List<GitMixBranchItemDO> mixBranchItemList = gitMixBranchItemMapper.queryByMixBranchId(req.getMixBranchId());
-        if (CollUtil.isEmpty(mixBranchItemList)) {
-            throw new BizException("未找到当前集成分支，数据库不存在 " + req.getMixBranchId());
-        }
+        // if (CollUtil.isEmpty(mixBranchItemList)) {
+        //     throw new BizException("未找到当前集成分支，数据库不存在 " + req.getMixBranchId());
+        // }
 
         // 待移除的分支名list
         List<String> removeBranchItemNameList = Lists.newArrayList();
@@ -768,24 +808,26 @@ public class GitFlowServiceImpl implements GitFlowService {
         List<String> mixedBranchNameList = Lists.newArrayList();
 
         // 1、当前集成分支是否已合并进主分支？已进主分支，则不再参与合并。
-        for (GitMixBranchItemDO mixBranchItem : mixBranchItemList) {
-            // 主分支，则跳过
-            if (StrUtil.equalsIgnoreCase(gitProjectDb.getDefaultBranch(), mixBranchItem.getBranchName())) {
-                continue;
-            }
+        if (CollUtil.isNotEmpty(mixBranchItemList)) {
+            for (GitMixBranchItemDO mixBranchItem : mixBranchItemList) {
+                // 主分支，则跳过
+                if (StrUtil.equalsIgnoreCase(gitProjectDb.getDefaultBranch(), mixBranchItem.getBranchName())) {
+                    continue;
+                }
 
-            GetCompareReq getCompareReq = new GetCompareReq();
-            setGitMergeFlowConfig(getCompareReq, gitProjectDb.getOrganizationId());
-            getCompareReq.setRepositoryId(gitProjectDb.getRepositoryId());
-            getCompareReq.setFrom(gitProjectDb.getDefaultBranch());
-            getCompareReq.setTo(mixBranchItem.getBranchName());
-            // 调用 open api，查询代码比较内容，判断当前分支是否已合并进主分支
-            GetCompareResp getCompareResp = gitOpenApiFactory.getCompare(getCompareReq);
-            if (CollUtil.isEmpty(getCompareResp.getCommits())) {
-                // 当前分支已合并进主分支
-                removeBranchItemNameList.add(mixBranchItem.getBranchName());
-            } else {
-                mixedBranchNameList.add(mixBranchItem.getBranchName());
+                GetCompareReq getCompareReq = new GetCompareReq();
+                setGitMergeFlowConfig(getCompareReq, gitProjectDb.getOrganizationId());
+                getCompareReq.setRepositoryId(gitProjectDb.getRepositoryId());
+                getCompareReq.setFrom(gitProjectDb.getDefaultBranch());
+                getCompareReq.setTo(mixBranchItem.getBranchName());
+                // 调用 open api，查询代码比较内容，判断当前分支是否已合并进主分支
+                GetCompareResp getCompareResp = gitOpenApiFactory.getCompare(getCompareReq);
+                if (CollUtil.isEmpty(getCompareResp.getCommits())) {
+                    // 当前分支已合并进主分支
+                    removeBranchItemNameList.add(mixBranchItem.getBranchName());
+                } else {
+                    mixedBranchNameList.add(mixBranchItem.getBranchName());
+                }
             }
         }
 
@@ -905,8 +947,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null == req || null == req.getMixBranchId()) {
             throw new BizException("未找到中间分支，请联系管理员");
         }
-        // req.setOperator(StrUtil.trim(req.getOperator()));
-        req.setOperator(GitConstant.SYSTEM_NAME);
+        req.setOperator(StrUtil.trim(req.getOperator()));
         if (StrUtil.isEmptyIfStr(req.getOperator())) {
             throw new BizException("操作人不能为空");
         }
