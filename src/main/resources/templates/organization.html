@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git组织管理 - Git合流管理系统</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon-256x256.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <!-- Element UI CSS -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <style>
@@ -12,7 +19,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         html, body {
             margin: 0;
             padding: 0;
@@ -20,14 +27,14 @@
             height: 100%;
             overflow-x: hidden;
         }
-        
+
         #app {
             margin: 0;
             padding: 0;
             width: 100%;
             min-height: 100vh;
         }
-        
+
         [v-cloak] {
             display: none !important;
         }
@@ -347,7 +354,6 @@
                 axios.get('/api/v1/git-merge-flow/listOrganizations')
                     .then(response => {
                         if (response?.data?.code === 200) {
-                            console.log("response: " + JSON.stringify(response.data.data))
                             this.allOrganizations = response.data.data;
                         } else {
                             this.$message.error('获取组织列表失败');
