@@ -211,6 +211,10 @@ src/
 3. 分支合并操作需要有相应的Git仓库权限
 4. 建议在测试环境先验证功能
 
+## 参考资料
+
+favicon 来源于 Araxis Merge 软件。
+
 ## 访问
 
 http://localhost:18081
