@@ -72,9 +72,11 @@ import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
 import com.feeltens.git.vo.req.PageMixBranchReqVO;
 import com.feeltens.git.vo.req.PullRemoteBranchReqVO;
+import com.feeltens.git.vo.req.QueryGitBranchReqVO;
 import com.feeltens.git.vo.req.QueryMixBranchReqVO;
 import com.feeltens.git.vo.req.RemergeMixBranchReqVO;
 import com.feeltens.git.vo.req.RemoveFromMixBranchReqVO;
+import com.feeltens.git.vo.req.UpdateGitBranchReqVO;
 import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
@@ -84,6 +86,7 @@ import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
 import com.feeltens.git.vo.resp.PageGitProjectRespVO;
 import com.feeltens.git.vo.resp.PageMixBranchRespVO;
+import com.feeltens.git.vo.resp.QueryGitBranchRespVO;
 import com.feeltens.git.vo.resp.QueryMixBranchRespVO;
 import com.feeltens.git.vo.resp.RemergeMixBranchRespVO;
 import com.feeltens.git.vo.resp.RemoveFromMixBranchRespVO;
@@ -737,6 +740,49 @@ public class GitFlowServiceImpl implements GitFlowService {
             vo.setMergeStatus(branckName2MergeFlagMap.get(vo.getBranchName()));
         }
         return resultList;
+    }
+
+    @Override
+    public QueryGitBranchRespVO queryGitBranch(QueryGitBranchReqVO req) {
+        // 校验入参
+        if (null == req || null == req.getBranchId()) {
+            throw new BizException("参数错误 git分支id不能为空");
+        }
+
+        // 查询db
+        GitBranchDO gitBranchDO = gitBranchMapper.queryByBranchId(req.getBranchId());
+        if (null == gitBranchDO) {
+            throw new BizException("git分支不存在 " + req.getBranchId());
+        }
+
+        return GitBranchConverter.toQueryRespVo(gitBranchDO);
+    }
+
+    @Override
+    public Boolean updateGitBranch(UpdateGitBranchReqVO req) {
+        // 校验入参
+        if (null == req || null == req.getBranchId()) {
+            throw new BizException("参数错误 git分支id不能为空");
+        }
+        req.setBranchDesc(StrUtil.trim(req.getBranchDesc()));
+        req.setOperator(StrUtil.trim(req.getOperator()));
+        if (StrUtil.isEmptyIfStr(req.getBranchDesc())) {
+            throw new BizException("参数错误 分支备注不能为空");
+        }
+        if (StrUtil.isEmptyIfStr(req.getOperator())) {
+            throw new BizException("参数错误 操作人不能为空");
+        }
+
+        // 校验db里git分支是否存在
+        GitBranchDO gitBranchDO = gitBranchMapper.queryByBranchId(req.getBranchId());
+        if (null == gitBranchDO) {
+            throw new BizException("git分支不存在 " + req.getBranchId());
+        }
+
+        // 落库
+        int row = gitBranchMapper.updateBranchDesc(req.getBranchId(), req.getBranchDesc(), req.getOperator());
+
+        return true;
     }
 
     @Override

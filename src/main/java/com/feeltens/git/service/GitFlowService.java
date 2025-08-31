@@ -15,9 +15,11 @@ import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
 import com.feeltens.git.vo.req.PageMixBranchReqVO;
 import com.feeltens.git.vo.req.PullRemoteBranchReqVO;
+import com.feeltens.git.vo.req.QueryGitBranchReqVO;
 import com.feeltens.git.vo.req.QueryMixBranchReqVO;
 import com.feeltens.git.vo.req.RemergeMixBranchReqVO;
 import com.feeltens.git.vo.req.RemoveFromMixBranchReqVO;
+import com.feeltens.git.vo.req.UpdateGitBranchReqVO;
 import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
@@ -27,6 +29,7 @@ import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
 import com.feeltens.git.vo.resp.PageGitProjectRespVO;
 import com.feeltens.git.vo.resp.PageMixBranchRespVO;
+import com.feeltens.git.vo.resp.QueryGitBranchRespVO;
 import com.feeltens.git.vo.resp.QueryMixBranchRespVO;
 import com.feeltens.git.vo.resp.RemergeMixBranchRespVO;
 import com.feeltens.git.vo.resp.RemoveFromMixBranchRespVO;
@@ -105,6 +108,16 @@ public interface GitFlowService {
      * 列表查询git原始分支
      */
     List<ListGitBranchRespVO> listGitBranch(ListGitBranchReqVO req);
+
+    /**
+     * 单个查询git原始分支
+     */
+    QueryGitBranchRespVO queryGitBranch(QueryGitBranchReqVO req);
+
+    /**
+     * 修改git原始分支
+     */
+    Boolean updateGitBranch(UpdateGitBranchReqVO req);
 
     /**
      * 查询git中间分支详情

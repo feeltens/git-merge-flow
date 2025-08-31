@@ -36,4 +36,10 @@ public interface GitBranchMapper {
      */
     List<GitBranchDO> queryByProjectIdAndBranchName(@Param("req") ListGitBranchReqVO req);
 
+    GitBranchDO queryByBranchId(@Param("branchId") Long branchId);
+
+    int updateBranchDesc(@Param("branchId") Long branchId,
+                         @Param("branchDesc") String branchDesc,
+                         @Param("operator") String operator);
+
 }
