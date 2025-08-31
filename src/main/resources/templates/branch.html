@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{documentTitle}}</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon-256x256.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <!-- Element UI CSS -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <style>
@@ -12,7 +19,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         html, body {
             margin: 0;
             padding: 0;
@@ -20,14 +27,14 @@
             height: 100%;
             overflow-x: hidden;
         }
-        
+
         #app {
             margin: 0;
             padding: 0;
             width: 100%;
             min-height: 100vh;
         }
-        
+
         [v-cloak] {
             display: none !important;
         }
@@ -199,19 +206,26 @@
             <div class="content-card">
                 <!-- 搜索表单 -->
                 <div class="search-form">
-                    <el-form :inline="true" :model="searchForm" class="demo-form-inline">
-                        <el-form-item label="分支名称">
-                            <el-input v-model="searchForm.branchName" placeholder="请输入分支名称" clearable></el-input>
-                        </el-form-item>
-                        <el-form-item>
+                    <div class="demo-form-inline" style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label>分支名称</label>
+                            <el-input v-model="searchForm.branchName" placeholder="请输入分支名称"
+                                      clearable
+                                      @keyup.enter.native="handleEnterKey"
+                                      style="width: 200px;"></el-input>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
                             <el-button type="primary" @click="handleSearch" :loading="searchLoading">搜索</el-button>
                             <el-button @click="handleReset">重置</el-button>
                             <el-button type="primary" @click="handleCreateBranch">新建分支</el-button>
                             <el-button type="danger" @click="handleBatchDelete"
                                        :disabled="selectedBranches.length === 0" :loading="batchDeleteLoading">清理分支
                             </el-button>
-                        </el-form-item>
-                    </el-form>
+                            <el-button type="success" @click="handlePullRemoteBranch" :loading="pullRemoteLoading">
+                                拉取远程分支
+                            </el-button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 表格 -->
@@ -233,10 +247,11 @@
                             <template slot-scope="scope">
                                 <div class="commit-message-container">
                                     <div class="commit-message-text">{{scope.row.lastCommitMessage}}</div>
-                                    <el-tooltip v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120" 
-                                               :content="scope.row.lastCommitMessage" 
-                                               placement="top" 
-                                               effect="dark">
+                                    <el-tooltip
+                                            v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120"
+                                            :content="scope.row.lastCommitMessage"
+                                            placement="top"
+                                            effect="dark">
                                         <i class="el-icon-info commit-message-icon"></i>
                                     </el-tooltip>
                                 </div>
@@ -326,6 +341,7 @@
                 saveBranchLoading: false,
                 deleteBranchLoading: false,
                 batchDeleteLoading: false,
+                pullRemoteLoading: false,
                 searchForm: {
                     branchName: ''
                 },
@@ -389,6 +405,14 @@
                 pageLoading.style.display = 'none';
             }
 
+            // 确保searchForm初始化
+            this.$nextTick(() => {
+                // 强制重新设置searchForm以确保响应式
+                this.$set(this, 'searchForm', {
+                    branchName: ''
+                });
+            });
+
             this.initOperator();
             this.initPage();
             this.loadData();
@@ -399,7 +423,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 this.projectId = urlParams.get('projectId');
                 this.pageTitle = urlParams.get('projectName') || '';
-                
+
                 // 更新页面标题
                 if (this.pageTitle) {
                     this.documentTitle = `${this.pageTitle}-分支管理 - Git合流管理系统`;
@@ -435,6 +459,7 @@
                     })
                     .finally(() => {
                         this.loading = false;
+                        this.searchLoading = false;
                     });
             },
 
@@ -628,8 +653,44 @@
                 });
             },
 
+            // 拉取远程分支
+            handlePullRemoteBranch() {
+                this.pullRemoteLoading = true;
+
+                const params = {
+                    gitProjectId: this.projectId
+                };
+
+                axios.post('/api/v1/git-merge-flow/pullRemoteBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            this.$message.success('拉取远程分支成功');
+                            this.loadData();
+                        } else {
+                            this.$message.error(response.data.message || '拉取远程分支失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.pullRemoteLoading = false;
+                    });
+            },
+
+            // 回车键事件处理
+            handleEnterKey() {
+                this.handleSearch();
+            },
+
             // 搜索
-            handleSearch() {
+            handleSearch(event) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                this.searchLoading = true;
                 this.pagination.current = 1;
                 this.loadData();
             },

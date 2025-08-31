@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Assert;
 import com.feeltens.git.config.GitMergeFlowConfig;
 import com.feeltens.git.enums.GitServiceEnum;
+import com.feeltens.git.oapi.dto.req.CloseChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.CreateBranchReq;
 import com.feeltens.git.oapi.dto.req.CreateChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.DeleteBranchReq;
@@ -15,6 +16,7 @@ import com.feeltens.git.oapi.dto.req.ListBranchesReq;
 import com.feeltens.git.oapi.dto.req.ListOrganizationsReq;
 import com.feeltens.git.oapi.dto.req.ListRepositoriesReq;
 import com.feeltens.git.oapi.dto.req.MergeChangeRequestReq;
+import com.feeltens.git.oapi.dto.resp.CloseChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.CreateBranchResp;
 import com.feeltens.git.oapi.dto.resp.CreateChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.DeleteBranchResp;
@@ -143,6 +145,13 @@ public class GitOpenApiFactory {
      */
     public MergeChangeRequestResp mergeChangeRequest(MergeChangeRequestReq req) {
         return getProcess().mergeChangeRequest(req);
+    }
+
+    /**
+     * closeMR - 关闭合并请求
+     */
+    public CloseChangeRequestResp closeMR(CloseChangeRequestReq req) {
+        return getProcess().closeMR(req);
     }
 
     /**

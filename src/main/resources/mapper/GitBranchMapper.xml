@@ -128,7 +128,7 @@
         default_branch_flag = #{item.defaultBranchFlag},
             merged_master_flag = #{item.mergedMasterFlag},
         <!--source_branch = #{item.sourceBranch},-->
-        create_by = #{item.createBy},
+        <!--create_by = #{item.createBy},-->
             create_time = #{item.createTime},
             update_by = #{item.updateBy},
             update_time = #{item.updateTime},

@@ -1,6 +1,7 @@
 package com.feeltens.git.oapi.factory;
 
 import com.feeltens.git.enums.GitServiceEnum;
+import com.feeltens.git.oapi.dto.req.CloseChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.CreateBranchReq;
 import com.feeltens.git.oapi.dto.req.CreateChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.DeleteBranchReq;
@@ -12,6 +13,7 @@ import com.feeltens.git.oapi.dto.req.ListBranchesReq;
 import com.feeltens.git.oapi.dto.req.ListOrganizationsReq;
 import com.feeltens.git.oapi.dto.req.ListRepositoriesReq;
 import com.feeltens.git.oapi.dto.req.MergeChangeRequestReq;
+import com.feeltens.git.oapi.dto.resp.CloseChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.CreateBranchResp;
 import com.feeltens.git.oapi.dto.resp.CreateChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.DeleteBranchResp;
@@ -85,6 +87,11 @@ public interface GitOpenApiProcess {
      * MergeChangeRequest - 合并合并请求
      */
     MergeChangeRequestResp mergeChangeRequest(MergeChangeRequestReq req);
+
+    /**
+     * closeMR - 关闭合并请求
+     */
+    CloseChangeRequestResp closeMR(CloseChangeRequestReq req);
 
     /**
      * GetCompare - 查询代码比较内容

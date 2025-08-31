@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git合流管理系统</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon-256x256.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <!-- Element UI CSS -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <style>
@@ -12,7 +19,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         html, body {
             margin: 0;
             padding: 0;
@@ -20,14 +27,14 @@
             height: 100%;
             overflow-x: hidden;
         }
-        
+
         #app {
             margin: 0;
             padding: 0;
             width: 100%;
             min-height: 100vh;
         }
-        
+
         [v-cloak] {
             display: none !important;
         }
@@ -176,20 +183,23 @@
         <div class="main-content">
             <div class="page-title">Git工程管理</div>
 
-            <div class="content-card" v-if="dataInitialized">
+            <div class="content-card">
                 <!-- 搜索表单 -->
                 <div class="search-form">
-                    <el-form :inline="true" :model="searchForm" class="demo-form-inline">
-                        <el-form-item label="工程名称">
+                    <div class="demo-form-inline" style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label>工程名称</label>
                             <el-input v-model="searchForm.gitProjectName" placeholder="请输入工程名称"
-                                      clearable></el-input>
-                        </el-form-item>
-                        <el-form-item>
+                                      clearable
+                                      @keyup.enter.native="handleEnterKey"
+                                      style="width: 200px;"></el-input>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
                             <el-button type="primary" @click="handleSearch" :loading="searchLoading">搜索</el-button>
                             <el-button @click="handleReset">重置</el-button>
                             <el-button type="success" @click="handleAddProject">添加Git工程</el-button>
-                        </el-form-item>
-                    </el-form>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 表格 -->
@@ -338,6 +348,14 @@
                 pageLoading.style.display = 'none';
             }
 
+            // 确保searchForm初始化
+            this.$nextTick(() => {
+                // 强制重新设置searchForm以确保响应式
+                this.$set(this, 'searchForm', {
+                    gitProjectName: ''
+                });
+            });
+
             this.initOperator();
             this.loadData();
         },
@@ -368,12 +386,24 @@
                     })
                     .finally(() => {
                         this.loading = false;
+                        this.searchLoading = false;
                         this.dataInitialized = true;
                     });
             },
 
+            // 回车键事件处理
+            handleEnterKey() {
+                this.handleSearch();
+            },
+
             // 搜索
-            handleSearch() {
+            handleSearch(event) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                this.searchLoading = true;
                 this.pagination.current = 1;
                 this.loadData();
             },
@@ -508,8 +538,6 @@
                             projectName: this.addProjectForm.projectName,
                             operator: operator
                         };
-
-                        console.log('发送到addGitProject的参数:', params);
 
                         axios.post('/api/v1/git-merge-flow/addGitProject', params)
                             .then(response => {

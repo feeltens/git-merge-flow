@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{documentTitle}}</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon-256x256.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <!-- Element UI CSS -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <style>
@@ -12,7 +19,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         html, body {
             margin: 0;
             padding: 0;
@@ -20,14 +27,14 @@
             height: 100%;
             overflow-x: hidden;
         }
-        
+
         #app {
             margin: 0;
             padding: 0;
             width: 100%;
             min-height: 100vh;
         }
-        
+
         [v-cloak] {
             display: none !important;
         }
@@ -143,6 +150,15 @@
             padding: 20px;
         }
 
+        .to-mix-branches-container {
+            padding: 20px;
+        }
+
+
+        .mixed-branches-container {
+            padding: 20px;
+        }
+
         .page-title {
             margin-bottom: 20px;
             font-size: 24px;
@@ -173,102 +189,253 @@
             border-bottom: 1px solid #e6e6e6;
         }
 
+        .shell-dialog {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .shell-dialog .el-dialog__header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px 30px;
+            margin: 0;
+        }
+
+        .shell-dialog .el-dialog__title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .shell-dialog .el-dialog__headerbtn .el-dialog__close {
+            color: #fff;
+            font-size: 20px;
+        }
+
         .shell-dialog .el-dialog__body {
             padding: 0;
+            background: #f8fafc;
         }
 
         .shell-content {
-            background: #2d3748;
+            background: #1a1d29;
             color: #e2e8f0;
-            font-family: 'Courier New', monospace;
-            padding: 0;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
             margin: 0;
-            border-radius: 4px;
-            max-height: 60vh;
+            min-height: 400px;
+            max-height: 70vh;
             overflow-y: auto;
+            position: relative;
         }
-        
+
         .shell-header {
-            background: #f56c6c;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: #fff;
-            padding: 15px 20px;
-            border-radius: 4px 4px 0 0;
-            font-weight: bold;
-            font-size: 14px;
+            padding: 20px 30px;
+            font-weight: 600;
+            font-size: 15px;
             display: flex;
             align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        
+
         .shell-header i {
-            margin-right: 8px;
-            font-size: 16px;
+            margin-right: 12px;
+            font-size: 18px;
+            animation: pulse 2s infinite;
         }
-        
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
         .shell-commands {
-            padding: 20px;
+            padding: 30px;
+            background: #1a1d29;
         }
 
         .shell-line {
             display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            padding: 8px 12px;
-            background: #1a202c;
-            border-radius: 6px;
-            border-left: 3px solid #4299e1;
-            transition: all 0.2s ease;
-        }
-        
-        .shell-line:hover {
+            align-items: flex-start;
+            margin-bottom: 16px;
+            padding: 16px 20px;
             background: #2d3748;
-            transform: translateX(2px);
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shell-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.5), transparent);
+        }
+
+        .shell-line:hover {
+            background: #374151;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-left-color: #3b82f6;
         }
 
         .shell-text {
             flex: 1;
-            margin-right: 10px;
-            font-size: 13px;
-            line-height: 1.5;
+            margin-right: 15px;
+            font-size: 14px;
+            line-height: 1.6;
             word-break: break-all;
+            color: #f1f5f9;
+            font-weight: 500;
+            letter-spacing: 0.5px;
         }
 
         .copy-btn {
-            background: #4299e1;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             border: none;
             color: #fff;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: 10px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
             white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .copy-btn:hover::before {
+            left: 100%;
         }
 
         .copy-btn:hover {
-            background: #3182ce;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
-        
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
         .copy-btn i {
-            margin-right: 4px;
+            margin-right: 6px;
+            font-size: 14px;
         }
-        
+
+        .copy-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+        }
+
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
-            color: #a0aec0;
+            padding: 60px 30px;
+            color: #64748b;
+            background: #2d3748;
+            margin: 30px;
+            border-radius: 12px;
+            border: 2px dashed #475569;
         }
-        
+
         .empty-state i {
-            font-size: 32px;
-            margin-bottom: 10px;
+            font-size: 48px;
+            margin-bottom: 20px;
             display: block;
+            color: #475569;
         }
-        
+
         .empty-state p {
             margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .shell-footer {
+            background: #374151;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 1px solid #4b5563;
+        }
+
+        .shell-footer .footer-text {
+            color: #9ca3af;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        /* 滚动条美化 */
+        .shell-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .shell-content::-webkit-scrollbar-track {
+            background: #374151;
+        }
+
+        .shell-content::-webkit-scrollbar-thumb {
+            background: #6b7280;
+            border-radius: 4px;
+        }
+
+        .shell-content::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* 新增的UI元素样式 */
+
+
+        .line-number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            margin-right: 16px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .empty-state span {
+            display: block;
+            margin-top: 8px;
             font-size: 14px;
+            color: #6b7280;
         }
 
         .commit-info {
@@ -347,21 +514,21 @@
              element-loading-spinner="el-icon-loading">
             <div class="page-title">{{pageTitle}}中间分支</div>
 
-            <!-- 集成状态 -->
+            <!-- 合并状态 -->
             <div class="content-card">
-                <div class="section-title">集成状态</div>
+                <div class="section-title">合并状态</div>
                 <div class="section-content">
                     <div style="display: flex;">
                         <div style="flex: 1; margin-right: 40px;">
                             <div class="status-item">
-                                <span class="status-label">集成分支：</span>
+                                <span class="status-label">合并分支：</span>
                                 <span>{{branchDetail.mixBranchName}}</span>
                             </div>
                             <div class="status-item">
-                                <span class="status-label">集成状态：</span>
-                                <span v-if="branchDetail.allMergeFlag === 1" class="status-success">自动集成成功</span>
+                                <span class="status-label">合并状态：</span>
+                                <span v-if="branchDetail.allMergeFlag === 1" class="status-success">自动合并成功</span>
                                 <span v-else>
-                                        <span class="status-fail">自动集成失败</span>
+                                        <span class="status-fail">自动合并失败</span>
                                         <el-button type="primary" size="mini" @click="showConflictShell"
                                                    style="margin-left: 10px;">手动处理冲突</el-button>
                                     </span>
@@ -369,16 +536,16 @@
                         </div>
                         <div style="flex: 1; margin-right: 40px;">
                             <div class="status-item">
-                                <span class="status-label">集成时间：</span>
+                                <span class="status-label">合并时间：</span>
                                 <span>{{branchDetail.updateTime}}</span>
                             </div>
                             <div class="status-item">
-                                <span class="status-label">集成人：</span>
+                                <span class="status-label">操作用户：</span>
                                 <span>{{branchDetail.updateBy}}</span>
                             </div>
                         </div>
                         <div style="flex: 0 0 auto;">
-                            <el-button type="primary" @click="handleRemerge" :loading="remergeLoading">重新集成
+                            <el-button type="primary" @click="handleRemerge" :loading="remergeLoading">重新合并
                             </el-button>
                         </div>
                     </div>
@@ -389,21 +556,22 @@
             <div class="content-card">
                 <div class="section-title">当前集成分支</div>
                 <div class="search-form">
-                    <el-form :inline="true" :model="mixedSearchForm">
-                        <el-form-item label="分支名">
+                    <div class="demo-form-inline" style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label>分支名</label>
                             <el-input v-model="mixedSearchForm.branchName" placeholder="请输入分支名"
-                                      clearable></el-input>
-                        </el-form-item>
-                        <el-form-item>
+                                      clearable style="width: 200px;"></el-input>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
                             <el-button type="primary" @click="searchMixedBranches">搜索</el-button>
                             <el-button type="danger" @click="handleBatchRemove"
-                                       :disabled="selectedMixedBranches.length === 0" 
-                                       :loading="batchRemoveLoading"
-                                       style="margin-left: 10px;">批量退出</el-button>
-                        </el-form-item>
-                    </el-form>
+                                       :disabled="selectedMixedBranches.length === 0"
+                                       :loading="batchRemoveLoading">批量退出
+                            </el-button>
+                        </div>
+                    </div>
                 </div>
-                <div class="section-content">
+                <div class="mixed-branches-container">
                     <el-table
                             :data="mixedBranches"
                             v-loading="mixedBranchesLoading"
@@ -412,10 +580,10 @@
                             element-loading-text="正在加载中..."
                             element-loading-spinner="el-icon-loading">
                         <el-table-column type="selection" width="55"></el-table-column>
-                        <el-table-column prop="branchName" label="分支名" width="180"></el-table-column>
+                        <el-table-column prop="branchName" label="分支名" width="300"></el-table-column>
                         <el-table-column prop="branchDesc" label="分支描述" min-width="150"></el-table-column>
                         <el-table-column prop="createBy" label="创建人" width="100"></el-table-column>
-                        <el-table-column label="集成状态" width="100">
+                        <el-table-column label="合并状态" width="100">
                             <template slot-scope="scope">
                                 <span v-if="scope.row.mergeStatus === 1" class="merge-status-success">成功</span>
                                 <span v-else class="merge-status-fail">失败</span>
@@ -430,10 +598,11 @@
                                     <div class="commit-message-container">
                                         <span>内容：</span>
                                         <div class="commit-message-text">{{scope.row.lastCommitMessage}}</div>
-                                        <el-tooltip v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120" 
-                                                   :content="scope.row.lastCommitMessage" 
-                                                   placement="top" 
-                                                   effect="dark">
+                                        <el-tooltip
+                                                v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120"
+                                                :content="scope.row.lastCommitMessage"
+                                                placement="top"
+                                                effect="dark">
                                             <i class="el-icon-info commit-message-icon"></i>
                                         </el-tooltip>
                                     </div>
@@ -454,12 +623,13 @@
             <div class="content-card">
                 <div class="section-title">待集成分支</div>
                 <div class="search-form">
-                    <el-form :inline="true" :model="toMixSearchForm">
-                        <el-form-item label="分支名">
+                    <div class="demo-form-inline" style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label>分支名</label>
                             <el-input v-model="toMixSearchForm.branchName" placeholder="请输入分支名"
-                                      clearable></el-input>
-                        </el-form-item>
-                        <el-form-item>
+                                      clearable style="width: 200px;"></el-input>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
                             <el-button type="primary" @click="searchToMixBranches">搜索</el-button>
                             <el-button type="success" @click="handleBatchAdd"
                                        :disabled="selectedToMixBranches.length === 0" :loading="batchAddLoading">批量加入
@@ -468,19 +638,20 @@
                             <el-button type="danger" @click="handleBatchClean"
                                        :disabled="selectedToMixBranches.length === 0" :loading="batchCleanLoading">分支清理
                             </el-button>
-                        </el-form-item>
-                    </el-form>
+                        </div>
+                    </div>
                 </div>
-                <div class="section-content">
+                <div class="to-mix-branches-container">
                     <el-table
                             :data="toMixBranches"
                             v-loading="toMixBranchesLoading"
                             @selection-change="handleToMixSelectionChange"
                             style="width: 100%"
+                            :height="toMixTableHeight"
                             element-loading-text="正在加载中..."
                             element-loading-spinner="el-icon-loading">
                         <el-table-column type="selection" width="55"></el-table-column>
-                        <el-table-column prop="branchName" label="分支名" width="180"></el-table-column>
+                        <el-table-column prop="branchName" label="分支名" width="300"></el-table-column>
                         <el-table-column prop="branchDesc" label="分支描述" min-width="150"></el-table-column>
                         <el-table-column prop="createBy" label="创建人" width="100"></el-table-column>
                         <el-table-column label="最近提交信息" min-width="200">
@@ -492,10 +663,11 @@
                                     <div class="commit-message-container">
                                         <span>内容：</span>
                                         <div class="commit-message-text">{{scope.row.lastCommitMessage}}</div>
-                                        <el-tooltip v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120" 
-                                                   :content="scope.row.lastCommitMessage" 
-                                                   placement="top" 
-                                                   effect="dark">
+                                        <el-tooltip
+                                                v-if="scope.row.lastCommitMessage && scope.row.lastCommitMessage.length > 120"
+                                                :content="scope.row.lastCommitMessage"
+                                                placement="top"
+                                                effect="dark">
                                             <i class="el-icon-info commit-message-icon"></i>
                                         </el-tooltip>
                                     </div>
@@ -517,28 +689,39 @@
     </div>
 
     <!-- 冲突处理Shell命令弹窗 -->
-    <el-dialog title="手动处理冲突命令" :visible.sync="shellVisible" width="80%" class="shell-dialog">
+    <el-dialog title="🔧 手动处理冲突命令" :visible.sync="shellVisible" width="85%" class="shell-dialog"
+               :before-close="handleShellDialogClose">
         <div class="shell-content">
             <!-- 提示信息 -->
             <div class="shell-header">
                 <i class="el-icon-warning"></i>
-                自动集成失败，请手动处理冲突，再重新集成
+                自动合并失败，请手动处理冲突，再重新合并
             </div>
-            
+
             <!-- 命令列表 -->
             <div class="shell-commands">
                 <div v-for="(line, index) in shellLines" :key="index" class="shell-line">
+                    <div class="line-number">{{index + 1}}</div>
                     <div class="shell-text">{{line}}</div>
-                    <button class="copy-btn" @click="copyToClipboard(line)">
+                    <button class="copy-btn" @click="copyToClipboard(line, index)" :ref="'copyBtn' + index">
                         <i class="el-icon-document-copy"></i> 复制
                     </button>
                 </div>
-                
+
                 <!-- 空状态提示 -->
                 <div v-if="!shellLines || shellLines.length === 0" class="empty-state">
-                    <i class="el-icon-info"></i>
+                    <i class="el-icon-warning-outline"></i>
                     <p>暂无冲突处理命令</p>
+                    <span>请检查后端接口返回数据</span>
                 </div>
+            </div>
+
+            <!-- 页脚提示 -->
+            <div class="shell-footer" v-if="shellLines && shellLines.length > 0">
+                <p class="footer-text">
+                    <i class="el-icon-lightbulb"></i>
+                    执行完所有命令后，请返回页面点击"重新合并"按钮继续操作
+                </p>
             </div>
         </div>
     </el-dialog>
@@ -627,6 +810,7 @@
                 cleanBranchLoading: false,
                 batchCleanLoading: false,
                 saveBranchLoading: false,
+                windowHeight: window.innerHeight,
                 createBranchVisible: false,
                 createBranchForm: {
                     sourceBranch: '',
@@ -668,6 +852,30 @@
                     }
                 },
                 immediate: true
+            },
+            // 监听数据变化，重新计算表格高度
+            mixedBranches: {
+                handler() {
+                    this.$nextTick(() => {
+                        this.updateTableHeight();
+                    });
+                },
+                deep: true
+            },
+            toMixBranches: {
+                handler() {
+                    this.$nextTick(() => {
+                        this.updateTableHeight();
+                    });
+                },
+                deep: true
+            }
+        },
+        computed: {
+            // 计算待集成分支表格的动态高度
+            toMixTableHeight() {
+                // 使用实际DOM计算高度，确保精确适配
+                return this.calculateTableHeight();
             }
         },
         mounted() {
@@ -680,8 +888,106 @@
             this.initOperator();
             this.initPage();
             this.loadData();
+
+            // 监听窗口大小变化
+            window.addEventListener('resize', this.handleWindowResize);
+
+            // 初始化完成后计算表格高度
+            this.$nextTick(() => {
+                setTimeout(() => {
+                    this.updateTableHeight();
+                }, 500); // 延迟确保DOM完全渲染
+            });
+        },
+        beforeDestroy() {
+            // 移除窗口大小变化监听器
+            window.removeEventListener('resize', this.handleWindowResize);
         },
         methods: {
+            // 处理窗口大小变化
+            handleWindowResize() {
+                this.windowHeight = window.innerHeight;
+                // 延迟重新计算高度，确保DOM已更新
+                this.$nextTick(() => {
+                    this.updateTableHeight();
+                });
+            },
+
+            // 计算表格高度
+            calculateTableHeight() {
+                try {
+                    // 获取页面总高度
+                    const viewportHeight = this.windowHeight || window.innerHeight;
+
+                    // 计算已占用的高度
+                    let usedHeight = 0;
+
+                    // 顶部导航栏和菜单栏
+                    const header = document.querySelector('.el-header') || document.querySelector('header') || document.querySelector('nav');
+                    if (header) {
+                        usedHeight += header.offsetHeight;
+                    } else {
+                        usedHeight += 60; // 默认值
+                    }
+
+                    // 页面标题
+                    const titleElement = document.querySelector('.page-title');
+                    if (titleElement) {
+                        usedHeight += titleElement.offsetHeight + 20; // 包含margin
+                    } else {
+                        usedHeight += 80; // 默认值
+                    }
+
+                    // 合并状态区域
+                    const statusCard = document.querySelector('.content-card:first-of-type');
+                    if (statusCard) {
+                        usedHeight += statusCard.offsetHeight + 20; // 包含margin
+                    } else {
+                        usedHeight += 200; // 默认值
+                    }
+
+                    // 当前集成分支区域（动态计算）
+                    const mixedCard = document.querySelector('.content-card:nth-of-type(2)');
+                    if (mixedCard) {
+                        usedHeight += mixedCard.offsetHeight + 20; // 包含margin
+                    } else {
+                        // 如果DOM还未渲染，使用动态估算
+                        const mixedBranchCount = this.mixedBranches ? this.mixedBranches.length : 0;
+                        const mixedBranchHeight = Math.min(mixedBranchCount * 60 + 160, 400);
+                        usedHeight += mixedBranchHeight;
+                    }
+
+                    // 待集成分支搜索区域
+                    const searchForm = document.querySelector('.content-card:last-of-type .search-form');
+                    if (searchForm) {
+                        usedHeight += searchForm.offsetHeight + 20; // 包含margin
+                    } else {
+                        usedHeight += 80; // 默认值
+                    }
+
+                    // 预留底部空间
+                    usedHeight += 40;
+
+                    // 计算可用高度
+                    const availableHeight = viewportHeight - usedHeight;
+
+                    // 设置合理的最小和最大值
+                    const minHeight = 200;
+                    const maxHeight = 600;
+
+                    return Math.max(minHeight, Math.min(availableHeight, maxHeight));
+                } catch (error) {
+                    console.error('计算表格高度失败:', error);
+                    return 300; // 兜底值
+                }
+            },
+
+            // 更新表格高度（用于窗口大小变化时）
+            updateTableHeight() {
+                // 强制触发computed重新计算
+                this.$forceUpdate();
+            },
+
             // 初始化页面
             initPage() {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -690,7 +996,7 @@
                 this.projectName = urlParams.get('projectName') || '';
                 this.env = urlParams.get('env') || '';
                 this.pageTitle = `${this.projectName}-${this.env}`;
-                
+
                 // 更新页面标题
                 if (this.projectName && this.env) {
                     this.documentTitle = `${this.projectName}-${this.env}中间分支 - Git合流管理系统`;
@@ -732,6 +1038,11 @@
                         this.pageLoading = false;
                         this.mixedBranchesLoading = false;
                         this.toMixBranchesLoading = false;
+
+                        // 数据加载完成后重新计算表格高度
+                        this.$nextTick(() => {
+                            this.updateTableHeight();
+                        });
                     });
             },
 
@@ -759,12 +1070,12 @@
             },
 
             // 复制到剪贴板
-            copyToClipboard(text) {
+            copyToClipboard(text, index) {
                 if (!text || text.trim() === '') {
                     this.$message.warning('复制内容为空');
                     return;
                 }
-                
+
                 if (navigator.clipboard && window.isSecureContext) {
                     // 现代浏览器API
                     navigator.clipboard.writeText(text.trim()).then(() => {
@@ -774,6 +1085,7 @@
                             duration: 2000,
                             showClose: true
                         });
+                        this.showCopySuccess(index);
                     }).catch(err => {
                         console.error('复制失败:', err);
                         this.$message.error('复制失败，请手动复制');
@@ -788,10 +1100,10 @@
                         document.body.appendChild(textArea);
                         textArea.focus();
                         textArea.select();
-                        
+
                         const successful = document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        
+
                         if (successful) {
                             this.$message({
                                 message: '命令已复制到剪贴板',
@@ -799,6 +1111,7 @@
                                 duration: 2000,
                                 showClose: true
                             });
+                            this.showCopySuccess(index);
                         } else {
                             throw new Error('execCommand failed');
                         }
@@ -809,7 +1122,31 @@
                 }
             },
 
-            // 重新集成
+
+            // 显示复制成功效果
+            showCopySuccess(index) {
+                if (typeof index !== 'undefined') {
+                    const btnRef = this.$refs['copyBtn' + index];
+                    if (btnRef && btnRef[0]) {
+                        const btn = btnRef[0];
+                        btn.classList.add('copy-success');
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '<i class="el-icon-check"></i> 已复制';
+
+                        setTimeout(() => {
+                            btn.classList.remove('copy-success');
+                            btn.innerHTML = originalText;
+                        }, 2000);
+                    }
+                }
+            },
+
+            // 关闭弹窗事件处理
+            handleShellDialogClose() {
+                this.shellVisible = false;
+            },
+
+            // 重新合并
             handleRemerge() {
                 const operator = localStorage.getItem('operator');
                 if (!operator) {
@@ -826,40 +1163,10 @@
                 axios.post('/api/v1/git-merge-flow/remergeMixBranch', params)
                     .then(response => {
                         if (response?.data?.code === 200) {
-                            const responseData = response.data.data;
-                            
-                            // 检查flag字段判断集成结果
-                            console.log('重新集成响应数据:', responseData);
-                            
-                            if (responseData && responseData.flag === true) {
-                                // 自动集成成功
-                                console.log('重新集成成功，刷新页面数据');
-                                this.$message.success('重新集成成功');
-                                this.loadData();
-                            } else if (responseData && responseData.flag === false) {
-                                // 自动集成失败，需要手动处理冲突
-                                console.log('重新集成失败，显示冲突处理命令');
-                                // this.$message.warning('自动集成失败，请手动处理冲突');
-                                
-                                // 更新branchDetail中的userMergeShell，然后显示冲突处理命令
-                                if (responseData.userMergeShell) {
-                                    // 临时更新branchDetail以便showConflictShell方法使用
-                                    if (!this.branchDetail) {
-                                        this.branchDetail = {};
-                                    }
-                                    this.branchDetail.userMergeShell = responseData.userMergeShell;
-                                    console.log('更新userMergeShell:', responseData.userMergeShell);
-                                }
-                                
-                                // 显示冲突处理命令弹窗
-                                this.showConflictShell();
-                            } else {
-                                // 未知状态
-                                console.log('重新集成状态未知:', responseData);
-                                this.$message.error(response.data.message || '重新集成状态未知');
-                            }
+                            // remergeMixBranch 成功，直接调用 queryMixBranch 刷新页面
+                            this.refreshPageAndCheckStatus();
                         } else {
-                            this.$message.error(response.data.message || '重新集成失败');
+                            this.$message.error(response.data.message || '重新合并失败');
                         }
                     })
                     .catch(error => {
@@ -868,6 +1175,54 @@
                     })
                     .finally(() => {
                         this.remergeLoading = false;
+                    });
+            },
+
+            // 刷新页面并检查合并状态
+            refreshPageAndCheckStatus() {
+                if (!this.mixBranchId) {
+                    this.$message.error('中间分支ID不能为空');
+                    return;
+                }
+
+                const params = {
+                    mixBranchId: this.mixBranchId
+                };
+
+                axios.post('/api/v1/git-merge-flow/queryMixBranch', params)
+                    .then(response => {
+                        if (response?.data?.code === 200) {
+                            // 更新页面数据
+                            this.branchDetail = response.data.data;
+                            this.mixedBranches = response.data.data.mixedBranchVoList || [];
+                            this.toMixBranches = response.data.data.toMixBranchVoList || [];
+
+                            // 检查合并状态
+                            const branchDetail = response.data.data;
+                            if (branchDetail && branchDetail.allMergeFlag === 0) {
+                                // flag=false，自动合并失败，弹出手动处理冲突命令页面
+                                if (branchDetail.userMergeShell) {
+                                    this.showConflictShell();
+                                } else {
+                                    this.$message.warning('自动合并失败，但未获取到冲突处理命令');
+                                }
+                            } else if (branchDetail && branchDetail.allMergeFlag === 1) {
+                                // flag=true，自动合并成功
+                                this.$message.success('自动合并成功');
+                            }
+                        } else {
+                            this.$message.error(response.data.message || '查询失败');
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('网络请求失败');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        // 数据加载完成后重新计算表格高度
+                        this.$nextTick(() => {
+                            this.updateTableHeight();
+                        });
                     });
             },
 
@@ -960,7 +1315,6 @@
                                 if (response.data.data && response.data.data.mixBranchId) {
                                     this.mixBranchId = response.data.data.mixBranchId;
                                     this.updateUrlMixBranchId(this.mixBranchId);
-                                    console.log('更新mixBranchId:', this.mixBranchId);
                                 }
                                 this.$message.success('退出成功');
                                 this.loadData();
@@ -1008,7 +1362,6 @@
                                 if (response.data.data && response.data.data.mixBranchId) {
                                     this.mixBranchId = response.data.data.mixBranchId;
                                     this.updateUrlMixBranchId(this.mixBranchId);
-                                    console.log('更新mixBranchId:', this.mixBranchId);
                                 }
                                 this.$message.success('批量退出成功');
                                 this.loadData();
@@ -1280,14 +1633,13 @@
                     }
                 });
             },
-            
+
             // 更新URL中的mixBranchId参数
             updateUrlMixBranchId(newMixBranchId) {
                 try {
                     const url = new URL(window.location);
                     url.searchParams.set('mixBranchId', newMixBranchId);
                     window.history.replaceState({}, '', url);
-                    console.log('URL已更新，新的mixBranchId:', newMixBranchId);
                 } catch (error) {
                     console.error('更新URL失败:', error);
                 }
