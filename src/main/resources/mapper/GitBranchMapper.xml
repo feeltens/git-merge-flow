@@ -81,7 +81,7 @@
 
     <select id="pageBranch" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List"></include>
+        <include refid="Base_Column_List" />
         from git_branch
         <where>
             <include refid="condition" />
@@ -94,7 +94,7 @@
 
     <select id="queryByBranchName" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List"></include>
+        <include refid="Base_Column_List" />
         from git_branch
         where branch_name = #{gitBranchName}
           and deleted = 0 limit 1
@@ -102,7 +102,7 @@
 
     <select id="queryByProjectId" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List"></include>
+        <include refid="Base_Column_List" />
         from git_branch
         where project_id = #{projectId}
           and deleted = 0
@@ -163,11 +163,29 @@
 
     <select id="queryByProjectIdAndBranchName" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List"></include>
+        <include refid="Base_Column_List" />
         from git_branch
         <where>
             <include refid="condition" />
         </where>
     </select>
+
+    <select id="queryByBranchId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from git_branch
+        where branch_id = #{branchId}
+        and deleted = 0
+    </select>
+
+    <update id="updateBranchDesc">
+        update git_branch
+        set branch_desc = #{branchDesc},
+            create_by   = #{operator},
+            update_by   = #{operator},
+            update_time = now()
+            where branch_id = #{branchId}
+                and deleted = 0
+    </update>
 
 </mapper>

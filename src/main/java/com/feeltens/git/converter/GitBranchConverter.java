@@ -5,6 +5,7 @@ import com.feeltens.git.entity.GitBranchDO;
 import com.feeltens.git.vo.resp.GitBranchRespVO;
 import com.feeltens.git.vo.resp.ListGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
+import com.feeltens.git.vo.resp.QueryGitBranchRespVO;
 import com.google.common.collect.Lists;
 
 import java.util.Collections;
@@ -133,6 +134,31 @@ public class GitBranchConverter {
         }
 
         return resultList;
+    }
+
+    public static QueryGitBranchRespVO toQueryRespVo(GitBranchDO gitBranchDO) {
+        if (null == gitBranchDO) {
+            return null;
+        }
+
+        return QueryGitBranchRespVO.builder()
+                .branchId(gitBranchDO.getBranchId())
+                .branchName(gitBranchDO.getBranchName())
+                .projectId(gitBranchDO.getProjectId())
+                .branchDesc(gitBranchDO.getBranchDesc())
+                .defaultBranchFlag(gitBranchDO.getDefaultBranchFlag())
+                .sourceBranch(gitBranchDO.getSourceBranch())
+                .createBy(gitBranchDO.getCreateBy())
+                .createTime(gitBranchDO.getCreateTime())
+                .updateBy(gitBranchDO.getUpdateBy())
+                .updateTime(gitBranchDO.getUpdateTime())
+                .lastCommitTime(gitBranchDO.getLastCommitTime())
+                .lastCommitUser(gitBranchDO.getLastCommitUser())
+                .lastCommitEmail(gitBranchDO.getLastCommitEmail())
+                .lastCommitId(gitBranchDO.getLastCommitId())
+                .lastCommitShortId(gitBranchDO.getLastCommitShortId())
+                .lastCommitMessage(gitBranchDO.getLastCommitMessage())
+                .build();
     }
 
 }

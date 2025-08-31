@@ -229,14 +229,16 @@
     </el-dialog>
 
     <!-- 操作人登录弹窗 -->
-    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px">
-        <el-form :model="operatorForm" :rules="operatorRules" ref="operatorForm" label-width="80px">
-            <el-form-item label="操作人" prop="operator">
-                <el-input v-model="operatorForm.operator" placeholder="请输入操作人"></el-input>
-            </el-form-item>
-        </el-form>
+    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px" :close-on-click-modal="false" :close-on-press-escape="false">
+        <div style="padding: 20px;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <label style="width: 80px; text-align: right; margin-right: 10px;">操作人：</label>
+                <el-input v-model="operatorForm.operator" placeholder="请输入操作人" 
+                          @keyup.enter.native="handleEnterKeySave" style="flex: 1;"></el-input>
+            </div>
+        </div>
         <div slot="footer" class="dialog-footer">
-            <el-button @click="operatorLoginVisible = false">关闭</el-button>
+            <el-button @click="handleCloseOperatorDialog">关闭</el-button>
             <el-button type="primary" @click="handleSaveOperator">保存</el-button>
         </div>
     </el-dialog>
@@ -274,11 +276,6 @@
                 operatorLoginVisible: false,
                 operatorForm: {
                     operator: ''
-                },
-                operatorRules: {
-                    operator: [
-                        {required: true, message: '请输入操作人', trigger: 'blur'}
-                    ]
                 },
                 operatorButtonText: '登录'
             }
@@ -423,16 +420,44 @@
                 this.operatorLoginVisible = true;
             },
 
+            // 回车键保存操作人
+            handleEnterKeySave(event) {
+                // 彻底阻止所有默认行为
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    
+                    // 阻止表单提交
+                    if (event.target && event.target.form) {
+                        event.target.form.onsubmit = function() { return false; };
+                    }
+                }
+                
+                // 延迟执行保存，确保事件完全处理完毕
+                this.$nextTick(() => {
+                    this.handleSaveOperator();
+                });
+            },
+
+            // 关闭操作人对话框
+            handleCloseOperatorDialog() {
+                this.operatorLoginVisible = false;
+            },
+
             // 保存操作人
             handleSaveOperator() {
-                this.$refs.operatorForm.validate((valid) => {
-                    if (valid) {
-                        localStorage.setItem('operator', this.operatorForm.operator);
-                        this.operatorButtonText = this.operatorForm.operator;
-                        this.operatorLoginVisible = false;
-                        this.$message.success('操作人设置成功');
-                    }
-                });
+                // 手动验证操作人输入
+                if (!this.operatorForm.operator || this.operatorForm.operator.trim() === '') {
+                    this.$message.error('请输入操作人');
+                    return;
+                }
+                
+                // 保存到localStorage
+                localStorage.setItem('operator', this.operatorForm.operator.trim());
+                this.operatorButtonText = this.operatorForm.operator.trim();
+                this.operatorLoginVisible = false;
+                this.$message.success('操作人设置成功');
             }
         }
     });
