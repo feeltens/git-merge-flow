@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.feeltens.git.enums.GitServiceEnum;
 import com.feeltens.git.enums.MergeTotalStatusEnum;
+import com.feeltens.git.oapi.dto.req.CloseChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.CreateBranchReq;
 import com.feeltens.git.oapi.dto.req.CreateChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.DeleteBranchReq;
@@ -19,6 +20,7 @@ import com.feeltens.git.oapi.dto.req.ListBranchesReq;
 import com.feeltens.git.oapi.dto.req.ListOrganizationsReq;
 import com.feeltens.git.oapi.dto.req.ListRepositoriesReq;
 import com.feeltens.git.oapi.dto.req.MergeChangeRequestReq;
+import com.feeltens.git.oapi.dto.resp.CloseChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.CreateBranchResp;
 import com.feeltens.git.oapi.dto.resp.CreateChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.DeleteBranchResp;
@@ -651,6 +653,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         return GetChangeRequestResp.builder()
                 .localId(jsonObject.getLong(GetChangeRequestResp.Fields.localId))
                 .mergeTotalStatus(getMergeTotalStatus(responseBody, jsonObject).getStatus())
+                .openFlag(getOpenFlag(jsonObject))
                 .projectId(jsonObject.getLong(GetChangeRequestResp.Fields.projectId))
                 .sourceBranch(jsonObject.getString(GetChangeRequestResp.Fields.sourceBranch))
                 .targetBranch(jsonObject.getString(GetChangeRequestResp.Fields.targetBranch))
@@ -714,6 +717,53 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
                 .description(jsonObject.getString(MergeChangeRequestResp.Fields.description))
                 .createTime(DateTimeXUtil.isoString2Date(jsonObject.getString(MergeChangeRequestResp.Fields.createTime)))
                 .updateTime(DateTimeXUtil.isoString2Date(jsonObject.getString(MergeChangeRequestResp.Fields.updateTime)))
+                .build();
+    }
+
+    /**
+     * CloseChangeRequest - 关闭合并请求
+     * <pre>
+     *     https://help.aliyun.com/zh/yunxiao/developer-reference/closechangerequest-close-merge-request
+     *
+     *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/changeRequests/{localId}/close
+     * </pre>
+     */
+    public CloseChangeRequestResp closeMR(CloseChangeRequestReq req) {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
+
+        String url = "{baseUrl}/oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/changeRequests/{localId}/close";
+        url = url.replace("{baseUrl}", req.getBaseUrl());
+        url = url.replace("{organizationId}", req.getOrganizationId());
+        url = url.replace("{repositoryId}", req.getRepositoryId().toString());
+        url = url.replace("{localId}", req.getLocalId().toString());
+
+        long start = System.currentTimeMillis();
+        String responseBody = "";
+        int status = 0;
+        try {
+            HttpResponse execute = HttpUtil.createPost(url)
+                    .addHeaders(headers)
+                    .execute();
+            status = execute.getStatus();
+            responseBody = execute.body();
+        } catch (Exception e) {
+            log.error("closeMR codeup hasError, e:", e);
+        }
+        log.info("closeMR codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
+                responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+
+        if (StrUtil.isEmptyIfStr(responseBody)) {
+            throw new RuntimeException("closeMR codeup openApi failed with nothing");
+        }
+
+        if (responseBody.contains(ERROR_CODE)) {
+            throw new RuntimeException("closeMR codeup openApi failedWithMsg, responseBody:" + responseBody);
+        }
+
+        JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
+        return CloseChangeRequestResp.builder()
+                .result(jsonObject.getBoolean(CloseChangeRequestResp.Fields.result))
                 .build();
     }
 
@@ -800,6 +850,21 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         }
 
         return MergeTotalStatusEnum.CHECKING;
+    }
+
+    /**
+     * MR是否处于打开状态
+     * true代表打开状态
+     * false代表已合并或已关闭状态
+     */
+    private boolean getOpenFlag(JSONObject jsonObject) {
+        String status = jsonObject.getString("status");
+        if (StrUtil.equals("MERGED", status)
+                || StrUtil.equals("CLOSED", status)) {
+            return false;
+        }
+
+        return true;
     }
 
 }

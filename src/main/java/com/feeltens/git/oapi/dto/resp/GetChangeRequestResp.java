@@ -91,6 +91,13 @@ public class GetChangeRequestResp {
      */
     private Integer mergeTotalStatus;
 
+    /**
+     * MR是否处于打开状态
+     * true代表打开状态
+     * false代表已合并或已关闭状态
+     */
+    private Boolean openFlag;
+
     private Long projectId;
     private String sourceBranch;
     private String targetBranch;

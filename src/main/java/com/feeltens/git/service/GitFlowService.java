@@ -14,6 +14,7 @@ import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
 import com.feeltens.git.vo.req.PageMixBranchReqVO;
+import com.feeltens.git.vo.req.PullRemoteBranchReqVO;
 import com.feeltens.git.vo.req.QueryMixBranchReqVO;
 import com.feeltens.git.vo.req.RemergeMixBranchReqVO;
 import com.feeltens.git.vo.req.RemoveFromMixBranchReqVO;
@@ -79,6 +80,11 @@ public interface GitFlowService {
      * 列表查询git远程仓库名称 (open api)
      */
     List<String> listGitRepositoryNameByOpenApi(ListGitRepositoryNameReqVO req);
+
+    /**
+     * 拉取远程分支，并且upsert到db
+     */
+    void pullRemoteBranch(PullRemoteBranchReqVO req);
 
     /**
      * 列表查询git工程

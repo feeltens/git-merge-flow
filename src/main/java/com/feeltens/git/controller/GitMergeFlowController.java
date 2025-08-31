@@ -16,6 +16,7 @@ import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
 import com.feeltens.git.vo.req.PageMixBranchReqVO;
+import com.feeltens.git.vo.req.PullRemoteBranchReqVO;
 import com.feeltens.git.vo.req.QueryMixBranchReqVO;
 import com.feeltens.git.vo.req.RemergeMixBranchReqVO;
 import com.feeltens.git.vo.req.RemoveFromMixBranchReqVO;
@@ -135,6 +136,15 @@ public class GitMergeFlowController {
         List<String> res = gitFlowService.listGitRepositoryNameByOpenApi(req);
         log.info("listGitRepositoryNameByOpenApi hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
+    }
+
+    /**
+     * 拉取远程分支，并且upsert到db
+     */
+    @PostMapping("/pullRemoteBranch")
+    public CloudResponse<String> pullRemoteBranch(@RequestBody PullRemoteBranchReqVO req) {
+        gitFlowService.pullRemoteBranch(req);
+        return CloudResponse.success("success");
     }
 
     /**

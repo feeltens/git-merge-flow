@@ -9,6 +9,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.feeltens.git.enums.GitServiceEnum;
 import com.feeltens.git.enums.MergeTotalStatusEnum;
+import com.feeltens.git.oapi.dto.req.CloseChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.CreateBranchReq;
 import com.feeltens.git.oapi.dto.req.CreateChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.DeleteBranchReq;
@@ -20,6 +21,7 @@ import com.feeltens.git.oapi.dto.req.ListBranchesReq;
 import com.feeltens.git.oapi.dto.req.ListOrganizationsReq;
 import com.feeltens.git.oapi.dto.req.ListRepositoriesReq;
 import com.feeltens.git.oapi.dto.req.MergeChangeRequestReq;
+import com.feeltens.git.oapi.dto.resp.CloseChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.CreateBranchResp;
 import com.feeltens.git.oapi.dto.resp.CreateChangeRequestResp;
 import com.feeltens.git.oapi.dto.resp.DeleteBranchResp;
@@ -648,6 +650,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         return GetChangeRequestResp.builder()
                 .localId(jsonObject.getLong("iid"))
                 .mergeTotalStatus(getMergeTotalStatus(responseBody, jsonObject).getStatus())
+                .openFlag(getOpenFlag(jsonObject))
                 .projectId(jsonObject.getLong("project_id"))
                 .sourceBranch(jsonObject.getString("source_branch"))
                 .targetBranch(jsonObject.getString("target_branch"))
@@ -716,8 +719,14 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
             Boolean hasDiffsFlag = mergeRequestHasDiffs(req);
             if (null != hasDiffsFlag && !hasDiffsFlag) {
                 // 没有文件差异，则关闭MR
-                boolean closeMRFlag = closeMR(req);
-                if (closeMRFlag) {
+                CloseChangeRequestReq closeReq = new CloseChangeRequestReq();
+                closeReq.setBaseUrl(req.getBaseUrl());
+                closeReq.setAccessToken(req.getAccessToken());
+                closeReq.setOrganizationId(req.getOrganizationId());
+                closeReq.setRepositoryId(req.getRepositoryId());
+                closeReq.setLocalId(req.getLocalId());
+                CloseChangeRequestResp closeChangeRequestResp = closeMR(closeReq);
+                if (closeChangeRequestResp.getResult()) {
                     return MergeChangeRequestResp.builder()
                             .localId(req.getLocalId())
                             .mergeTotalStatus(MergeTotalStatusEnum.MERGED.getStatus()) // 已关闭，此外理解为【已合并】
@@ -805,12 +814,12 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/merge_requests/{merge_request_iid}
      * </pre>
      */
-    public boolean closeMR(MergeChangeRequestReq req) {
+    public CloseChangeRequestResp closeMR(CloseChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
         Map<String, Object> formMap = new HashMap<>();
-        formMap.put("description", "GitMergeFlow: source branch same to target branch");
+        formMap.put("description", "GitMergeFlow: closeMR");
         formMap.put("state_event", "close");
 
         String url = "{baseUrl}/api/v4/projects/{id}/merge_requests/{merge_request_iid}";
@@ -846,7 +855,8 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         "state": "closed",
         */
         JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
-        return jsonObject.getString("state").equals("closed");
+        // return jsonObject.getString("state").equals("closed");
+        return new CloseChangeRequestResp(jsonObject.getString("state").equals("closed"));
     }
 
     /**
@@ -947,6 +957,21 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         }
         // 无法合并
         return MergeTotalStatusEnum.CAN_NOT_BE_MERGED;
+    }
+
+    /**
+     * MR是否处于打开状态
+     * true代表打开状态
+     * false代表已合并或已关闭状态
+     */
+    private boolean getOpenFlag(JSONObject jsonObject) {
+        String state = jsonObject.getString("state");
+        if (StrUtil.equals("merged", state)
+                || StrUtil.equals("closed", state)) {
+            return false;
+        }
+
+        return true;
     }
 
 }
