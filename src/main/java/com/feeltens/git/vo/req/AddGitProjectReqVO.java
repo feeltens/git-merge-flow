@@ -1,5 +1,6 @@
 package com.feeltens.git.vo.req;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,12 +25,19 @@ public class AddGitProjectReqVO implements Serializable {
     /**
      * 组织ID
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private String organizationId;
+
+    /**
+     * git远程仓库id
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Long repositoryId;
 
     /**
      * 仓库名称
      */
-    private String repositoryName;
+    // private String repositoryName;
 
     /**
      * 工程名称
