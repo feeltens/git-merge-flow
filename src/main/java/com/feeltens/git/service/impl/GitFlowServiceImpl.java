@@ -66,7 +66,7 @@ import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
 import com.feeltens.git.vo.req.ListGitBranchReqVO;
-import com.feeltens.git.vo.req.ListGitRepositoryNameReqVO;
+import com.feeltens.git.vo.req.ListGitRepositoryReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -81,6 +81,7 @@ import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
 import com.feeltens.git.vo.resp.ListGitBranchRespVO;
+import com.feeltens.git.vo.resp.ListGitRepositoryRespVO;
 import com.feeltens.git.vo.resp.ListOrganizationsRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
@@ -302,13 +303,16 @@ public class GitFlowServiceImpl implements GitFlowService {
                 throw new RuntimeException("入参为空");
             }
             req.setOrganizationId(StrUtil.trim(req.getOrganizationId()));
-            req.setRepositoryName(StrUtil.trim(req.getRepositoryName()));
+            // req.setRepositoryName(StrUtil.trim(req.getRepositoryName()));
             req.setProjectName(StrUtil.trim(req.getProjectName()));
             req.setOperator(StrUtil.trim(req.getOperator()));
             if (StrUtil.isEmptyIfStr(req.getOrganizationId())) {
                 throw new RuntimeException("组织id不能为空");
             }
-            if (StrUtil.isEmptyIfStr(req.getRepositoryName())) {
+            // if (StrUtil.isEmptyIfStr(req.getRepositoryName())) {
+            //     throw new RuntimeException("请选择仓库");
+            // }
+            if (null == req.getRepositoryId()) {
                 throw new RuntimeException("请选择仓库");
             }
             if (StrUtil.isEmptyIfStr(req.getProjectName())) {
@@ -324,20 +328,8 @@ public class GitFlowServiceImpl implements GitFlowService {
                 return CloudResponse.fail(req.getProjectName() + "工程已存在");
             }
 
-            // 调用open api，查询git仓库信息
-            ListRepositoriesReq request = new ListRepositoriesReq(req.getRepositoryName()); // 仓库名称
-            setGitMergeFlowConfig(request, req.getOrganizationId());
-
-            ListRepositoriesResp oapiResponse = gitOpenApiFactory.listRepositories(request);
-            if (null == oapiResponse || CollUtil.isEmpty(oapiResponse.getRepoItemList())) {
-                return CloudResponse.fail("未找到对应的仓库信息:" + req.getProjectName());
-            }
-            if (oapiResponse.getRepoItemList().size() > 1) {
-                return CloudResponse.fail("匹配到多个仓库，请检查:" + req.getProjectName());
-            }
-
             // 仓库id
-            Long repositoryId = oapiResponse.getRepoItemList().get(0).getId();
+            Long repositoryId = req.getRepositoryId();
 
             // 根据git仓库id，查询git仓库信息
             GetRepositoryReq getRepositoryReq = new GetRepositoryReq();
@@ -563,7 +555,7 @@ public class GitFlowServiceImpl implements GitFlowService {
     }
 
     @Override
-    public List<String> listGitRepositoryNameByOpenApi(ListGitRepositoryNameReqVO req) {
+    public List<ListGitRepositoryRespVO> listGitRepositoryNameByOpenApi(ListGitRepositoryReqVO req) {
         // 调用open api，查询git仓库信息
         ListRepositoriesReq request = new ListRepositoriesReq(); // 仓库名称
         setGitMergeFlowConfig(request, req.getOrganizationId());
@@ -574,7 +566,10 @@ public class GitFlowServiceImpl implements GitFlowService {
         }
 
         return oapiResponse.getRepoItemList().stream()
-                .map(ListRepositoriesResp.ListRepositoriesRespItem::getName).collect(Collectors.toList());
+                .map(item -> ListGitRepositoryRespVO.builder()
+                        .repositoryId(item.getId())
+                        .repositoryName(item.getName()).build())
+                .collect(Collectors.toList());
     }
 
     @Override

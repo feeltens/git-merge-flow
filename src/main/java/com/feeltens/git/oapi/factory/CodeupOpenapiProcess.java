@@ -1,5 +1,6 @@
 package com.feeltens.git.oapi.factory;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
@@ -124,6 +125,22 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      * </pre>
      */
     public ListRepositoriesResp listRepositories(ListRepositoriesReq req) {
+        int page = 1;
+        List<ListRepositoriesResp.ListRepositoriesRespItem> resultList = Lists.newArrayList();
+        // 最大100w调用，防止死循环
+        for (int i = 0; i < 100_0000; i++) {
+            ListRepositoriesResp resp = doListRepositories(req, page);
+            if (null != resp && CollUtil.isNotEmpty(resp.getRepoItemList())) {
+                CollUtil.addAll(resultList, resp.getRepoItemList());
+                page++;
+            } else {
+                break;
+            }
+        }
+        return new ListRepositoriesResp(resultList);
+    }
+
+    private ListRepositoriesResp doListRepositories(ListRepositoriesReq req, int page) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
@@ -131,7 +148,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         if (StrUtil.isNotEmpty(req.getSearch())) {
             formMap.put(ListRepositoriesReq.Fields.search, req.getSearch());
         }
-        formMap.put("page", 1); // 页码，默认从 1 开始，一般不要超过 150 页。
+        formMap.put("page", page); // 页码，默认从 1 开始，一般不要超过 150 页。
         formMap.put("perPage", 100); // 每页大小，默认 20，取值范围【1，100】。
 
         String url = "{baseUrl}/oapi/v1/codeup/organizations/{organizationId}/repositories";

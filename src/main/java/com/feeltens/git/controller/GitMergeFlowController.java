@@ -11,7 +11,7 @@ import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
 import com.feeltens.git.vo.req.ListGitBranchReqVO;
-import com.feeltens.git.vo.req.ListGitRepositoryNameReqVO;
+import com.feeltens.git.vo.req.ListGitRepositoryReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -26,6 +26,7 @@ import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
 import com.feeltens.git.vo.resp.ListGitBranchRespVO;
+import com.feeltens.git.vo.resp.ListGitRepositoryRespVO;
 import com.feeltens.git.vo.resp.ListOrganizationsRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
@@ -132,11 +133,11 @@ public class GitMergeFlowController {
     }
 
     /**
-     * 列表查询git远程仓库名称 (open api)
+     * 列表查询git远程仓库 (open api)
      */
     @PostMapping("/listGitRepositoryNameByOpenApi")
-    public CloudResponse<List<String>> listGitRepositoryNameByOpenApi(@RequestBody ListGitRepositoryNameReqVO req) {
-        List<String> res = gitFlowService.listGitRepositoryNameByOpenApi(req);
+    public CloudResponse<List<ListGitRepositoryRespVO>> listGitRepositoryNameByOpenApi(@RequestBody ListGitRepositoryReqVO req) {
+        List<ListGitRepositoryRespVO> res = gitFlowService.listGitRepositoryNameByOpenApi(req);
         log.info("listGitRepositoryNameByOpenApi hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }

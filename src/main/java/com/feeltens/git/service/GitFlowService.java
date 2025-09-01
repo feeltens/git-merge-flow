@@ -9,7 +9,7 @@ import com.feeltens.git.vo.req.AddIntoMixBranchReqVO;
 import com.feeltens.git.vo.req.CreateGitBranchReqVO;
 import com.feeltens.git.vo.req.DeleteGitBranchReqVO;
 import com.feeltens.git.vo.req.ListGitBranchReqVO;
-import com.feeltens.git.vo.req.ListGitRepositoryNameReqVO;
+import com.feeltens.git.vo.req.ListGitRepositoryReqVO;
 import com.feeltens.git.vo.req.PageGitBranchReqVO;
 import com.feeltens.git.vo.req.PageGitOrganizationReqVO;
 import com.feeltens.git.vo.req.PageGitProjectReqVO;
@@ -24,6 +24,7 @@ import com.feeltens.git.vo.resp.AddIntoMixBranchRespVO;
 import com.feeltens.git.vo.resp.CreateGitBranchRespVO;
 import com.feeltens.git.vo.resp.DeleteGitBranchRespVO;
 import com.feeltens.git.vo.resp.ListGitBranchRespVO;
+import com.feeltens.git.vo.resp.ListGitRepositoryRespVO;
 import com.feeltens.git.vo.resp.ListOrganizationsRespVO;
 import com.feeltens.git.vo.resp.PageGitBranchRespVO;
 import com.feeltens.git.vo.resp.PageGitOrganizationRespVO;
@@ -80,9 +81,9 @@ public interface GitFlowService {
     PageResponse<PageGitProjectRespVO> pageGitProject(PageRequest<PageGitProjectReqVO> req);
 
     /**
-     * 列表查询git远程仓库名称 (open api)
+     * 列表查询git远程仓库 (open api)
      */
-    List<String> listGitRepositoryNameByOpenApi(ListGitRepositoryNameReqVO req);
+    List<ListGitRepositoryRespVO> listGitRepositoryNameByOpenApi(ListGitRepositoryReqVO req);
 
     /**
      * 拉取远程分支，并且upsert到db
