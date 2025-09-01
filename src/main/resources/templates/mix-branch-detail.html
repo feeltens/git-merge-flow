@@ -560,7 +560,9 @@
                         <div style="display: flex; align-items: center; gap: 5px;">
                             <label>分支名</label>
                             <el-input v-model="mixedSearchForm.branchName" placeholder="请输入分支名"
-                                      clearable style="width: 200px;"></el-input>
+                                      clearable
+                                      @keyup.enter.native="searchMixedBranches"
+                                      style="width: 200px;"></el-input>
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <el-button type="primary" @click="searchMixedBranches">搜索</el-button>
@@ -627,7 +629,9 @@
                         <div style="display: flex; align-items: center; gap: 5px;">
                             <label>分支名</label>
                             <el-input v-model="toMixSearchForm.branchName" placeholder="请输入分支名"
-                                      clearable style="width: 200px;"></el-input>
+                                      clearable
+                                      @keyup.enter.native="searchToMixBranches"
+                                      style="width: 200px;"></el-input>
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <el-button type="primary" @click="searchToMixBranches">搜索</el-button>
@@ -886,7 +890,7 @@
             this.initPage();
             this.loadData();
 
-                        // 监听窗口大小变化
+            // 监听窗口大小变化
             window.addEventListener('resize', this.handleWindowResize);
             
             // 防止页面意外刷新
@@ -905,6 +909,9 @@
                     this.updateTableHeight();
                 }, 500); // 延迟确保DOM完全渲染
             });
+            
+            // 添加全局回车键事件监听，阻止除特定输入框外的回车键事件
+            this.addGlobalEnterKeyHandler();
         },
         beforeDestroy() {
             // 移除窗口大小变化监听器
@@ -1680,6 +1687,30 @@
                 } catch (error) {
                     console.error('更新URL失败:', error);
                 }
+            },
+
+            // 添加全局回车键事件处理
+            addGlobalEnterKeyHandler() {
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        // 检查当前焦点是否在允许回车键的输入框上
+                        const activeElement = document.activeElement;
+                        const isOperatorInput = activeElement && 
+                            activeElement.getAttribute('placeholder') === '请输入操作人';
+                        const isMixedBranchSearchInput = activeElement && 
+                            activeElement.getAttribute('placeholder') === '请输入分支名' &&
+                            activeElement.closest('.mixed-branches-container');
+                        const isToMixBranchSearchInput = activeElement && 
+                            activeElement.getAttribute('placeholder') === '请输入分支名' &&
+                            activeElement.closest('.to-mix-branches-container');
+                        
+                        // 如果不在允许的输入框上，阻止回车键事件
+                        if (!isOperatorInput && !isMixedBranchSearchInput && !isToMixBranchSearchInput) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                    }
+                });
             }
         }
     });

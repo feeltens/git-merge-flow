@@ -454,6 +454,9 @@
             this.initOperator();
             this.initPage();
             this.loadData();
+            
+            // 添加全局回车键事件监听，阻止除特定输入框外的回车键事件
+            this.addGlobalEnterKeyHandler();
         },
         methods: {
             // 初始化页面
@@ -877,6 +880,26 @@
                 this.operatorButtonText = this.operatorForm.operator.trim();
                 this.operatorLoginVisible = false;
                 this.$message.success('操作人设置成功');
+            },
+
+            // 添加全局回车键事件处理
+            addGlobalEnterKeyHandler() {
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        // 检查当前焦点是否在允许回车键的输入框上
+                        const activeElement = document.activeElement;
+                        const isBranchNameInput = activeElement && 
+                            activeElement.getAttribute('placeholder') === '请输入分支名称';
+                        const isOperatorInput = activeElement && 
+                            activeElement.getAttribute('placeholder') === '请输入操作人';
+                        
+                        // 如果不在允许的输入框上，阻止回车键事件
+                        if (!isBranchNameInput && !isOperatorInput) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                    }
+                });
             }
         }
     });
