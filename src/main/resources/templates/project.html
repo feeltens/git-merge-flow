@@ -251,14 +251,20 @@
                     </el-option>
                 </el-select>
             </el-form-item>
-            <el-form-item label="仓库名称" prop="repositoryName">
-                <el-select v-model="addProjectForm.repositoryName" placeholder="请选择仓库名称" style="width: 100%"
-                           :disabled="!addProjectForm.organizationId">
+            <el-form-item label="仓库名称" prop="repositoryId">
+                <el-select v-model="addProjectForm.repositoryId"
+                           filterable
+                           remote
+                           :remote-method="filterRepositories"
+                           placeholder="请输入仓库名称进行搜索"
+                           style="width: 100%"
+                           :disabled="!addProjectForm.organizationId"
+                           :loading="repositoryLoading">
                     <el-option
-                            v-for="repo in repositoryList"
-                            :key="repo"
-                            :label="repo"
-                            :value="repo">
+                            v-for="repo in filteredRepositoryList"
+                            :key="repo.repositoryId"
+                            :label="repo.repositoryName"
+                            :value="repo.repositoryId">
                     </el-option>
                 </el-select>
             </el-form-item>
@@ -273,11 +279,12 @@
     </el-dialog>
 
     <!-- 操作人登录弹窗 -->
-    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px" :close-on-click-modal="false" :close-on-press-escape="false">
+    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px" :close-on-click-modal="false"
+               :close-on-press-escape="false">
         <div style="padding: 20px;">
             <div style="display: flex; align-items: center; margin-bottom: 20px;">
                 <label style="width: 80px; text-align: right; margin-right: 10px;">操作人：</label>
-                <el-input v-model="operatorForm.operator" placeholder="请输入操作人" 
+                <el-input v-model="operatorForm.operator" placeholder="请输入操作人"
                           @keyup.enter.native="handleEnterKeySave" style="flex: 1;"></el-input>
             </div>
         </div>
@@ -314,14 +321,14 @@
                 addProjectVisible: false,
                 addProjectForm: {
                     organizationId: '',
-                    repositoryName: '',
+                    repositoryId: '',
                     projectName: ''
                 },
                 addProjectRules: {
                     organizationId: [
                         {required: true, message: '请选择Git组织', trigger: 'change'}
                     ],
-                    repositoryName: [
+                    repositoryId: [
                         {required: true, message: '请选择仓库名称', trigger: 'change'}
                     ],
                     projectName: [
@@ -330,6 +337,8 @@
                 },
                 organizationList: [],
                 repositoryList: [],
+                filteredRepositoryList: [],
+                repositoryLoading: false,
                 // 操作人相关
                 operatorLoginVisible: false,
                 operatorForm: {
@@ -355,7 +364,7 @@
 
             this.initOperator();
             this.loadData();
-            
+
             // 添加全局回车键事件监听，阻止除特定输入框外的回车键事件
             this.addGlobalEnterKeyHandler();
         },
@@ -492,8 +501,9 @@
             // 组织变更处理
             handleOrganizationChange(organizationId) {
                 // 清空仓库选择
-                this.addProjectForm.repositoryName = '';
+                this.addProjectForm.repositoryId = '';
                 this.repositoryList = [];
+                this.filteredRepositoryList = [];
 
                 if (organizationId) {
                     this.loadRepositories(organizationId);
@@ -502,6 +512,7 @@
 
             // 加载仓库列表
             loadRepositories(organizationId) {
+                this.repositoryLoading = true;
                 const params = {
                     organizationId: organizationId
                 };
@@ -510,6 +521,8 @@
                     .then(response => {
                         if (response?.data?.code === 200) {
                             this.repositoryList = response.data.data;
+                            // 初始化过滤后的列表
+                            this.filteredRepositoryList = [...this.repositoryList];
                         } else {
                             this.$message.error('获取仓库列表失败');
                         }
@@ -517,7 +530,21 @@
                     .catch(error => {
                         this.$message.error('网络请求失败');
                         console.error(error);
+                    })
+                    .finally(() => {
+                        this.repositoryLoading = false;
                     });
+            },
+
+            // 过滤仓库列表（支持模糊查询）
+            filterRepositories(query) {
+                if (query === '') {
+                    this.filteredRepositoryList = this.repositoryList;
+                } else {
+                    this.filteredRepositoryList = this.repositoryList.filter(repo =>
+                        repo.repositoryName.toLowerCase().includes(query.toLowerCase())
+                    );
+                }
             },
 
             // 保存工程
@@ -534,7 +561,7 @@
 
                         const params = {
                             organizationId: this.addProjectForm.organizationId,
-                            repositoryName: this.addProjectForm.repositoryName,
+                            repositoryId: this.addProjectForm.repositoryId,
                             projectName: this.addProjectForm.projectName,
                             operator: operator
                         };
@@ -546,10 +573,11 @@
                                     this.addProjectVisible = false;
                                     this.addProjectForm = {
                                         organizationId: '',
-                                        repositoryName: '',
+                                        repositoryId: '',
                                         projectName: ''
                                     };
                                     this.repositoryList = [];
+                                    this.filteredRepositoryList = [];
                                     this.loadData();
                                 } else {
                                     this.$message.error(response.data.message || '添加失败');
@@ -590,13 +618,15 @@
                     event.preventDefault();
                     event.stopPropagation();
                     event.stopImmediatePropagation();
-                    
+
                     // 阻止表单提交
                     if (event.target && event.target.form) {
-                        event.target.form.onsubmit = function() { return false; };
+                        event.target.form.onsubmit = function () {
+                            return false;
+                        };
                     }
                 }
-                
+
                 // 延迟执行保存，确保事件完全处理完毕
                 this.$nextTick(() => {
                     this.handleSaveOperator();
@@ -615,7 +645,7 @@
                     this.$message.error('请输入操作人');
                     return;
                 }
-                
+
                 // 保存到localStorage
                 localStorage.setItem('operator', this.operatorForm.operator.trim());
                 this.operatorButtonText = this.operatorForm.operator.trim();
@@ -629,13 +659,15 @@
                     if (event.key === 'Enter') {
                         // 检查当前焦点是否在允许回车键的输入框上
                         const activeElement = document.activeElement;
-                        const isProjectNameInput = activeElement && 
+                        const isProjectNameInput = activeElement &&
                             activeElement.getAttribute('placeholder') === '请输入工程名称';
-                        const isOperatorInput = activeElement && 
+                        const isOperatorInput = activeElement &&
                             activeElement.getAttribute('placeholder') === '请输入操作人';
-                        
+                        const isRepositorySearchInput = activeElement &&
+                            activeElement.getAttribute('placeholder') === '请输入仓库名称进行搜索';
+
                         // 如果不在允许的输入框上，阻止回车键事件
-                        if (!isProjectNameInput && !isOperatorInput) {
+                        if (!isProjectNameInput && !isOperatorInput && !isRepositorySearchInput) {
                             event.preventDefault();
                             event.stopPropagation();
                         }
