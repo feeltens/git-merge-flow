@@ -467,6 +467,10 @@
         .merge-status-fail {
             color: #f56c6c;
         }
+        /* 勾选行高亮底色 */
+        .el-table .row-selected > td {
+            background-color: rgb(255, 241, 230) !important;
+        }
     </style>
 </head>
 <body>
@@ -577,6 +581,7 @@
                     <el-table
                             :data="mixedBranches"
                             v-loading="mixedBranchesLoading"
+                            :row-class-name="mixedRowClassName"
                             @selection-change="handleMixedSelectionChange"
                             style="width: 100%"
                             element-loading-text="正在加载中..."
@@ -649,6 +654,7 @@
                     <el-table
                             :data="toMixBranches"
                             v-loading="toMixBranchesLoading"
+                            :row-class-name="toMixRowClassName"
                             @selection-change="handleToMixSelectionChange"
                             style="width: 100%"
                             :height="toMixTableHeight"
@@ -1711,6 +1717,24 @@
                         }
                     }
                 });
+            },
+
+            // 行样式：当前集成分支被勾选的行设置高亮底色
+            mixedRowClassName({ row }) {
+                if (!this.selectedMixedBranches || this.selectedMixedBranches.length === 0) {
+                    return '';
+                }
+                const found = this.selectedMixedBranches.find(sel => sel && row && sel.branchName === row.branchName);
+                return found ? 'row-selected' : '';
+            },
+
+            // 行样式：待集成分支被勾选的行设置高亮底色
+            toMixRowClassName({ row }) {
+                if (!this.selectedToMixBranches || this.selectedToMixBranches.length === 0) {
+                    return '';
+                }
+                const found = this.selectedToMixBranches.find(sel => sel && row && sel.branchName === row.branchName);
+                return found ? 'row-selected' : '';
             }
         }
     });
