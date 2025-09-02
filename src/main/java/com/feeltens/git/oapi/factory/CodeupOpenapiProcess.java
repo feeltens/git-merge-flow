@@ -851,9 +851,9 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
             throw new RuntimeException("getCompare openApi failed with nothing");
         }
 
-        if (responseBody.contains(ERROR_CODE)) {
-            throw new RuntimeException("getCompare codeup openApi failedWithMsg, responseBody:" + responseBody);
-        }
+        // if (responseBody.contains(ERROR_CODE)) {
+        //     throw new RuntimeException("getCompare codeup openApi failedWithMsg, responseBody:" + responseBody);
+        // }
 
         JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
         return GetCompareResp.builder()
