@@ -79,7 +79,7 @@ public class GitMergeFlowController {
     @PostMapping("/pageGitOrganization")
     public CloudResponse<PageResponse<PageGitOrganizationRespVO>> pageGitOrganization(@RequestBody PageRequest<PageGitOrganizationReqVO> req) {
         PageResponse<PageGitOrganizationRespVO> res = gitFlowService.pageGitOrganization(req);
-        log.info("pageGitOrganization hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        // log.info("pageGitOrganization hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -99,7 +99,7 @@ public class GitMergeFlowController {
     public CloudResponse<String> addGitOrganization(@RequestBody AddGitOrganizationReqVO req) {
         try {
             CloudResponse<String> res = gitFlowService.addGitOrganization(req);
-            log.info("addGitOrganization hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            // log.info("addGitOrganization hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
             return res;
         } catch (Exception e) {
             log.error("addGitOrganization hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -113,8 +113,10 @@ public class GitMergeFlowController {
     @PostMapping("/addGitProject")
     public CloudResponse<String> addGitProject(@RequestBody AddGitProjectReqVO req) {
         try {
+            long start = System.currentTimeMillis();
             CloudResponse<String> res = gitFlowService.addGitProject(req);
-            log.info("addGitProject hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            log.info("addGitProject hasResult, param:{}    result:{}    costTime:{}ms",
+                    JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return res;
         } catch (Exception e) {
             log.error("addGitProject hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -128,7 +130,7 @@ public class GitMergeFlowController {
     @PostMapping("/pageGitProject")
     public CloudResponse<PageResponse<PageGitProjectRespVO>> pageGitProject(@RequestBody PageRequest<PageGitProjectReqVO> req) {
         PageResponse<PageGitProjectRespVO> res = gitFlowService.pageGitProject(req);
-        log.info("pageGitProject hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        // log.info("pageGitProject hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -138,7 +140,7 @@ public class GitMergeFlowController {
     @PostMapping("/listGitRepositoryNameByOpenApi")
     public CloudResponse<List<ListGitRepositoryRespVO>> listGitRepositoryNameByOpenApi(@RequestBody ListGitRepositoryReqVO req) {
         List<ListGitRepositoryRespVO> res = gitFlowService.listGitRepositoryNameByOpenApi(req);
-        log.info("listGitRepositoryNameByOpenApi hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        // log.info("listGitRepositoryNameByOpenApi hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -147,7 +149,9 @@ public class GitMergeFlowController {
      */
     @PostMapping("/pullRemoteBranch")
     public CloudResponse<String> pullRemoteBranch(@RequestBody PullRemoteBranchReqVO req) {
+        long start = System.currentTimeMillis();
         gitFlowService.pullRemoteBranch(req);
+        log.info("pullRemoteBranch hasResult, param:{}    costTime:{}ms", JSON.toJSONString(req), System.currentTimeMillis() - start);
         return CloudResponse.success("success");
     }
 
@@ -157,7 +161,7 @@ public class GitMergeFlowController {
     @PostMapping("/listGitProject")
     public CloudResponse<List<PageGitProjectRespVO>> listGitProject() {
         List<PageGitProjectRespVO> res = gitFlowService.listGitProject();
-        log.info("listGitProject hasResult, result:{}", JSON.toJSONString(res));
+        // log.info("listGitProject hasResult, result:{}", JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -167,7 +171,7 @@ public class GitMergeFlowController {
     @PostMapping("/pageGitBranch")
     public CloudResponse<PageResponse<PageGitBranchRespVO>> pageGitBranch(@RequestBody PageRequest<PageGitBranchReqVO> req) {
         PageResponse<PageGitBranchRespVO> res = gitFlowService.pageGitBranch(req);
-        log.info("pageGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        // log.info("pageGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -177,7 +181,7 @@ public class GitMergeFlowController {
     @PostMapping("/listGitBranch")
     public CloudResponse<List<ListGitBranchRespVO>> listGitBranch(@RequestBody ListGitBranchReqVO req) {
         List<ListGitBranchRespVO> res = gitFlowService.listGitBranch(req);
-        log.info("listGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        // log.info("listGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -187,7 +191,7 @@ public class GitMergeFlowController {
     @PostMapping("/queryGitBranch")
     public CloudResponse<QueryGitBranchRespVO> queryGitBranch(@RequestBody QueryGitBranchReqVO req) {
         QueryGitBranchRespVO res = gitFlowService.queryGitBranch(req);
-        log.info("queryGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        // log.info("queryGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -197,8 +201,10 @@ public class GitMergeFlowController {
     @PostMapping("/updateGitBranch")
     public CloudResponse<Boolean> updateGitBranch(@RequestBody UpdateGitBranchReqVO req) {
         try {
+            long start = System.currentTimeMillis();
             Boolean res = gitFlowService.updateGitBranch(req);
-            log.info("updateGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            log.info("updateGitBranch hasResult, param:{}    result:{}    costTime:{}ms",
+                    JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return CloudResponse.success(res);
         } catch (Exception e) {
             log.error("updateGitBranch hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -212,8 +218,10 @@ public class GitMergeFlowController {
     @PostMapping("/createGitBranch")
     public CloudResponse<CreateGitBranchRespVO> createGitBranch(@RequestBody CreateGitBranchReqVO req) {
         try {
+            long start = System.currentTimeMillis();
             CloudResponse<CreateGitBranchRespVO> res = gitFlowService.createGitBranch(req);
-            log.info("createGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            log.info("createGitBranch hasResult, param:{}    result:{}    costTime:{}ms",
+                    JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return res;
         } catch (Exception e) {
             log.error("createGitBranch hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -227,7 +235,7 @@ public class GitMergeFlowController {
     @PostMapping("/pageMixBranch")
     public CloudResponse<PageResponse<PageMixBranchRespVO>> pageMixBranch(@RequestBody PageRequest<PageMixBranchReqVO> req) {
         PageResponse<PageMixBranchRespVO> res = gitFlowService.pageMixBranch(req);
-        log.info("pageMixBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+        // log.info("pageMixBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
     }
 
@@ -247,8 +255,10 @@ public class GitMergeFlowController {
     @PostMapping("/queryMixBranch")
     public CloudResponse<QueryMixBranchRespVO> queryMixBranch(@RequestBody QueryMixBranchReqVO req) {
         try {
+            // long start = System.currentTimeMillis();
             QueryMixBranchRespVO res = gitFlowService.queryMixBranch(req);
-            log.info("queryMixBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            // log.info("queryMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
+            //         JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return CloudResponse.success(res);
         } catch (Exception e) {
             log.error("queryMixBranch hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -265,8 +275,10 @@ public class GitMergeFlowController {
     @PostMapping("/addIntoMixBranch")
     public CloudResponse<AddIntoMixBranchRespVO> addIntoMixBranch(@RequestBody AddIntoMixBranchReqVO req) {
         try {
+            long start = System.currentTimeMillis();
             AddIntoMixBranchRespVO res = gitFlowService.addIntoMixBranch(req);
-            log.info("addIntoMixBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            log.info("addIntoMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
+                    JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return CloudResponse.success(res);
         } catch (Exception e) {
             log.error("addIntoMixBranch hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -280,8 +292,10 @@ public class GitMergeFlowController {
     @PostMapping("/remergeMixBranch")
     public CloudResponse<RemergeMixBranchRespVO> remergeMixBranch(@RequestBody RemergeMixBranchReqVO req) {
         try {
+            long start = System.currentTimeMillis();
             RemergeMixBranchRespVO res = gitFlowService.remergeMixBranch(req);
-            log.info("remergeMixBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            log.info("remergeMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
+                    JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return CloudResponse.success(res);
         } catch (Exception e) {
             log.error("remergeMixBranch hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -295,8 +309,10 @@ public class GitMergeFlowController {
     @PostMapping("/removeFromMixBranch")
     public CloudResponse<RemoveFromMixBranchRespVO> removeFromMixBranch(@RequestBody RemoveFromMixBranchReqVO req) {
         try {
+            long start = System.currentTimeMillis();
             RemoveFromMixBranchRespVO res = gitFlowService.removeFromMixBranch(req);
-            log.info("removeFromMixBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            log.info("removeFromMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
+                    JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return CloudResponse.success(res);
         } catch (Exception e) {
             log.error("removeFromMixBranch hasError, param:{}    e:", JSON.toJSONString(req), e);
@@ -310,8 +326,10 @@ public class GitMergeFlowController {
     @PostMapping("/deleteGitBranch")
     public CloudResponse<DeleteGitBranchRespVO> deleteGitBranch(@RequestBody DeleteGitBranchReqVO req) {
         try {
+            long start = System.currentTimeMillis();
             DeleteGitBranchRespVO res = gitFlowService.deleteGitBranch(req);
-            log.info("deleteGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
+            log.info("deleteGitBranch hasResult, param:{}    result:{}    costTime:{}ms",
+                    JSON.toJSONString(req), JSON.toJSONString(res), System.currentTimeMillis() - start);
             return CloudResponse.success(res);
         } catch (Exception e) {
             log.error("deleteGitBranch hasError, param:{}    e:", JSON.toJSONString(req), e);

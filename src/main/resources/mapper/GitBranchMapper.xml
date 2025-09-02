@@ -77,6 +77,7 @@
             and branch_name like concat('%', #{req.branchName}, '%')
         </if>
         and deleted = 0
+        order by branch_id desc
     </sql>
 
     <select id="pageBranch" resultMap="BaseResultMap">
@@ -85,7 +86,6 @@
         from git_branch
         <where>
             <include refid="condition" />
-            order by branch_id desc
             <if test="limitSize != null and pageSize != null">
                 limit #{limitSize}, #{pageSize}
             </if>
@@ -106,7 +106,7 @@
         from git_branch
         where project_id = #{projectId}
           and deleted = 0
-        order by branch_id
+        order by branch_id desc
     </select>
 
     <insert id="insertOrUpdateByBranchName">
