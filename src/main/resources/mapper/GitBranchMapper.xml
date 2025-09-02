@@ -86,7 +86,6 @@
         from git_branch
         <where>
             <include refid="condition" />
-            order by branch_id desc
             <if test="limitSize != null and pageSize != null">
                 limit #{limitSize}, #{pageSize}
             </if>
