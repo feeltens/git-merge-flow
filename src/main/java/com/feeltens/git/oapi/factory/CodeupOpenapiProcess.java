@@ -414,6 +414,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         try {
             HttpResponse execute = HttpUtil.createGet(url)
                     .addHeaders(headers)
+                    .form(formMap)
                     .execute();
             status = execute.getStatus();
             responseBody = execute.body();
