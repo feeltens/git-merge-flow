@@ -1,5 +1,6 @@
 package com.feeltens.git.oapi.factory;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
@@ -90,6 +91,22 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      * </pre>
      */
     public ListRepositoriesResp listRepositories(ListRepositoriesReq req) {
+        int page = 1;
+        List<ListRepositoriesResp.ListRepositoriesRespItem> resultList = Lists.newArrayList();
+        // 最大100w调用，防止死循环
+        for (int i = 0; i < 100_0000; i++) {
+            ListRepositoriesResp resp = doListRepositories(req, page);
+            if (null != resp && CollUtil.isNotEmpty(resp.getRepoItemList())) {
+                CollUtil.addAll(resultList, resp.getRepoItemList());
+                page++;
+            } else {
+                break;
+            }
+        }
+        return new ListRepositoriesResp(resultList);
+    }
+
+    public ListRepositoriesResp doListRepositories(ListRepositoriesReq req, int page) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
@@ -97,7 +114,10 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         if (StrUtil.isNotEmpty(req.getSearch())) {
             formMap.put(ListRepositoriesReq.Fields.search, req.getSearch());
         }
-        formMap.put("order_by", "created_at");
+        formMap.put("page", page);
+        formMap.put("per_page", 100);
+        formMap.put("order_by", "id");
+        formMap.put("sort", "asc");
 
         String url = "{baseUrl}/api/v4/projects";
         url = url.replace("{baseUrl}", req.getBaseUrl());
@@ -322,11 +342,30 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      * </pre>
      */
     public ListBranchesResp listBranches(ListBranchesReq req) {
+        int page = 1;
+        List<ListBranchesResp.BranchItem> resultList = Lists.newArrayList();
+        // 最大100w调用，防止死循环
+        for (int i = 0; i < 100_0000; i++) {
+            ListBranchesResp resp = doListBranches(req, page);
+            if (null != resp && CollUtil.isNotEmpty(resp.getBranchItemList())) {
+                CollUtil.addAll(resultList, resp.getBranchItemList());
+                page++;
+            } else {
+                break;
+            }
+        }
+        return new ListBranchesResp(resultList);
+    }
+
+    public ListBranchesResp doListBranches(ListBranchesReq req, int page) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
         Map<String, Object> formMap = new HashMap<>();
-        formMap.put("per_page", 10000000);
+        formMap.put("page", page);
+        formMap.put("per_page", 100);
+        formMap.put("order_by", "id");
+        formMap.put("sort", "asc");
 
         String url = "{baseUrl}/api/v4/projects/{id}/repository/branches";
         url = url.replace("{baseUrl}", req.getBaseUrl());
