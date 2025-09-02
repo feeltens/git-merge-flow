@@ -58,7 +58,7 @@ CREATE TABLE `git_branch` (
   `last_commit_email` varchar(100) NOT NULL COMMENT '最近一次提交人邮箱',
   `last_commit_id` varchar(100) NOT NULL COMMENT '最近一次提交ID',
   `last_commit_short_id` varchar(100) NOT NULL COMMENT '最近一次提交shortID',
-  `last_commit_message` varchar(512) NOT NULL COMMENT '最近一次提交内容',
+  `last_commit_message` text NOT NULL COMMENT '最近一次提交内容',
   `deleted` bigint NOT NULL DEFAULT '0' COMMENT '删除标识: 0代表未删除，>0代表已删除，此时同branch_id',
   PRIMARY KEY (`branch_id`),
   UNIQUE KEY `uk_index` (`project_id`,`branch_name`,`deleted`) USING BTREE
