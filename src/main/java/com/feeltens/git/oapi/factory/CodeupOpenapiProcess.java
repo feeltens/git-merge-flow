@@ -844,8 +844,10 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("getCompare codeup hasError, e:", e);
         }
-        log.info("getCompare codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
-                responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        // log.info("getCompare codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
+        //         responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        log.info("getCompare codeup openApi hasResult: status:{}    param:{}    costTime:{}ms",
+                status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
         if (StrUtil.isEmptyIfStr(responseBody)) {
             throw new RuntimeException("getCompare openApi failed with nothing");

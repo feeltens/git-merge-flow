@@ -931,8 +931,10 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("getCompare gitlab hasError, e:", e);
         }
-        log.info("getCompare gitlab openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
-                responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        // log.info("getCompare gitlab openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
+        //         responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        log.info("getCompare gitlab openApi hasResult: status:{}    param:{}    costTime:{}ms",
+                status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
         if (status != 200) {
             throw new RuntimeException("getCompare gitlab openApi failedWithFailStatus, status:" + status + " responseBody:" + responseBody);
