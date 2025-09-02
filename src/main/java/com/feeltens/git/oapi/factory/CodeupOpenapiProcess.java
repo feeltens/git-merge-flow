@@ -150,6 +150,8 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         }
         formMap.put("page", page); // 页码，默认从 1 开始，一般不要超过 150 页。
         formMap.put("perPage", 100); // 每页大小，默认 20，取值范围【1，100】。
+        formMap.put("orderBy", "created_at");
+        formMap.put("sort", "asc");
 
         String url = "{baseUrl}/oapi/v1/codeup/organizations/{organizationId}/repositories";
         url = url.replace("{baseUrl}", req.getBaseUrl());
@@ -377,8 +379,29 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      * </pre>
      */
     public ListBranchesResp listBranches(ListBranchesReq req) {
+        int page = 1;
+        List<ListBranchesResp.BranchItem> resultList = Lists.newArrayList();
+        // 最大100w调用，防止死循环
+        for (int i = 0; i < 100_0000; i++) {
+            ListBranchesResp resp = doListBranches(req, page);
+            if (null != resp && CollUtil.isNotEmpty(resp.getBranchItemList())) {
+                CollUtil.addAll(resultList, resp.getBranchItemList());
+                page++;
+            } else {
+                break;
+            }
+        }
+        return new ListBranchesResp(resultList);
+    }
+
+    public ListBranchesResp doListBranches(ListBranchesReq req, int page) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
+
+        Map<String, Object> formMap = new HashMap<>();
+        formMap.put("page", page); // 页码
+        formMap.put("perPage", 100); // 每页数量
+        formMap.put("sort", "updated_asc"); // updated_asc - 更新时间升序
 
         String url = "{baseUrl}/oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/branches";
         url = url.replace("{baseUrl}", req.getBaseUrl());
