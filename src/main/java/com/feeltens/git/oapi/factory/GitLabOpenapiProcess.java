@@ -41,6 +41,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -931,10 +932,10 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("getCompare gitlab hasError, e:", e);
         }
-        // log.info("getCompare gitlab openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
-        //         responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
-        log.info("getCompare gitlab openApi hasResult: status:{}    param:{}    costTime:{}ms",
-                status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        log.info("getCompare gitlab openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
+                responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        // log.info("getCompare gitlab openApi hasResult: status:{}    param:{}    costTime:{}ms",
+        //         status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
         if (status != 200) {
             throw new RuntimeException("getCompare gitlab openApi failedWithFailStatus, status:" + status + " responseBody:" + responseBody);
@@ -944,10 +945,18 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
             throw new RuntimeException("getCompare gitlab openApi failed with nothing");
         }
 
-        JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
-        return GetCompareResp.builder()
-                .commits(jsonObject.getJSONArray(GetCompareResp.Fields.commits))
-                .build();
+        try {
+            JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
+            return GetCompareResp.builder()
+                    .commits(jsonObject.getJSONArray(GetCompareResp.Fields.commits))
+                    .build();
+        } catch (Exception e) {
+            // diffs.diff 可能有特殊字符，导致json反序列化失败，所以用 commits":[{ 来判断
+            List<Object> commitList = responseBody.contains("commits\":[{") ? Lists.newArrayList("one") : Collections.emptyList();
+            return GetCompareResp.builder()
+                    .commits(commitList)
+                    .build();
+        }
     }
 
     /**

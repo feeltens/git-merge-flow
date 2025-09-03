@@ -40,6 +40,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -91,6 +92,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("listOrganizations codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("listOrganizations codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -170,6 +172,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("listRepositories codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("listRepositories codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -224,6 +227,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("getRepository codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("getRepository codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -282,6 +286,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("createBranch codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("createBranch codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -348,6 +353,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("getBranch codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("getBranch codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -421,6 +427,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("listBranches codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("listBranches codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -485,6 +492,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("deleteBranch codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("deleteBranch codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -537,6 +545,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("createChangeRequest codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("createChangeRequest codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -605,6 +614,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("listChangeRequests codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("listChangeRequests codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -679,6 +689,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("getChangeRequest codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("getChangeRequest codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -736,6 +747,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("mergeChangeRequest codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("mergeChangeRequest codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -791,6 +803,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("closeMR codeup hasError, e:", e);
         }
+        responseBody = replaceResponseBodyStr(responseBody);
         log.info("closeMR codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
                 responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
@@ -844,10 +857,11 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         } catch (Exception e) {
             log.error("getCompare codeup hasError, e:", e);
         }
-        // log.info("getCompare codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
-        //         responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
-        log.info("getCompare codeup openApi hasResult: status:{}    param:{}    costTime:{}ms",
-                status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        responseBody = replaceResponseBodyStr(responseBody);
+        log.info("getCompare codeup openApi hasResult:{}    status:{}    param:{}    costTime:{}ms",
+                responseBody, status, JSON.toJSONString(req), System.currentTimeMillis() - start);
+        // log.info("getCompare codeup openApi hasResult: status:{}    param:{}    costTime:{}ms",
+        //         status, JSON.toJSONString(req), System.currentTimeMillis() - start);
 
         if (StrUtil.isEmptyIfStr(responseBody)) {
             throw new RuntimeException("getCompare openApi failed with nothing");
@@ -857,10 +871,18 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         //     throw new RuntimeException("getCompare codeup openApi failedWithMsg, responseBody:" + responseBody);
         // }
 
-        JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
-        return GetCompareResp.builder()
-                .commits(jsonObject.getJSONArray(GetCompareResp.Fields.commits))
-                .build();
+        try {
+            JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
+            return GetCompareResp.builder()
+                    .commits(jsonObject.getJSONArray(GetCompareResp.Fields.commits))
+                    .build();
+        } catch (Exception e) {
+            // diffs.diff 可能有特殊字符，导致json反序列化失败，所以用 commits":[{ 来判断
+            List<Object> commitList = responseBody.contains("commits\":[{") ? Lists.newArrayList("one") : Collections.emptyList();
+            return GetCompareResp.builder()
+                    .commits(commitList)
+                    .build();
+        }
     }
 
     /**
@@ -908,6 +930,14 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         }
 
         return true;
+    }
+
+    private String replaceResponseBodyStr(String responseBody) {
+        if (StrUtil.isEmptyIfStr(responseBody)) {
+            return responseBody;
+        }
+
+        return responseBody.replace("\r\n", "");
     }
 
 }
