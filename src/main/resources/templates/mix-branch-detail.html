@@ -1313,10 +1313,11 @@
 
             // 移除单个分支
             handleRemoveBranch(row) {
-                this.$confirm('确认将该分支从中间分支中退出吗？', '提示', {
+                this.$confirm('<strong>确认将该分支从中间分支中退出吗？</strong><br/><strong style="color: red;">这将重建中间分支，可能需要重新处理代码冲突！</strong>', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    type: 'warning'
+                    type: 'warning',
+                    dangerouslyUseHTMLString: true
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
@@ -1358,10 +1359,11 @@
                     return;
                 }
 
-                this.$confirm(`确认将选中的${this.selectedMixedBranches.length}个分支从中间分支中退出吗？`, '提示', {
+                this.$confirm(`<strong>确认将选中的${this.selectedMixedBranches.length}个分支从中间分支中退出吗？</strong><br/><strong style="color: red;">这将重建中间分支，可能需要重新处理代码冲突！</strong>`, '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    type: 'warning'
+                    type: 'warning',
+                    dangerouslyUseHTMLString: true
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
