@@ -255,7 +255,9 @@
                 <el-select v-model="addProjectForm.repositoryId"
                            filterable
                            remote
+                           clearable
                            :remote-method="filterRepositories"
+                           @clear="handleClearRepository"
                            placeholder="请输入仓库名称进行搜索"
                            style="width: 100%"
                            :disabled="!addProjectForm.organizationId"
@@ -538,13 +540,19 @@
 
             // 过滤仓库列表（支持模糊查询）
             filterRepositories(query) {
-                if (query === '') {
-                    this.filteredRepositoryList = this.repositoryList;
+                if (!query || query === '') {
+                    this.filteredRepositoryList = [...this.repositoryList];
                 } else {
                     this.filteredRepositoryList = this.repositoryList.filter(repo =>
                         repo.repositoryName.toLowerCase().includes(query.toLowerCase())
                     );
                 }
+            },
+
+            // 处理仓库名称清空事件
+            handleClearRepository() {
+                // 清空时显示所有仓库选项
+                this.filteredRepositoryList = [...this.repositoryList];
             },
 
             // 保存工程

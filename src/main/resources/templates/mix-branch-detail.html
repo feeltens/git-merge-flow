@@ -743,9 +743,16 @@
                 <el-input :value="projectName" disabled></el-input>
             </el-form-item>
             <el-form-item label="来源分支" prop="sourceBranch">
-                <el-select v-model="createBranchForm.sourceBranch" placeholder="请选择来源分支" style="width: 100%">
+                <el-select v-model="createBranchForm.sourceBranch" 
+                           filterable
+                           remote
+                           clearable
+                           :remote-method="filterSourceBranches"
+                           @clear="handleClearSourceBranch"
+                           placeholder="请输入分支名称进行搜索" 
+                           style="width: 100%">
                     <el-option
-                            v-for="branch in sourceBranches"
+                            v-for="branch in filteredSourceBranches"
                             :key="branch.branchName"
                             :label="branch.branchName"
                             :value="branch.branchName">
@@ -842,6 +849,7 @@
                     ]
                 },
                 sourceBranches: [],
+                filteredSourceBranches: [],
                 // 操作人相关
                 operatorLoginVisible: false,
                 operatorForm: {
@@ -1568,6 +1576,8 @@
                     .then(response => {
                         if (response?.data?.code === 200) {
                             this.sourceBranches = response.data.data;
+                            // 初始化过滤后的列表
+                            this.filteredSourceBranches = [...this.sourceBranches];
                             // 默认选中默认分支
                             const defaultBranch = this.sourceBranches.find(b => b.defaultBranchFlag === 1);
                             if (defaultBranch) {
@@ -1581,6 +1591,23 @@
                         this.$message.error('网络请求失败');
                         console.error(error);
                     });
+            },
+
+            // 过滤来源分支列表（支持模糊查询）
+            filterSourceBranches(query) {
+                if (!query || query === '') {
+                    this.filteredSourceBranches = [...this.sourceBranches];
+                } else {
+                    this.filteredSourceBranches = this.sourceBranches.filter(branch =>
+                        branch.branchName.toLowerCase().includes(query.toLowerCase())
+                    );
+                }
+            },
+
+            // 处理来源分支清空事件
+            handleClearSourceBranch() {
+                // 清空时显示所有分支选项
+                this.filteredSourceBranches = [...this.sourceBranches];
             },
 
             // 保存分支
