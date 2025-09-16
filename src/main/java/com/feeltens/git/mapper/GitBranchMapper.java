@@ -19,8 +19,8 @@ public interface GitBranchMapper {
                                  @Param("limitSize") Integer limitSize,
                                  @Param("pageSize") Integer pageSize);
 
-    GitBranchDO queryByProjectIdAndBranchName(@Param("projectId") Long projectId,
-                                              @Param("branchName") String branchName);
+    GitBranchDO queryByBranchName(@Param("projectId") Long projectId,
+                                  @Param("branchName") String branchName);
 
     List<GitBranchDO> queryByProjectId(@Param("projectId") Long projectId);
 

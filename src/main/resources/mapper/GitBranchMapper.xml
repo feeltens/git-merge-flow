@@ -92,7 +92,7 @@
         </where>
     </select>
 
-    <select id="queryByProjectIdAndBranchName" resultMap="BaseResultMap">
+    <select id="queryByBranchName" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
         from git_branch
