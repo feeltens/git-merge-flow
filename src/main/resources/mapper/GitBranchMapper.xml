@@ -65,7 +65,7 @@
         select count(1)
         from git_branch
         <where>
-            <include refid="condition" />
+            <include refid="condition"/>
         </where>
     </select>
 
@@ -82,10 +82,10 @@
 
     <select id="pageBranch" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
+        <include refid="Base_Column_List"/>
         from git_branch
         <where>
-            <include refid="condition" />
+            <include refid="condition"/>
             <if test="limitSize != null and pageSize != null">
                 limit #{limitSize}, #{pageSize}
             </if>
@@ -94,15 +94,16 @@
 
     <select id="queryByBranchName" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
+        <include refid="Base_Column_List"/>
         from git_branch
-        where branch_name = #{gitBranchName}
+        where project_id = #{projectId}
+          and branch_name = #{branchName}
           and deleted = 0 limit 1
     </select>
 
     <select id="queryByProjectId" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
+        <include refid="Base_Column_List"/>
         from git_branch
         where project_id = #{projectId}
           and deleted = 0
@@ -119,8 +120,7 @@
                 #{item.mergedMasterFlag}, #{item.sourceBranch},
                 #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.lastCommitTime},
                 #{item.lastCommitUser}, #{item.lastCommitEmail}, #{item.lastCommitId}, #{item.lastCommitShortId},
-                #{item.lastCommitMessage}, #{item.branchExt}, #{item.deleted})
-        ON DUPLICATE KEY
+                #{item.lastCommitMessage}, #{item.branchExt}, #{item.deleted}) ON DUPLICATE KEY
         UPDATE
             branch_name = #{item.branchName},
             project_id = #{item.projectId},
@@ -129,7 +129,7 @@
             merged_master_flag = #{item.mergedMasterFlag},
         <!--source_branch = #{item.sourceBranch},-->
         <!--create_by = #{item.createBy},-->
-            create_time = #{item.createTime},
+        create_time = #{item.createTime},
             update_by = #{item.updateBy},
             update_time = #{item.updateTime},
             last_commit_time = #{item.lastCommitTime},
@@ -163,19 +163,19 @@
 
     <select id="queryByProjectIdAndBranchName" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
+        <include refid="Base_Column_List"/>
         from git_branch
         <where>
-            <include refid="condition" />
+            <include refid="condition"/>
         </where>
     </select>
 
     <select id="queryByBranchId" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
+        <include refid="Base_Column_List"/>
         from git_branch
         where branch_id = #{branchId}
-        and deleted = 0
+          and deleted = 0
     </select>
 
     <update id="updateBranchDesc">
@@ -184,8 +184,7 @@
             create_by   = #{operator},
             update_by   = #{operator},
             update_time = now()
-            where branch_id = #{branchId}
-                and deleted = 0
+        where branch_id = #{branchId}
+          and deleted = 0
     </update>
-
 </mapper>

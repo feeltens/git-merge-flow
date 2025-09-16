@@ -478,7 +478,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             req.setSourceBranch(gitProjectDO.getDefaultBranch());
         }
 
-        GitBranchDO gitBranchDb = gitBranchMapper.queryByBranchName(req.getGitBranchName());
+        GitBranchDO gitBranchDb = gitBranchMapper.queryByBranchName(req.getGitProjectId(), req.getGitBranchName());
         if (null != gitBranchDb) {
             throw new RuntimeException(req.getGitBranchName() + "分支已存在，无需重复添加");
         }
