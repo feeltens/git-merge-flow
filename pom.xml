@@ -115,6 +115,15 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- 集成 jenkins -->
+        <dependency>
+            <groupId>io.github.cdancy</groupId>
+            <artifactId>jenkins-rest</artifactId>
+            <!-- 1.0.2 适配 JDK 8；1.0.2 适配 Java 11+ -->
+            <version>1.0.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
