@@ -614,8 +614,8 @@
                         <el-table-column type="selection" width="55"></el-table-column>
                         <el-table-column prop="branchName" label="分支名" width="300">
                             <template slot-scope="scope">
-                                <div style="display: flex; align-items: center;">
-                                    <span style="flex: 1;">{{scope.row.branchName}}</span>
+                                <div style="display: inline-flex; align-items: center;">
+                                    <span>{{scope.row.branchName}}</span>
                                     <i class="el-icon-document-copy copy-branch-icon" 
                                        @click="copyBranchName(scope.row.branchName)"
                                        title="复制分支名称"></i>
@@ -697,8 +697,8 @@
                         <el-table-column type="selection" width="55"></el-table-column>
                         <el-table-column prop="branchName" label="分支名" width="300">
                             <template slot-scope="scope">
-                                <div style="display: flex; align-items: center;">
-                                    <span style="flex: 1;">{{scope.row.branchName}}</span>
+                                <div style="display: inline-flex; align-items: center;">
+                                    <span>{{scope.row.branchName}}</span>
                                     <i class="el-icon-document-copy copy-branch-icon" 
                                        @click="copyBranchName(scope.row.branchName)"
                                        title="复制分支名称"></i>
