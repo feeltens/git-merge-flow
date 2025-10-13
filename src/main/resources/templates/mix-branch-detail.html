@@ -471,6 +471,31 @@
         .el-table .row-selected > td {
             background-color: rgb(255, 241, 230) !important;
         }
+
+        /* 复制分支名称图标样式 */
+        .copy-branch-icon {
+            margin-left: 8px;
+            cursor: pointer;
+            color: #409eff;
+            font-size: 14px;
+            flex-shrink: 0;
+            transition: color 0.3s ease;
+        }
+
+        .copy-branch-icon:hover {
+            color: #66b1ff;
+        }
+
+        /* 复制成功提示框样式 */
+        .copy-success-message {
+            width: auto !important;
+            min-width: auto !important;
+            max-width: none !important;
+        }
+
+        .copy-success-message .el-message__content {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -587,7 +612,16 @@
                             element-loading-text="正在加载中..."
                             element-loading-spinner="el-icon-loading">
                         <el-table-column type="selection" width="55"></el-table-column>
-                        <el-table-column prop="branchName" label="分支名" width="300"></el-table-column>
+                        <el-table-column prop="branchName" label="分支名" width="300">
+                            <template slot-scope="scope">
+                                <div style="display: flex; align-items: center;">
+                                    <span style="flex: 1;">{{scope.row.branchName}}</span>
+                                    <i class="el-icon-document-copy copy-branch-icon" 
+                                       @click="copyBranchName(scope.row.branchName)"
+                                       title="复制分支名称"></i>
+                                </div>
+                            </template>
+                        </el-table-column>
                         <el-table-column prop="branchDesc" label="分支描述" min-width="150"></el-table-column>
                         <el-table-column prop="createBy" label="创建人" width="100"></el-table-column>
                         <el-table-column label="合并状态" width="100">
@@ -661,7 +695,16 @@
                             element-loading-text="正在加载中..."
                             element-loading-spinner="el-icon-loading">
                         <el-table-column type="selection" width="55"></el-table-column>
-                        <el-table-column prop="branchName" label="分支名" width="300"></el-table-column>
+                        <el-table-column prop="branchName" label="分支名" width="300">
+                            <template slot-scope="scope">
+                                <div style="display: flex; align-items: center;">
+                                    <span style="flex: 1;">{{scope.row.branchName}}</span>
+                                    <i class="el-icon-document-copy copy-branch-icon" 
+                                       @click="copyBranchName(scope.row.branchName)"
+                                       title="复制分支名称"></i>
+                                </div>
+                            </template>
+                        </el-table-column>
                         <el-table-column prop="branchDesc" label="分支描述" min-width="150"></el-table-column>
                         <el-table-column prop="createBy" label="创建人" width="100"></el-table-column>
                         <el-table-column label="最近提交信息" min-width="200">
@@ -1764,6 +1807,59 @@
                 }
                 const found = this.selectedToMixBranches.find(sel => sel && row && sel.branchName === row.branchName);
                 return found ? 'row-selected' : '';
+            },
+
+            // 复制分支名称到剪贴板
+            copyBranchName(branchName) {
+                if (!branchName || branchName.trim() === '') {
+                    this.$message.warning('分支名称为空');
+                    return;
+                }
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    // 现代浏览器API
+                    navigator.clipboard.writeText(branchName.trim()).then(() => {
+                        this.$message({
+                            message: '复制成功！',
+                            type: 'success',
+                            duration: 2000,
+                            showClose: false,
+                            customClass: 'copy-success-message'
+                        });
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        this.$message.error('复制失败，请手动复制');
+                    });
+                } else {
+                    // 兼容旧浏览器
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = branchName.trim();
+                        textArea.style.position = 'fixed';
+                        textArea.style.opacity = '0';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+
+                        const successful = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+
+                        if (successful) {
+                            this.$message({
+                                message: '复制成功！',
+                                type: 'success',
+                                duration: 2000,
+                                showClose: false,
+                                customClass: 'copy-success-message'
+                            });
+                        } else {
+                            throw new Error('execCommand failed');
+                        }
+                    } catch (err) {
+                        console.error('复制失败:', err);
+                        this.$message.error('复制失败，请手动复制');
+                    }
+                }
             }
         }
     });
