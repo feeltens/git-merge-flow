@@ -1511,7 +1511,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         getChangeRequestReq.setLocalId(createChangeRequestResp.getLocalId());
 
         boolean canMergeFlag = false;
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 2; i++) {
             // 调用 open api，查询合并请求
             GetChangeRequestResp getChangeRequestResp = gitOpenApiFactory.getChangeRequest(getChangeRequestReq);
 
@@ -1570,9 +1570,7 @@ public class GitFlowServiceImpl implements GitFlowService {
                 "git fetch origin; git checkout %s; git branch -D %s; git checkout -b %s origin/%s; git checkout %s; git pull\n" +
                         "git merge origin/%s\n" +
                         "处理代码冲突\n" +
-                        "git add -u\n" +
-                        "git commit -m 'XXXXX'\n" +
-                        "git push\n";
+                        "git add -u; git commit -m '解决代码冲突'; git push";
         return String.format(shellTemplate, defaultBranchName, targetBranchName, targetBranchName, targetBranchName, targetBranchName, sourceBranchName);
     }
 
