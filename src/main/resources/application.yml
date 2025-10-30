@@ -48,6 +48,7 @@ gitlab:
     # baseUrl: http://192.168.111.221
     baseUrl: set-your-gitlab-base-url
     # gitlab api 访问令牌
+    # http://192.168.111.221/-/user_settings/personal_access_tokens
     accessToken: set-your-gitlab-access-token
 
 # CodeUp API 配置
@@ -56,4 +57,5 @@ codeup:
     # codeup api 基础url
     baseUrl: https://openapi-rdc.aliyuncs.com
     # codeup api 访问令牌
+    # https://account-devops.aliyun.com/settings/personalAccessToken
     accessToken: set-your-codeup-access-token
