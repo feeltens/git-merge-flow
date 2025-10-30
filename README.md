@@ -136,33 +136,34 @@ http://localhost:18081
 解决的痛点问题：`多个分支共用同一套环境`。  
 应用场景：企业或团队内部，在降本增效的趋势下，往往有多个需求并行、多个代码分支、多个测试任务并行，但基于只有一套环境下，每次手动合并多个分支到中间分支，非常麻烦。
 
-当然，基于开源，也可以支持做二次开发和集成。比如集成jenkins、钉钉邮件通知等，进一步接入CI、CD等DevOps。
+当然，基于开源，也可以支持做二次开发和集成。比如集成jenkins、钉钉邮件通知等，进一步实现或接入CI、CD等DevOps。
 例如，可以在 com.feeltens.git.service.GitFlowService#remergeMixBranch 方法之后，如果重新合并git中间分支成功，就通过spring事件，回调 git-merge-flow 的 dev_jenkins 分支的 com.feeltens.git.controller.JenkinsController#testJenkins （使用api重新部署jenkins），这样就实现了【重新合并中间分支 -> 重新部署jenkins】的简单CICD功能。
 
-3. 除了支持 GitLab、阿里云CodeUp，是否考虑支持其他git服务平台？  
-暂不考虑。  
+
+2. 除了支持 GitLab、阿里云CodeUp，是否考虑支持其他git服务平台？  
+`暂不考虑`。  
 个人看法：  
 自建gitlab，是大部分公司选择的方案。  
 阿里云的CodeUp，是公司不自建git服务的第二选择。  
 GitHub，经常用于开源组织、个人开源项目，目前个人使用GitHub很少有需要多个分支合并到一起的场景。
 
 
-4. 支持的环境有 dev、test、pre，支持其他环境吗？  
+3. 支持的环境有 dev、test、pre，支持其他环境吗？  
 环境枚举在 EnvEnum，可以根据具体使用场景进行增删改。
 
 
-5. 中间分支名是 dev_mix、test_mix、pre_mix，可以自定义吗？  
+4. 中间分支名是 dev_mix、test_mix、pre_mix，可以自定义吗？  
 完全可以，按团队实际需要，自行修改。  
 方法在 com.feeltens.git.service.impl.GitFlowServiceImpl.getMixBranchName
 
 
-6. 为什么会有【git组织管理】模块？  
+5. 为什么会有【git组织管理】模块？  
 阿里云的CodeUp，允许同一用户归属不同的git组织。  
 所以为了统一多个git服务平台的模型，而添加了【git组织】这个模型和菜单管理模块。  
 在git-merge-flow的设计里，gitlab默认的组织名是default。
 
 
-7. 为什么只有填写操作人这么简单的配置，没有常见的注册、登录功能？  
+6. 为什么只有填写操作人这么简单的配置，没有常见的注册、登录功能？  
 git-merge-flow 的定位是专注于解决中间分支合并问题的小而美的工具。（虽然它已经经历过个人、团队、公司的使用内测，但仍然有变美的空间。）  
 所以为了记录操作日志，只是简单的填写操作人。当然，也可以自行添加登录功能。  
 再者，目前没有实现操作记录审计功能，也可以自行添加审计。
