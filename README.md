@@ -206,6 +206,12 @@ src/
 
 ## 参考资料
 
+GitLab OpenAPI  
+https://docs.gitlab.com/18.3/api/rest/
+
+阿里云云效CodeUp OpenAPI  
+https://help.aliyun.com/zh/yunxiao/developer-reference/codeup/
+
 favicon 来源于 Araxis Merge 软件。
 
 ## 开源许可证
