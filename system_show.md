@@ -1,9 +1,5 @@
 # 效果图
 
-## 最核心的功能：【重新合并】  
-内部方法逻辑：
-![【重新合并】内部方法逻辑](doc/img/git_remergeMixBranch.jpg)
-
 ## 主界面：
 ![主界面](doc/img/git_01.jpg)
 
