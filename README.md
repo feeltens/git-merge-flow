@@ -21,7 +21,7 @@ flow即每次【重新合并】，都会把当前集成分支（包括主分支�
 主图：
 ![git-merge-flow效果图](doc/img/git_main.jpg)
 
-![更多效果图](system_show.md)
+[更多效果图](system_show.md)
 
 ## 快速开始
 
