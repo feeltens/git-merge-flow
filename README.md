@@ -132,11 +132,12 @@ http://localhost:18081
 
 1. git-merge-flow 的定位是什么？有哪些应用场景？  
 定位：管理多个Git工程，多个环境，多个分支管理的中间分支，用于多个分支部署在同一环境的问题。  
-小而美的工具，而非各种功能都要集成的富工具。  
-当然，基于开源，也可以支持做二次开发和集成。比如集成jenkins、钉钉邮件通知等，进一步接入CI、CD等DevOps。  
-解决的痛点问题：多个分支共用同一套环境。  
+`小而美的工具`，而非各种功能都要集成的富工具。
+解决的痛点问题：`多个分支共用同一套环境`。  
 应用场景：企业或团队内部，在降本增效的趋势下，往往有多个需求并行、多个代码分支、多个测试任务并行，但基于只有一套环境下，每次手动合并多个分支到中间分支，非常麻烦。
 
+当然，基于开源，也可以支持做二次开发和集成。比如集成jenkins、钉钉邮件通知等，进一步接入CI、CD等DevOps。
+例如，可以在 com.feeltens.git.service.GitFlowService#remergeMixBranch 方法之后，如果重新合并git中间分支成功，就通过spring事件，回调 git-merge-flow 的 dev_jenkins 分支的 com.feeltens.git.controller.JenkinsController#testJenkins （使用api重新部署jenkins），这样就实现了【重新合并中间分支 -> 重新部署jenkins】的简单CICD功能。
 
 3. 除了支持 GitLab、阿里云CodeUp，是否考虑支持其他git服务平台？  
 暂不考虑。  
