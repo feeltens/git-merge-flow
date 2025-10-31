@@ -36,7 +36,7 @@
 
 <div align="center">
   <img src="doc/img/git_03.jpg" alt="Git组织管理" width="800"/>
-  <p><em>管理多个 Git 组织（支持 GitLab 和 CodeUp）</em></p>
+  <p><em>管理 Git 组织（支持 GitLab 和 CodeUp）</em></p>
 </div>
 
 ---
@@ -77,14 +77,14 @@
 
 <div align="center">
   <img src="doc/img/git_08.jpg" alt="Git中间分支管理" width="800"/>
-  <p><em>中间分支详情 - 查看所有已合并的分支</em></p>
+  <p><em>中间分支详情 - 查看当前集成分支列表、待集成分支列表</em></p>
 </div>
 
 ### 添加分支到中间分支
 
 <div align="center">
   <img src="doc/img/git_09.jpg" alt="添加分支到中间分支" width="700"/>
-  <p><em>选择需要合并到中间分支的分支</em></p>
+  <p><em>选择需要合并到中间分支的分支，然后批量加入</em></p>
 </div>
 
 ---
@@ -132,5 +132,5 @@
 
 <div align="center">
   <p><strong>返回 <a href="README.md">主文档</a></strong></p>
-  <p>Made with ❤️ by git-merge-flow</p>
+  <p>Made with ❤️ by feeltens</p>
 </div>
