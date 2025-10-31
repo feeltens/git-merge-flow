@@ -1,88 +1,151 @@
-# git-merge-flow (合流管理系统)
+<div align="center">
+  <h1>🌊 git-merge-flow</h1>
+  <p><strong>合流管理系统 - Git 中间分支合并工具</strong></p>
 
-## 项目简介
+  ![Java](https://img.shields.io/badge/Java-1.8-orange.svg)
+  ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.2.1-brightgreen.svg)
+  ![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg)
+  ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)
+  ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
-git-merge-flow (合流管理系统)是一个基于 Spring Boot + Thymeleaf + Vue.js 的单体工程，
-主要功能是解决 GitLab、阿里云 CodeUp 等 Git 仓库的中间分支合并查询等相关问题。
-基于 GitLab(v18.3)、CodeUp 提供的官方 API，使用 Java 实现对 Git 分支的管理。
+  <p>
+    <a href="#-功能特性">功能特性</a> •
+    <a href="#-效果预览">效果预览</a> •
+    <a href="#-快速开始">快速开始</a> •
+    <a href="#-技术栈">技术栈</a> •
+    <a href="#-qa">Q&A</a>
+  </p>
 
+  <img src="doc/img/git_main.jpg" alt="git-merge-flow效果图" width="800"/>
+</div>
 
-英文名git-merge-flow释义：  
-git是操作对象；  
-merge有合并之义；  
-flow即每次【重新合并】，都会把当前集成分支（包括主分支）重新合并到中间分支一遍，就像一段可持续的流程。
+---
 
-中文名【合流】释义：  
-就像河流的各个分支汇聚到河流主干，git-merge-flow的核心功能就是合并git分支到主干河流(中间分支)。  
+## 📖 项目简介
 
+**git-merge-flow**（合流管理系统）是一个基于 Spring Boot + Thymeleaf + Vue.js 的 Git 分支管理工具，专注于解决**多个开发分支共用同一测试环境**的痛点问题。
 
-## 效果图
+通过集成 GitLab 和阿里云 CodeUp 的官方 API，实现对中间分支的自动化管理，让团队协作更加高效。
 
-主图：
-![git-merge-flow效果图](doc/img/git_main.jpg)
+### 💡 名称释义
 
-[更多效果图](system_show.md)
+**英文名 git-merge-flow**：
+- **git**：管理对象
+- **merge**：合并之义
+- **flow**：每次【重新合并】都会把当前集成分支重新合并到中间分支，就像一段可持续的流程
 
-## 最核心的功能：【重新合并】  
+**中文名【合流】**：  
+就像河流的各个分支汇聚到主干，git-merge-flow 的核心功能就是合并 git 分支到中间分支（主干河流）
 
-内部方法逻辑：
-![【重新合并】内部方法逻辑](doc/img/git_remergeMixBranch.jpg)
+### 🎯 应用场景
 
+在降本增效的趋势下，企业或团队往往面临：
+- ✅ 多个需求并行开发
+- ✅ 多个代码分支同时存在
+- ✅ 多个测试任务并行执行
+- ❌ 但各个环境只会部署一套
 
-## 快速开始
+**git-merge-flow** 解决了手动合并多个分支到中间分支的繁琐操作，提升团队效率。
 
-### 环境要求
+---
 
-- JDK 1.8
-- MySQL 8.0
-- Maven 3.6+
+## ✨ 功能特性
 
-### 数据库初始化
+- 🔀 **中间分支管理**：自动管理 dev_mix、test_mix、pre_mix 等中间分支
+- 🔄 **一键重新合并**：核心功能，自动重新合并中间分支，保持与主分支最新代码一致，并依次合并所有分支
+- 🌿 **分支操作**：新建分支、拉取远程分支、清理无效分支
+- 🏢 **多工程支持**：支持管理多个 Git 工程
+- 🔌 **多平台适配**：支持 GitLab (v18.3+) 和阿里云 CodeUp
+- 📊 **可视化界面**：基于 Thymeleaf + Vue.js 的友好 Web 界面
+- 🛠️ **冲突处理**：自动生成冲突处理脚本，简化手动解决流程
+- 📝 **操作日志**：记录所有分支操作历史
 
-创建数据库，并初始化数据表  
-sql脚本位置：
-doc/sql/git_merge_flow.sql
+---
 
-### Git open API配置
+## 🖼️ 效果预览
 
-gitlab 个人访问令牌  (以 gitlab 私服地址为 http://192.168.111.221/ 举例)
-http://192.168.111.221/-/user_settings/personal_access_tokens
+|            工程管理             | 分支管理 |
+|:---------------------------:|:----:|
+| ![工程管理](doc/img/git_04.jpg) |  ![分支管理](doc/img/git_06.jpg)    |
 
-codeup 个人访问令牌  
-https://account-devops.aliyun.com/settings/personalAccessToken
+|        自动合并失败，则手动处理冲突         |           一键重新合并，无冲突，则自动合并            |
+|:-----------------------------:|:-------------------------------------:|
+| ![自动合并失败，则手动处理冲突](doc/img/git_11.jpg) | ![一键重新合并，无冲突，则自动合并](doc/img/git_13.jpg) |
 
+**[查看完整效果图 →](system_show.md)**
 
-在 `application.yml` 中配置open API相关参数：
+---
 
-```yaml
-merge-flow:
-  # git服务提供方：gitlab、codeup
-  gitService: gitlab
-  # gitService: codeup
+## 🔄 核心功能：重新合并
 
-# GitLab API 配置
-gitlab:
-  api:
-    # gitlab api 基础url
-    # baseUrl: http://192.168.111.221
-    baseUrl: set-your-gitlab-base-url
-    # gitlab api 访问令牌
-    # http://192.168.111.221/-/user_settings/personal_access_tokens
-    accessToken: set-your-gitlab-access-token
+**重新合并**是 git-merge-flow 最重要的功能
 
-# CodeUp API 配置
-codeup:
-  api:
-    # codeup api 基础url
-    baseUrl: https://openapi-rdc.aliyuncs.com
-    # codeup api 访问令牌
-    # https://account-devops.aliyun.com/settings/personalAccessToken
-    accessToken: set-your-codeup-access-token
+<div align="center">
+  <img src="doc/img/git_remergeMixBranch.jpg" alt="重新合并内部方法逻辑" width="600"/>
+  <p><em>重新合并内部方法逻辑</em></p>
+</div>
+
+---
+
+## 🚀 快速开始
+
+### 📋 环境要求
+
+| 软件 | 版本要求 |
+|:---:|:---:|
+| JDK | 1.8+ |
+| MySQL | 8.0+ |
+| Maven | 3.6+ |
+
+### 1️⃣ 数据库初始化
+
+创建数据库并执行初始化脚本：
+
+```bash
+# 1. 创建数据库
+mysql -u root -p
+CREATE DATABASE git_merge_flow DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# 2. 导入表结构
+mysql -u root -p git_merge_flow < doc/sql/git_merge_flow.sql
 ```
 
-### 配置文件
+### 2️⃣ 获取 Git API 访问令牌
 
-修改 `src/main/resources/application.yml` 中的数据库连接配置：
+<details>
+<summary><b>GitLab 配置</b></summary>
+
+访问您的 GitLab 实例获取个人访问令牌：
+
+```
+http://your-gitlab-domain/-/user_settings/personal_access_tokens
+```
+
+示例：`http://192.168.111.221/-/user_settings/personal_access_tokens`
+
+需要勾选的权限范围：
+- ✅ `api`
+- ✅ `read_repository`
+- ✅ `write_repository`
+
+</details>
+
+<details>
+<summary><b>阿里云 CodeUp 配置</b></summary>
+
+访问阿里云获取个人访问令牌：
+
+```
+https://account-devops.aliyun.com/settings/personalAccessToken
+```
+
+</details>
+
+### 3️⃣ 配置文件
+
+修改 `src/main/resources/application.yml`：
+
+#### **数据库配置**
 
 ```yaml
 spring:
@@ -92,136 +155,249 @@ spring:
     password: your_password
 ```
 
-### 运行项目
+#### **Git API 配置**
 
-```shell
-# 编译打包
+```yaml
+merge-flow:
+  # git服务提供方：gitlab 或 codeup
+  gitService: gitlab
+
+# GitLab API 配置
+gitlab:
+  api:
+    baseUrl: http://your-gitlab-domain  # 例如：http://192.168.111.221
+    accessToken: your-gitlab-access-token
+
+# CodeUp API 配置
+codeup:
+  api:
+    baseUrl: https://openapi-rdc.aliyuncs.com
+    accessToken: your-codeup-access-token
+```
+
+### 4️⃣ 启动项目
+
+<details>
+<summary><b>方式一：Maven 运行</b></summary>
+
+```bash
+# 1. 编译打包
 mvn clean package
 
-# 运行项目
+# 2. 运行项目
 java -jar target/git-merge-flow-1.0-SNAPSHOT.jar
 
-# 或者直接运行主类
+# 或者直接运行（开发模式）
 mvn spring-boot:run
 ```
 
-启动jar时，指定参数：
-```shell
-java -jar app.jar \
---merge-flow.gitService=gitlab \
---gitlab.api.baseUrl=your-base-url \
---gitlab.api.accessToken=you-gitlab-access-token \
---codeup.api.accessToken=you-codeup-access-token
+</details>
+
+<details>
+<summary><b>方式二：命令行参数启动</b></summary>
+
+适合生产环境，无需修改配置文件：
+
+```bash
+java -jar target/git-merge-flow-1.0-SNAPSHOT.jar \
+  --merge-flow.gitService=gitlab \
+  --gitlab.api.baseUrl=http://your-gitlab-domain \
+  --gitlab.api.accessToken=your-gitlab-access-token \
+  --codeup.api.accessToken=your-codeup-access-token
 ```
 
-在idea里启动时，指定参数：
+</details>
+
+<details>
+<summary><b>方式三：IDEA 启动（开发调试）</b></summary>
+
+在 IDEA 的 Run/Debug Configurations 中添加 Program arguments：
+
 ```
 --merge-flow.gitService=gitlab
---gitlab.api.baseUrl=your-base-url
---gitlab.api.accessToken=you-gitlab-access-token
---codeup.api.accessToken=you-codeup-access-token
+--gitlab.api.baseUrl=http://your-gitlab-domain
+--gitlab.api.accessToken=your-gitlab-access-token
+--codeup.api.accessToken=your-codeup-access-token
 ```
 
-### 访问地址
+</details>
 
-项目启动后，访问：  
-http://localhost:18081
+### 5️⃣ 访问系统
 
+浏览器访问：**http://localhost:18081**
 
-## Q&A
-
-1. git-merge-flow 的定位是什么？有哪些应用场景？  
-定位：管理多个Git工程，多个环境，多个分支管理的中间分支，用于多个分支部署在同一环境的问题。  
-`小而美的工具`，而非各种功能都要集成的富工具。
-解决的痛点问题：`多个分支共用同一套环境`。  
-应用场景：企业或团队内部，在降本增效的趋势下，往往有多个需求并行、多个代码分支、多个测试任务并行，但基于只有一套环境下，每次手动合并多个分支到中间分支，非常麻烦。
-
-当然，基于开源，也可以支持做二次开发和集成。比如集成jenkins、钉钉邮件通知等，进一步接入CI、CD等DevOps。
-例如，可以在 com.feeltens.git.service.GitFlowService#remergeMixBranch 方法之后，如果重新合并git中间分支成功，就通过spring事件，回调 git-merge-flow 的 dev_jenkins 分支的 com.feeltens.git.controller.JenkinsController#testJenkins （使用api重新部署jenkins），这样就实现了【重新合并中间分支 -> 重新部署jenkins】的简单CICD功能。
-
-3. 除了支持 GitLab、阿里云CodeUp，是否考虑支持其他git服务平台？  
-暂不考虑。  
-个人看法：  
-自建gitlab，是大部分公司选择的方案。  
-阿里云的CodeUp，是公司不自建git服务的第二选择。  
-GitHub，经常用于开源组织、个人开源项目，目前个人使用GitHub很少有需要多个分支合并到一起的场景。
+首次使用时填写操作人即可开始使用 🎉
 
 
-4. 支持的环境有 dev、test、pre，支持其他环境吗？  
-环境枚举在 EnvEnum，可以根据具体使用场景进行增删改。
+---
 
+## 🛠️ 技术栈
 
-5. 中间分支名是 dev_mix、test_mix、pre_mix，可以自定义吗？  
-完全可以，按团队实际需要，自行修改。  
-方法在 com.feeltens.git.service.impl.GitFlowServiceImpl.getMixBranchName
+| 类型 | 技术 |
+|:---:|:---|
+| **后端框架** | Spring Boot 2.2.1.RELEASE |
+| **模板引擎** | Thymeleaf |
+| **前端框架** | Vue.js 2.6 + Element UI 2.15 |
+| **数据库** | MySQL 8.0 |
+| **ORM 框架** | MyBatis |
+| **构建工具** | Maven |
+| **JDK 版本** | 1.8 |
+| **Git API** | GitLab API v18.3+ / CodeUp OpenAPI |
 
+---
 
-6. 为什么会有【git组织管理】模块？  
-阿里云的CodeUp，允许同一用户归属不同的git组织。  
-所以为了统一多个git服务平台的模型，而添加了【git组织】这个模型和菜单管理模块。  
-在git-merge-flow的设计里，gitlab默认的组织名是default。
-
-
-7. 为什么只有填写操作人这么简单的配置，没有常见的注册、登录功能？  
-git-merge-flow 的定位是专注于解决中间分支合并问题的小而美的工具。（虽然它已经经历过个人、团队、公司的使用内测，但仍然有变美的空间。）  
-所以为了记录操作日志，只是简单的填写操作人。当然，也可以自行添加登录功能。  
-再者，目前没有实现操作记录审计功能，也可以自行添加审计。
-
-## 技术栈
-
-- **后端框架**: Spring Boot 2.2.1.RELEASE
-- **模板引擎**: Thymeleaf
-- **前端框架**: Vue.js 2.6 + Element UI 2.15
-- **数据库**: MySQL 8.0
-- **ORM框架**: MyBatis
-- **构建工具**: Maven
-- **JDK版本**: 1.8
-
-## 配置说明
-
-### 数据库表结构
-
-项目包含以下核心表：
-
-1. `git_organization` - git组织表
-2. `git_project` - git工程表
-3. `git_branch` - git原始分支表
-4. `git_mix_branch` - git中间分支表
-5. `git_mix_branch_item` - git中间分支条目表
-
-详细表结构请参考 `doc/sql/git_merge_flow.sql`
-
-## 开发指南
-
-### 项目结构
+## 📂 项目结构
 
 ```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/feeltens/git/
-│   │       ├── GitMergeFlowApplication.java  # 启动类
-│   │       ├── common/                          # 通用类
-│   │       ├── controller/                      # 控制器
-│   │       ├── entity/                          # 实体类
-│   │       ├── mapper/                          # Mapper接口
-│   │       └── service/                         # 服务类
+git-merge-flow/
+├── src/main/
+│   ├── java/com/feeltens/git/
+│   │   ├── GitMergeFlowApplication.java   # 主启动类
+│   │   ├── common/                        # 公共组件
+│   │   │   ├── constant/                  # 常量定义
+│   │   │   └── exception/                 # 异常处理
+│   │   ├── config/                        # 配置类
+│   │   ├── controller/                    # 控制器层
+│   │   ├── converter/                     # 对象转换器
+│   │   ├── dto/                           # 数据传输对象
+│   │   ├── entity/                        # 实体类
+│   │   ├── enums/                         # 枚举类
+│   │   ├── mapper/                        # MyBatis Mapper
+│   │   ├── oapi/                          # OpenAPI 适配器
+│   │   ├── service/                       # 服务层
+│   │   ├── util/                          # 工具类
+│   │   └── vo/                            # 视图对象
 │   └── resources/
-│       ├── mapper/                              # MyBatis映射文件
-│       ├── templates/                           # Thymeleaf模板
-│       └── application.yml                      # 配置文件
+│       ├── mapper/                        # MyBatis XML映射
+│       ├── templates/                     # Thymeleaf模板
+│       ├── static/                        # 静态资源
+│       └── application.yml                # 配置文件
+└── doc/
+    ├── img/                               # 效果图
+    └── sql/                               # 数据库脚本
 ```
 
-## 参考资料
+---
 
-GitLab OpenAPI  
-https://docs.gitlab.com/18.3/api/rest/
+## 💾 数据库表结构
 
-阿里云云效CodeUp OpenAPI  
-https://help.aliyun.com/zh/yunxiao/developer-reference/codeup/
+| 表名 | 说明 |
+|:---|:---|
+| `git_organization` | Git 组织表 |
+| `git_project` | Git 工程表 |
+| `git_branch` | Git 原始分支表 |
+| `git_mix_branch` | Git 中间分支表 |
+| `git_mix_branch_item` | Git 中间分支条目表（记录哪些分支合并到中间分支） |
 
-favicon 来源于 Araxis Merge 软件。
+详细表结构请参考：[`doc/sql/git_merge_flow.sql`](doc/sql/git_merge_flow.sql)
 
-## 开源许可证
+---
 
-基于 GPL 协议开源
+## ❓ Q&A
+
+<details>
+<summary><b>1. git-merge-flow 的定位是什么？</b></summary>
+
+**定位**：管理多个 Git 工程、多个环境、多个分支的中间分支，专门解决多个分支部署在同一环境的问题。
+
+**核心理念**：`小而美的工具`，而非功能臃肿的大而全系统。
+
+**解决痛点**：`多个分支共用同一套环境`
+
+**应用场景**：
+- 企业或团队在降本增效趋势下的实际需求
+- 多个需求并行、多个代码分支、多个测试任务并行
+- 但各个环境只会部署一套的情况
+
+**二次开发**：基于开源协议，可集成 Jenkins、钉钉、邮件通知等，实现完整的 CI/CD 流程。
+
+例如：在 `GitFlowService#remergeMixBranch` 方法后，通过 Spring 事件机制，触发 Jenkins 自动部署。
+
+示例：
+调用 git-merge-flow 的 dev_jenkins 分支的 com.feeltens.git.controller.JenkinsController#testJenkins （使用api重新部署jenkins），这样就实现了【重新合并中间分支 -> 重新部署jenkins】的简单CI/CD功能。
+
+</details>
+
+<details>
+<summary><b>2. 是否支持其他 Git 服务平台（如 GitHub）？</b></summary>
+
+**暂不考虑。**
+
+原因分析：
+- 🏢 **GitLab**：大部分企业的首选方案（自建私有仓库）
+- ☁️ **CodeUp**：不想自建 Git 服务的第二选择（阿里云托管）
+- 🌐 **GitHub**：主要用于开源项目，较少出现多分支合并场景
+
+如有强烈需求，欢迎提交 PR 贡献代码！
+
+</details>
+
+<details>
+<summary><b>3. 支持哪些环境？可以自定义吗？</b></summary>
+
+默认支持环境：`dev`、`test`、`pre`
+
+**自定义方法**：
+修改 `com.feeltens.git.enums.EnvEnum` 枚举类，根据实际需求增删改环境类型。
+
+</details>
+
+<details>
+<summary><b>4. 中间分支命名规则可以修改吗？</b></summary>
+
+**完全可以！** 默认命名：`dev_mix`、`test_mix`、`pre_mix`
+
+**修改位置**：
+`com.feeltens.git.service.impl.GitFlowServiceImpl.getMixBranchName()`
+
+</details>
+
+<details>
+<summary><b>5. 为什么需要【Git 组织管理】模块？</b></summary>
+
+因为阿里云 CodeUp 允许同一用户归属不同的 Git 组织。
+
+为了统一 GitLab 和 CodeUp 的数据模型，添加了【Git 组织】概念。
+
+**注意**：在 git-merge-flow 的设计中，GitLab 默认的组织名是 `default`。
+
+</details>
+
+<details>
+<summary><b>6. 为什么没有登录功能，只需填写操作人？</b></summary>
+
+**设计理念**：专注于解决中间分支合并问题的小而美工具。
+
+**当前做法**：简单填写操作人用于记录操作日志。
+
+**扩展性**：
+- ✅ 可自行添加登录、权限管理功能
+- ✅ 可自行添加操作审计功能
+- ✅ 适合企业内网使用，安全性由网络隔离保障
+
+</details>
+
+---
+
+## 📚 参考资料
+
+- [GitLab REST API (v18.3)](https://docs.gitlab.com/18.3/api/rest/)
+- [阿里云云效 CodeUp OpenAPI](https://help.aliyun.com/zh/yunxiao/developer-reference/codeup/)
+- Favicon 来源于 Araxis Merge 软件
+
+---
+
+## 📄 开源许可证
+
+本项目基于 **[GPL-3.0](LICENSE)** 协议开源。
+
+---
+
+## ⭐ Star History
+
+如果这个项目对您有帮助，请给个 Star ⭐ 支持一下！
+
+<div align="center">
+  <p>Made with ❤️ by feeltens</p>
+  <p>Copyright © 2025 git-merge-flow</p>
+</div>
