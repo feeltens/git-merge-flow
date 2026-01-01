@@ -23,6 +23,10 @@ public interface GitMixBranchMapper {
     GitMixBranchDO queryByProjectIdAndEnv(@Param("projectId") Long projectId,
                                           @Param("env") String env);
 
+    GitMixBranchDO queryByProjectIdAndEnvAndBranchName(@Param("projectId") Long projectId,
+                                                       @Param("env") String env,
+                                                       @Param("branchName") String branchName);
+
     int updateAllMergeFlag(@Param("mixBranchId") Long mixBranchId,
                            @Param("allMergeFlag") Integer allMergeFlag,
                            @Param("operator") String operator);
