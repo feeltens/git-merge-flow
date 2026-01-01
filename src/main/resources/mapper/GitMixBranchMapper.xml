@@ -89,6 +89,16 @@
         and deleted = 0
     </select>
 
+    <select id="queryByProjectIdAndEnvAndBranchName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from git_mix_branch
+        where project_id = #{projectId}
+        and env = #{env}
+        and mix_branch_name = #{branchName}
+        and deleted = 0
+    </select>
+
     <update id="updateAllMergeFlag">
         update git_mix_branch
         set all_merge_flag = #{allMergeFlag},

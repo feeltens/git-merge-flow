@@ -1174,6 +1174,11 @@ public class GitFlowServiceImpl implements GitFlowService {
                 // 调用 open api，删除分支
                 deleteBranchResp = gitOpenApiFactory.deleteBranch(deleteBranchReq);
             } catch (Exception e) {
+                // 查询远程分支是否存在，若不存在，则认为是删除成功
+                boolean existFlag = existOriginalBranch(gitProjectDb.getRepositoryId(), gitProjectDb.getOrganizationId(), branchName);
+                if (!existFlag) {
+                    successDelBranchNameList.add(branchName);
+                }
                 continue;
             }
             // 删除成功
@@ -1275,7 +1280,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         boolean needBackupBranch = false;
         // 备份中间分支DO
         GitBranchDO backupBranchDO = null;
-        GitMixBranchDO mixBranchDb = gitMixBranchMapper.queryByProjectIdAndEnv(projectId, envEnum.getCode());
+        GitMixBranchDO mixBranchDb = gitMixBranchMapper.queryByProjectIdAndEnvAndBranchName(projectId, envEnum.getCode(), mixBranchName);
         // 本地db不存在该分支名
         if (null == mixBranchDb) {
             // 是否存在远程分支
