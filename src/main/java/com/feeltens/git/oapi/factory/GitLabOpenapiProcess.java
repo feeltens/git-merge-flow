@@ -71,6 +71,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *     not found api
      * </pre>
      */
+    @Override
     public ListOrganizationsResp listOrganizations(ListOrganizationsReq req) {
         // mock
         ListOrganizationsResp.ListOrganizationsRespItem repoItem = ListOrganizationsResp.ListOrganizationsRespItem.builder()
@@ -91,6 +92,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects
      * </pre>
      */
+    @Override
     public ListRepositoriesResp listRepositories(ListRepositoriesReq req) {
         int page = 1;
         List<ListRepositoriesResp.ListRepositoriesRespItem> resultList = Lists.newArrayList();
@@ -170,6 +172,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}
      * </pre>
      */
+    @Override
     public GetRepositoryResp getRepository(GetRepositoryReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -222,6 +225,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/repository/branches
      * </pre>
      */
+    @Override
     public CreateBranchResp createBranch(CreateBranchReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -291,6 +295,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/repository/branches/{branch}
      * </pre>
      */
+    @Override
     public GetBranchResp getBranch(GetBranchReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -342,6 +347,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/repository/branches
      * </pre>
      */
+    @Override
     public ListBranchesResp listBranches(ListBranchesReq req) {
         int page = 1;
         List<ListBranchesResp.BranchItem> resultList = Lists.newArrayList();
@@ -427,6 +433,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/repository/branches/{branch}
      * </pre>
      */
+    @Override
     public DeleteBranchResp deleteBranch(DeleteBranchReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -470,11 +477,12 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/merge_requests
      * </pre>
      */
-    public CreateChangeRequestResp createChangeRequest(CreateChangeRequestReq req) {
+    @Override
+    public CreateChangeRequestResp createMR(CreateChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
-        String title = String.format("GitMergeFlow: merge branch %s into %s", req.getSourceBranch(), req.getTargetBranch());
+        String title = String.format("%s GitMergeFlow: merge branch %s into %s", req.getOperator(), req.getSourceBranch(), req.getTargetBranch());
 
         Map<String, Object> formMap = new HashMap<>();
         formMap.put("source_branch", req.getSourceBranch());
@@ -646,7 +654,8 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/merge_requests/{merge_request_iid}
      * </pre>
      */
-    public GetChangeRequestResp getChangeRequest(GetChangeRequestReq req) {
+    @Override
+    public GetChangeRequestResp queryMR(GetChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
@@ -710,7 +719,8 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/merge_requests/{merge_request_iid}/merge
      * </pre>
      */
-    public MergeChangeRequestResp mergeChangeRequest(MergeChangeRequestReq req) {
+    @Override
+    public MergeChangeRequestResp mergeMR(MergeChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
@@ -828,7 +838,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
         getChangeRequest.setRepositoryId(req.getRepositoryId());
         getChangeRequest.setLocalId(req.getLocalId());
 
-        GetChangeRequestResp getChangeRequestResp = getChangeRequest(getChangeRequest);
+        GetChangeRequestResp getChangeRequestResp = queryMR(getChangeRequest);
 
         if (null == getChangeRequestResp || null == getChangeRequestResp.getDiffRefsObj()) {
             // 无法判断
@@ -854,6 +864,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *      /api/v4/projects/{id}/merge_requests/{merge_request_iid}
      * </pre>
      */
+    @Override
     public CloseChangeRequestResp closeMR(CloseChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -907,6 +918,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
      *     /api/v4/projects/{id}/repository/compare
      * </pre>
      */
+    @Override
     public GetCompareResp getCompare(GetCompareReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
