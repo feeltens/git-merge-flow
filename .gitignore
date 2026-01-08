@@ -6,8 +6,9 @@ target
 *.iml
 .idea
 
-### VS Code ###
+### other IDE ###
 .vscode/
+.kiro
 
 ### Maven ###
 *.ipr
