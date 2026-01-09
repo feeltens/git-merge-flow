@@ -35,6 +35,11 @@
             <version>2.2.1.RELEASE</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+
         <!-- Spring Boot Thymeleaf Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -116,6 +121,18 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- JGit - Eclipse Git 库，用于本地 Git 操作 -->
+        <!-- https://projects.eclipse.org/projects/technology.jgit -->
+        <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
+        <!-- JGit 5.x 对应 JDK 8 -->
+        <!-- JGit 6.x 对应 JDK 11 -->
+        <!-- JGit 7.x 对应 JDK 17 (Spring Boot 3.x) -->
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>5.13.5.202508271544-r</version>
+        </dependency>
+
         <!-- 集成 jenkins -->
         <dependency>
             <groupId>io.github.cdancy</groupId>
@@ -125,6 +142,18 @@
         </dependency>
 
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>Hoxton.SR12</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

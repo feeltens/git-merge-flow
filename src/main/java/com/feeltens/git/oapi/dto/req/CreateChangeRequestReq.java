@@ -48,4 +48,9 @@ public class CreateChangeRequestReq extends OapiBaseReq {
      */
     private String description;
 
+    /**
+     * 操作人
+     */
+    private String operator;
+
 }

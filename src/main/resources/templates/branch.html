@@ -186,6 +186,38 @@
         .copy-success-message .el-message__content {
             white-space: nowrap;
         }
+
+        /* 全局加载模态框 */
+        .global-loading-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .global-loading-content {
+            background: #fff;
+            padding: 30px 50px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .global-loading-content i {
+            font-size: 36px;
+            color: #409eff;
+        }
+        .global-loading-content span {
+            font-size: 16px;
+            color: #606266;
+        }
     </style>
 </head>
 <body>
@@ -323,7 +355,7 @@
     </div>
 
     <!-- 新建分支弹窗 -->
-    <el-dialog title="新建分支" :visible.sync="createBranchVisible" width="500px">
+    <el-dialog title="新建分支" :visible.sync="createBranchVisible" width="500px" :close-on-click-modal="false">
         <el-form :model="createBranchForm" :rules="createBranchRules" ref="createBranchForm" label-width="100px">
             <el-form-item label="Git工程">
                 <el-input v-model="pageTitle" disabled></el-input>
@@ -360,7 +392,7 @@
     </el-dialog>
 
     <!-- 编辑分支弹窗 -->
-    <el-dialog title="编辑分支" :visible.sync="editBranchVisible" width="500px">
+    <el-dialog title="编辑分支" :visible.sync="editBranchVisible" width="500px" :close-on-click-modal="false">
         <el-form :model="editBranchForm" :rules="editBranchRules" ref="editBranchForm" label-width="100px">
             <el-form-item label="分支名称" prop="branchName">
                 <el-input v-model="editBranchForm.branchName" disabled></el-input>
@@ -395,6 +427,14 @@
             <el-button type="primary" @click="handleSaveOperator">保存</el-button>
         </div>
     </el-dialog>
+
+    <!-- 全局加载模态框 -->
+    <div v-if="globalLoading" class="global-loading-mask">
+        <div class="global-loading-content">
+            <i class="el-icon-loading"></i>
+            <span>{{globalLoadingText}}</span>
+        </div>
+    </div>
 </div>
 
 <!-- Vue和Element UI -->
@@ -469,7 +509,10 @@
                 operatorForm: {
                     operator: ''
                 },
-                operatorButtonText: '登录'
+                operatorButtonText: '登录',
+                // 全局加载状态
+                globalLoading: false,
+                globalLoadingText: '处理中...'
             }
         },
         watch: {
@@ -639,6 +682,9 @@
                             return;
                         }
 
+                        if (this.globalLoading) return;
+                        this.globalLoading = true;
+                        this.globalLoadingText = '正在创建分支...';
                         this.saveBranchLoading = true;
 
                         const params = {
@@ -670,6 +716,7 @@
                             })
                             .finally(() => {
                                 this.saveBranchLoading = false;
+                                this.globalLoading = false;
                             });
                     }
                 });
@@ -680,7 +727,8 @@
                 this.$confirm('确认删除该分支吗？', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    type: 'warning'
+                    type: 'warning',
+                    closeOnClickModal: false
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
@@ -688,6 +736,9 @@
                         return;
                     }
 
+                    if (this.globalLoading) return;
+                    this.globalLoading = true;
+                    this.globalLoadingText = '正在删除分支...';
                     this.deleteBranchLoading = true;
 
                     const params = {
@@ -711,6 +762,7 @@
                         })
                         .finally(() => {
                             this.deleteBranchLoading = false;
+                            this.globalLoading = false;
                         });
                 });
             },
@@ -725,7 +777,8 @@
                 this.$confirm(`确认删除选中的${this.selectedBranches.length}个分支吗？`, '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    type: 'warning'
+                    type: 'warning',
+                    closeOnClickModal: false
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
@@ -733,6 +786,9 @@
                         return;
                     }
 
+                    if (this.globalLoading) return;
+                    this.globalLoading = true;
+                    this.globalLoadingText = '正在批量删除分支...';
                     this.batchDeleteLoading = true;
 
                     const params = {
@@ -756,12 +812,16 @@
                         })
                         .finally(() => {
                             this.batchDeleteLoading = false;
+                            this.globalLoading = false;
                         });
                 });
             },
 
             // 编辑分支
             handleEditBranch(row) {
+                if (this.globalLoading) return;
+                this.globalLoading = true;
+                this.globalLoadingText = '正在加载分支信息...';
                 this.editBranchLoading = true;
                 
                 const params = {
@@ -789,6 +849,7 @@
                     })
                     .finally(() => {
                         this.editBranchLoading = false;
+                        this.globalLoading = false;
                     });
             },
 
@@ -813,6 +874,9 @@
                             return;
                         }
 
+                        if (this.globalLoading) return;
+                        this.globalLoading = true;
+                        this.globalLoadingText = '正在保存分支信息...';
                         this.saveEditBranchLoading = true;
 
                         const params = {
@@ -837,6 +901,7 @@
                             })
                             .finally(() => {
                                 this.saveEditBranchLoading = false;
+                                this.globalLoading = false;
                             });
                     }
                 });
@@ -844,6 +909,9 @@
 
             // 拉取远程分支
             handlePullRemoteBranch() {
+                if (this.globalLoading) return;
+                this.globalLoading = true;
+                this.globalLoadingText = '正在拉取远程分支...';
                 this.pullRemoteLoading = true;
 
                 const params = {
@@ -865,6 +933,7 @@
                     })
                     .finally(() => {
                         this.pullRemoteLoading = false;
+                        this.globalLoading = false;
                     });
             },
 

@@ -496,6 +496,101 @@
         .copy-success-message .el-message__content {
             white-space: nowrap;
         }
+
+        /* 全局加载模态框 */
+        .global-loading-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .global-loading-content {
+            background: #fff;
+            padding: 30px 50px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .global-loading-content i {
+            font-size: 36px;
+            color: #409eff;
+        }
+        .global-loading-content span {
+            font-size: 16px;
+            color: #606266;
+        }
+
+        /* 冲突选择对话框样式 */
+        .conflict-choice-dialog {
+            border-radius: 8px;
+        }
+        .conflict-choice-dialog .el-message-box__header {
+            background: linear-gradient(135deg, #E6A23C 0%, #F56C6C 100%);
+            border-radius: 8px 8px 0 0;
+            padding: 15px 20px;
+        }
+        .conflict-choice-dialog .el-message-box__title {
+            color: #fff;
+            font-weight: 600;
+        }
+        .conflict-choice-dialog .el-message-box__headerbtn .el-message-box__close {
+            color: #fff;
+        }
+        .conflict-choice-dialog .el-message-box__content {
+            padding: 20px 20px 10px;
+        }
+        .conflict-choice-dialog .el-message-box__btns {
+            padding: 10px 20px 20px;
+        }
+        /* 右边按钮 - 手动处理冲突 */
+        .btn-manual-conflict,
+        .btn-manual-conflict.el-button--primary {
+            background: rgb(242, 117, 100) !important;
+            border-color: rgb(242, 117, 100) !important;
+            color: #fff !important;
+        }
+        .btn-manual-conflict:hover,
+        .btn-manual-conflict:focus,
+        .btn-manual-conflict.el-button--primary:hover,
+        .btn-manual-conflict.el-button--primary:focus {
+            background: rgb(245, 145, 132) !important;
+            border-color: rgb(245, 145, 132) !important;
+        }
+        /* 左边按钮 - Web解决冲突 - 橙色 */
+        .btn-web-conflict,
+        .btn-web-conflict.el-button--default {
+            background: #E6A23C !important;
+            border-color: #E6A23C !important;
+            color: #fff !important;
+        }
+        .btn-web-conflict:hover,
+        .btn-web-conflict:focus,
+        .btn-web-conflict.el-button--default:hover,
+        .btn-web-conflict.el-button--default:focus {
+            background: #EEBE77 !important;
+            border-color: #EEBE77 !important;
+        }
+
+        /* 手动处理冲突按钮样式 */
+        .btn-manual-conflict {
+            background: rgb(242, 117, 100) !important;
+            border-color: rgb(242, 117, 100) !important;
+            color: #fff !important;
+        }
+        .btn-manual-conflict:hover,
+        .btn-manual-conflict:focus {
+            background: rgb(245, 145, 132) !important;
+            border-color: rgb(245, 145, 132) !important;
+        }
     </style>
 </head>
 <body>
@@ -558,8 +653,10 @@
                                 <span v-if="branchDetail.allMergeFlag === 1" class="status-success">自动合并成功</span>
                                 <span v-else>
                                         <span class="status-fail">自动合并失败</span>
+                                        <el-button type="warning" size="mini" @click="handleWebConflictResolve"
+                                                   style="margin-left: 10px;" :loading="webConflictLoading">Web解决冲突</el-button>
                                         <el-button type="primary" size="mini" @click="showConflictShell"
-                                                   style="margin-left: 10px;">手动处理冲突</el-button>
+                                                   style="margin-left: 10px;" class="btn-manual-conflict">手动处理冲突</el-button>
                                     </span>
                             </div>
                         </div>
@@ -587,6 +684,9 @@
                 <div class="search-form">
                     <div class="demo-form-inline" style="display: flex; align-items: center; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 5px;">
+                            <i class="el-icon-document-copy copy-branch-icon" 
+                               @click="copyAllMixedBranchNames"
+                               title="复制所有集成分支名"></i>
                             <label>分支名</label>
                             <el-input v-model="mixedSearchForm.branchName" placeholder="请输入分支名"
                                       clearable
@@ -743,7 +843,7 @@
 
     <!-- 冲突处理Shell命令弹窗 -->
     <el-dialog title="🔧 手动处理冲突命令" :visible.sync="shellVisible" width="85%" class="shell-dialog"
-               :before-close="handleShellDialogClose">
+               :close-on-click-modal="false" :before-close="handleShellDialogClose">
         <div class="shell-content">
             <!-- 提示信息 -->
             <div class="shell-header">
@@ -780,7 +880,7 @@
     </el-dialog>
 
     <!-- 新建分支弹窗 -->
-    <el-dialog title="新建分支" :visible.sync="createBranchVisible" width="500px">
+    <el-dialog title="新建分支" :visible.sync="createBranchVisible" width="500px" :close-on-click-modal="false">
         <el-form :model="createBranchForm" :rules="createBranchRules" ref="createBranchForm" label-width="100px">
             <el-form-item label="Git工程">
                 <el-input :value="projectName" disabled></el-input>
@@ -830,6 +930,14 @@
             <el-button type="primary" @click="handleSaveOperator">保存</el-button>
         </div>
     </el-dialog>
+
+    <!-- 全局加载模态框 -->
+    <div v-if="globalLoading" class="global-loading-mask">
+        <div class="global-loading-content">
+            <i class="el-icon-loading"></i>
+            <span>{{globalLoadingText}}</span>
+        </div>
+    </div>
 </div>
 
 <!-- Vue和Element UI -->
@@ -898,7 +1006,16 @@
                 operatorForm: {
                     operator: ''
                 },
-                operatorButtonText: '登录'
+                operatorButtonText: '登录',
+                // Web冲突解决相关
+                webConflictLoading: false,
+                // 全局加载状态
+                globalLoading: false,
+                globalLoadingText: '处理中...',
+                // 跨页面通信
+                broadcastChannel: null,
+                // 当前冲突解决会话ID
+                currentConflictSessionId: null
             }
         },
         watch: {
@@ -969,14 +1086,55 @@
             
             // 添加全局回车键事件监听，阻止除特定输入框外的回车键事件
             this.addGlobalEnterKeyHandler();
+            
+            // 初始化跨页面通信监听（用于接收冲突解决完成的通知）
+            this.initConflictResolveListener();
         },
         beforeDestroy() {
             // 移除窗口大小变化监听器
             window.removeEventListener('resize', this.handleWindowResize);
             // 移除页面刷新监听器
             window.removeEventListener('beforeunload', this.handleBeforeUnload);
+            // 关闭 BroadcastChannel
+            if (this.broadcastChannel) {
+                this.broadcastChannel.close();
+            }
+            // 移除 localStorage 监听
+            window.removeEventListener('storage', this.handleStorageEvent);
         },
         methods: {
+            // 初始化冲突解决完成监听
+            initConflictResolveListener() {
+                if (typeof BroadcastChannel !== 'undefined') {
+                    // 优先使用 BroadcastChannel
+                    this.broadcastChannel = new BroadcastChannel('git_conflict_resolve_channel');
+                    this.broadcastChannel.onmessage = (event) => {
+                        if (event.data && event.data.type === 'conflict_resolved') {
+                            // 检查是否是当前会话
+                            if (this.currentConflictSessionId && event.data.sessionId === this.currentConflictSessionId) {
+                                this.$message.success('冲突解决完成，正在重新合并...');
+                                this.currentConflictSessionId = null;
+                                this.handleRemerge();
+                            }
+                        }
+                    };
+                } else {
+                    // 降级使用 localStorage 监听
+                    this.handleStorageEvent = (event) => {
+                        if (event.key && event.key.startsWith('conflict_resolved_')) {
+                            const sessionId = event.key.replace('conflict_resolved_', '');
+                            if (this.currentConflictSessionId && sessionId === this.currentConflictSessionId) {
+                                this.$message.success('冲突解决完成，正在重新合并...');
+                                this.currentConflictSessionId = null;
+                                localStorage.removeItem(event.key);
+                                this.handleRemerge();
+                            }
+                        }
+                    };
+                    window.addEventListener('storage', this.handleStorageEvent);
+                }
+            },
+
             // 处理窗口大小变化
             handleWindowResize() {
                 this.windowHeight = window.innerHeight;
@@ -1142,6 +1300,53 @@
                 }
             },
 
+            // Web解决冲突
+            async handleWebConflictResolve() {
+                // 检查操作人
+                const operator = localStorage.getItem('operator');
+                if (!operator) {
+                    this.$message.warning('请先登录操作人');
+                    this.operatorLoginVisible = true;
+                    return;
+                }
+
+                // 获取冲突的源分支（从当前集成分支中找到合并失败的分支）
+                const failedBranch = this.mixedBranches?.find(b => b.mergeStatus !== 1);
+                if (!failedBranch) {
+                    this.$message.warning('未找到合并失败的分支');
+                    return;
+                }
+
+                this.webConflictLoading = true;
+                try {
+                    // 调用初始化冲突解决会话接口
+                    const response = await axios.post('/api/conflict/init', {
+                        projectId: this.projectId,
+                        mixBranchId: this.mixBranchId,
+                        sourceBranch: failedBranch.branchName,
+                        targetBranch: this.branchDetail.mixBranchName,
+                        operator: operator
+                    });
+
+                    if (response.data.code === 200) {
+                        const sessionId = response.data.data.sessionId;
+                        // 记录当前冲突解决会话ID，用于接收完成通知
+                        this.currentConflictSessionId = sessionId;
+                        // 跳转到冲突解决页面
+                        window.open('/conflict/resolve?sessionId=' + sessionId, '_blank');
+                        this.$message.success('已打开冲突解决页面');
+                    } else {
+                        this.$message.error(response.data.message || '初始化冲突解决失败');
+                    }
+                } catch (error) {
+                    console.error('初始化冲突解决失败:', error);
+                    const errorMsg = error.response?.data?.message || '初始化冲突解决失败，请稍后重试';
+                    this.$message.error(errorMsg);
+                } finally {
+                    this.webConflictLoading = false;
+                }
+            },
+
             // 复制到剪贴板
             copyToClipboard(text, index) {
                 if (!text || text.trim() === '') {
@@ -1227,6 +1432,9 @@
                     return;
                 }
 
+                if (this.globalLoading) return;
+                this.globalLoading = true;
+                this.globalLoadingText = '正在重新合并...';
                 this.remergeLoading = true;
                 const params = {
                     mixBranchId: this.mixBranchId,
@@ -1248,6 +1456,7 @@
                     })
                     .finally(() => {
                         this.remergeLoading = false;
+                        this.globalLoading = false;
                     });
             },
 
@@ -1273,12 +1482,8 @@
                             // 检查合并状态
                             const branchDetail = response.data.data;
                             if (branchDetail && branchDetail.allMergeFlag === 0) {
-                                // flag=false，自动合并失败，弹出手动处理冲突命令页面
-                                if (branchDetail.userMergeShell) {
-                                    this.showConflictShell();
-                                } else {
-                                    this.$message.warning('自动合并失败，但未获取到冲突处理命令');
-                                }
+                                // flag=false，自动合并失败，弹出选择对话框
+                                this.showConflictChoiceDialog();
                             } else if (branchDetail && branchDetail.allMergeFlag === 1) {
                                 // flag=true，自动合并成功
                                 this.$message.success('自动合并成功');
@@ -1297,6 +1502,46 @@
                             this.updateTableHeight();
                         });
                     });
+            },
+
+            // 显示冲突处理选择对话框
+            showConflictChoiceDialog() {
+                this.$msgbox({
+                    title: '自动合并失败',
+                    message: '<div style="line-height: 1.8;">' +
+                        '<p style="margin-bottom: 12px; color: #F56C6C; font-weight: bold;"><i class="el-icon-warning" style="margin-right: 6px;"></i>检测到代码冲突，无法自动合并。</p>' +
+                        '<p style="color: #606266;">请选择处理方式：</p>' +
+                        '</div>',
+                    dangerouslyUseHTMLString: true,
+                    showCancelButton: true,
+                    distinguishCancelAndClose: true,
+                    confirmButtonText: '手动处理冲突',
+                    cancelButtonText: 'Web解决冲突',
+                    confirmButtonClass: 'btn-manual-conflict',
+                    cancelButtonClass: 'btn-web-conflict',
+                    closeOnClickModal: false,
+                    customClass: 'conflict-choice-dialog',
+                    beforeClose: (action, instance, done) => {
+                        if (action === 'confirm') {
+                            // 手动处理冲突
+                            done();
+                            if (this.branchDetail.userMergeShell) {
+                                this.showConflictShell();
+                            } else {
+                                this.$message.warning('未获取到冲突处理命令');
+                            }
+                        } else if (action === 'cancel') {
+                            // Web解决冲突
+                            done();
+                            this.handleWebConflictResolve();
+                        } else {
+                            // 点击关闭按钮，稍后处理
+                            done();
+                        }
+                    }
+                }).catch(() => {
+                    // 用户点击了关闭按钮，不做任何处理
+                });
             },
 
             // 搜索已集成分支
@@ -1368,13 +1613,18 @@
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
                     type: 'warning',
-                    dangerouslyUseHTMLString: true
+                    dangerouslyUseHTMLString: true,
+                    closeOnClickModal: false
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
                         this.$message.error('请先登录设置操作人');
                         return;
                     }
+
+                    if (this.globalLoading) return;
+                    this.globalLoading = true;
+                    this.globalLoadingText = '正在退出分支...';
 
                     const params = {
                         mixBranchId: this.mixBranchId,
@@ -1399,6 +1649,9 @@
                         .catch(error => {
                             this.$message.error('网络请求失败');
                             console.error(error);
+                        })
+                        .finally(() => {
+                            this.globalLoading = false;
                         });
                 });
             },
@@ -1414,7 +1667,8 @@
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
                     type: 'warning',
-                    dangerouslyUseHTMLString: true
+                    dangerouslyUseHTMLString: true,
+                    closeOnClickModal: false
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
@@ -1422,6 +1676,9 @@
                         return;
                     }
 
+                    if (this.globalLoading) return;
+                    this.globalLoading = true;
+                    this.globalLoadingText = '正在批量退出分支...';
                     this.batchRemoveLoading = true;
 
                     const params = {
@@ -1450,6 +1707,7 @@
                         })
                         .finally(() => {
                             this.batchRemoveLoading = false;
+                            this.globalLoading = false;
                         });
                 });
             },
@@ -1462,6 +1720,10 @@
                     return;
                 }
 
+                if (this.globalLoading) return;
+                this.globalLoading = true;
+                this.globalLoadingText = '正在加入分支...';
+
                 const params = {
                     mixBranchId: this.mixBranchId,
                     gitBranchNameList: [row.branchName],
@@ -1471,8 +1733,17 @@
                 axios.post('/api/v1/git-merge-flow/addIntoMixBranch', params)
                     .then(response => {
                         if (response?.data?.code === 200) {
-                            this.$message.success('加入成功');
                             this.loadData();
+                            // 检查合并状态，flag=false表示自动合并失败
+                            if (response.data.data && response.data.data.flag === false) {
+                                // 更新branchDetail中的userMergeShell
+                                if (response.data.data.userMergeShell) {
+                                    this.branchDetail.userMergeShell = response.data.data.userMergeShell;
+                                }
+                                this.showConflictChoiceDialog();
+                            } else {
+                                this.$message.success('加入成功');
+                            }
                         } else {
                             this.$message.error(response.data.message || '加入失败');
                         }
@@ -1480,6 +1751,9 @@
                     .catch(error => {
                         this.$message.error('网络请求失败');
                         console.error(error);
+                    })
+                    .finally(() => {
+                        this.globalLoading = false;
                     });
             },
 
@@ -1496,6 +1770,9 @@
                     return;
                 }
 
+                if (this.globalLoading) return;
+                this.globalLoading = true;
+                this.globalLoadingText = '正在批量加入分支...';
                 this.batchAddLoading = true;
 
                 const params = {
@@ -1507,8 +1784,17 @@
                 axios.post('/api/v1/git-merge-flow/addIntoMixBranch', params)
                     .then(response => {
                         if (response?.data?.code === 200) {
-                            this.$message.success('批量加入成功');
                             this.loadData();
+                            // 检查合并状态，flag=false表示自动合并失败
+                            if (response.data.data && response.data.data.flag === false) {
+                                // 更新branchDetail中的userMergeShell
+                                if (response.data.data.userMergeShell) {
+                                    this.branchDetail.userMergeShell = response.data.data.userMergeShell;
+                                }
+                                this.showConflictChoiceDialog();
+                            } else {
+                                this.$message.success('批量加入成功');
+                            }
                         } else {
                             this.$message.error(response.data.message || '批量加入失败');
                         }
@@ -1519,6 +1805,7 @@
                     })
                     .finally(() => {
                         this.batchAddLoading = false;
+                        this.globalLoading = false;
                     });
             },
 
@@ -1527,13 +1814,18 @@
                 this.$confirm('确认删除该分支吗？', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    type: 'warning'
+                    type: 'warning',
+                    closeOnClickModal: false
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
                         this.$message.error('请先登录设置操作人');
                         return;
                     }
+
+                    if (this.globalLoading) return;
+                    this.globalLoading = true;
+                    this.globalLoadingText = '正在删除分支...';
 
                     const params = {
                         projectId: this.projectId,
@@ -1553,6 +1845,9 @@
                         .catch(error => {
                             this.$message.error('网络请求失败');
                             console.error(error);
+                        })
+                        .finally(() => {
+                            this.globalLoading = false;
                         });
                 });
             },
@@ -1567,7 +1862,8 @@
                 this.$confirm(`确认删除选中的${this.selectedToMixBranches.length}个分支吗？`, '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    type: 'warning'
+                    type: 'warning',
+                    closeOnClickModal: false
                 }).then(() => {
                     const operator = localStorage.getItem('operator');
                     if (!operator) {
@@ -1575,6 +1871,9 @@
                         return;
                     }
 
+                    if (this.globalLoading) return;
+                    this.globalLoading = true;
+                    this.globalLoadingText = '正在批量删除分支...';
                     this.batchCleanLoading = true;
 
                     const params = {
@@ -1598,6 +1897,7 @@
                         })
                         .finally(() => {
                             this.batchCleanLoading = false;
+                            this.globalLoading = false;
                         });
                 });
             },
@@ -1663,6 +1963,9 @@
                             return;
                         }
 
+                        if (this.globalLoading) return;
+                        this.globalLoading = true;
+                        this.globalLoadingText = '正在创建分支...';
                         this.saveBranchLoading = true;
 
                         const params = {
@@ -1694,6 +1997,7 @@
                             })
                             .finally(() => {
                                 this.saveBranchLoading = false;
+                                this.globalLoading = false;
                             });
                     }
                 });
@@ -1847,6 +2151,59 @@
                         if (successful) {
                             this.$message({
                                 message: '复制成功！',
+                                type: 'success',
+                                duration: 2000,
+                                showClose: false,
+                                customClass: 'copy-success-message'
+                            });
+                        } else {
+                            throw new Error('execCommand failed');
+                        }
+                    } catch (err) {
+                        console.error('复制失败:', err);
+                        this.$message.error('复制失败，请手动复制');
+                    }
+                }
+            },
+
+            // 复制所有集成分支名称到剪贴板
+            copyAllMixedBranchNames() {
+                if (!this.mixedBranches || this.mixedBranches.length === 0) {
+                    this.$message.warning('暂无集成分支');
+                    return;
+                }
+
+                const branchNames = this.mixedBranches.map(b => b.branchName).join('\n');
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(branchNames).then(() => {
+                        this.$message({
+                            message: '集成分支名复制成功！',
+                            type: 'success',
+                            duration: 2000,
+                            showClose: false,
+                            customClass: 'copy-success-message'
+                        });
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        this.$message.error('复制失败，请手动复制');
+                    });
+                } else {
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = branchNames;
+                        textArea.style.position = 'fixed';
+                        textArea.style.opacity = '0';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+
+                        const successful = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+
+                        if (successful) {
+                            this.$message({
+                                message: '集成分支名复制成功！',
                                 type: 'success',
                                 duration: 2000,
                                 showClose: false,

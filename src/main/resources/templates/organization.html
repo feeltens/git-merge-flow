@@ -122,6 +122,38 @@
             font-weight: bold;
             color: #303133;
         }
+
+        /* 全局加载模态框 */
+        .global-loading-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .global-loading-content {
+            background: #fff;
+            padding: 30px 50px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        .global-loading-content i {
+            font-size: 36px;
+            color: #409eff;
+        }
+        .global-loading-content span {
+            font-size: 16px;
+            color: #606266;
+        }
     </style>
 </head>
 <body>
@@ -206,7 +238,7 @@
     </div>
 
     <!-- 添加组织弹窗 -->
-    <el-dialog title="添加组织" :visible.sync="addOrgVisible" width="500px">
+    <el-dialog title="添加组织" :visible.sync="addOrgVisible" width="500px" :close-on-click-modal="false">
         <el-form :model="addOrgForm" :rules="addOrgRules" ref="addOrgForm" label-width="100px">
             <el-form-item label="组织" prop="organizationId">
                 <el-select v-model="addOrgForm.organizationId" placeholder="请选择组织" style="width: 100%">
@@ -242,6 +274,14 @@
             <el-button type="primary" @click="handleSaveOperator">保存</el-button>
         </div>
     </el-dialog>
+
+    <!-- 全局加载模态框 -->
+    <div v-if="globalLoading" class="global-loading-mask">
+        <div class="global-loading-content">
+            <i class="el-icon-loading"></i>
+            <span>{{globalLoadingText}}</span>
+        </div>
+    </div>
 </div>
 
 <!-- Vue和Element UI -->
@@ -277,7 +317,10 @@
                 operatorForm: {
                     operator: ''
                 },
-                operatorButtonText: '登录'
+                operatorButtonText: '登录',
+                // 全局加载状态
+                globalLoading: false,
+                globalLoadingText: '处理中...'
             }
         },
         mounted() {
@@ -375,6 +418,9 @@
                             return;
                         }
 
+                        if (this.globalLoading) return;
+                        this.globalLoading = true;
+                        this.globalLoadingText = '正在添加组织...';
                         this.saveOrgLoading = true;
 
                         const params = {
@@ -401,6 +447,7 @@
                             })
                             .finally(() => {
                                 this.saveOrgLoading = false;
+                                this.globalLoading = false;
                             });
                     }
                 });

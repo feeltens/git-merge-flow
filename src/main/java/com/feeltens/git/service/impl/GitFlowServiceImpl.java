@@ -56,6 +56,7 @@ import com.feeltens.git.oapi.dto.resp.ListOrganizationsResp;
 import com.feeltens.git.oapi.dto.resp.ListRepositoriesResp;
 import com.feeltens.git.oapi.dto.resp.MergeChangeRequestResp;
 import com.feeltens.git.oapi.factory.GitOpenApiFactory;
+import com.feeltens.git.service.ConflictSessionService;
 import com.feeltens.git.service.GitFlowService;
 import com.feeltens.git.vo.base.CloudResponse;
 import com.feeltens.git.vo.base.PageRequest;
@@ -140,6 +141,8 @@ public class GitFlowServiceImpl implements GitFlowService {
     private GitMixBranchMapper gitMixBranchMapper;
     @Resource
     private GitMixBranchItemMapper gitMixBranchItemMapper;
+    @Resource
+    private ConflictSessionService conflictSessionService;
 
     @Override
     public CloudResponse<List<ListOrganizationsRespVO>> listOrganizations() {
@@ -885,27 +888,12 @@ public class GitFlowServiceImpl implements GitFlowService {
             throw new BizException("未找到git工程，数据库不存在 " + req.getMixBranchId());
         }
 
+        // 清理该工程的所有冲突解决会话和临时仓库
+        conflictSessionService.clearSessionsByProjectName(gitProjectDb.getProjectName());
+
         // 若存在处理中的合并请求，即（git服务平台的）合并请求的id不为空，则先关闭这个合并请求
         if (null != mixBranchDb.getMergeRequestId()) {
-            GetChangeRequestReq getChangeRequestReq = new GetChangeRequestReq();
-            setGitMergeFlowConfig(getChangeRequestReq, gitProjectDb.getOrganizationId());
-            getChangeRequestReq.setRepositoryId(gitProjectDb.getRepositoryId());
-            getChangeRequestReq.setLocalId(mixBranchDb.getMergeRequestId());
-
-            // 调用 open api，查询合并请求
-            GetChangeRequestResp getChangeRequestResp = gitOpenApiFactory.getChangeRequest(getChangeRequestReq);
-            // 若合并请求 still open，则关闭这个合并请求
-            if (null != getChangeRequestResp && getChangeRequestResp.getOpenFlag()) {
-                // 调用 open api，关闭合并请求
-                CloseChangeRequestReq closeChangeRequestReq = new CloseChangeRequestReq();
-                setGitMergeFlowConfig(closeChangeRequestReq, gitProjectDb.getOrganizationId());
-                closeChangeRequestReq.setRepositoryId(gitProjectDb.getRepositoryId());
-                closeChangeRequestReq.setLocalId(mixBranchDb.getMergeRequestId());
-                CloseChangeRequestResp closeChangeRequestResp = gitOpenApiFactory.closeMR(closeChangeRequestReq);
-                if (null == closeChangeRequestResp || !closeChangeRequestResp.getResult()) {
-                    throw new BizException("关闭合并请求失败 " + req.getMixBranchId());
-                }
-            }
+            closeMRIfOpen(gitProjectDb, req.getMixBranchId(), mixBranchDb.getMergeRequestId());
         }
 
         List<GitBranchDO> gitBranchList = gitBranchMapper.queryByProjectId(gitProjectDb.getProjectId());
@@ -989,6 +977,35 @@ public class GitFlowServiceImpl implements GitFlowService {
         // 全部成功
         int updateRow = gitMixBranchMapper.updateAllMergeFlag(req.getMixBranchId(), 1, req.getOperator());
         return new RemergeMixBranchRespVO(req.getMixBranchId(), true, null);
+    }
+
+    private void closeMRIfOpen(GitProjectDO gitProjectDb, Long mixBranchId, Long mergeRequestId) {
+        GetChangeRequestReq getChangeRequestReq = new GetChangeRequestReq();
+        setGitMergeFlowConfig(getChangeRequestReq, gitProjectDb.getOrganizationId());
+        getChangeRequestReq.setRepositoryId(gitProjectDb.getRepositoryId());
+        getChangeRequestReq.setLocalId(mergeRequestId);
+
+        // 调用 open api，查询合并请求
+        GetChangeRequestResp getChangeRequestResp = gitOpenApiFactory.queryMR(getChangeRequestReq);
+        // 若合并请求 still open，则关闭这个合并请求
+        if (null != getChangeRequestResp && getChangeRequestResp.getOpenFlag()) {
+            // 调用 open api，关闭合并请求
+            CloseChangeRequestReq closeChangeRequestReq = new CloseChangeRequestReq();
+            setGitMergeFlowConfig(closeChangeRequestReq, gitProjectDb.getOrganizationId());
+            closeChangeRequestReq.setRepositoryId(gitProjectDb.getRepositoryId());
+            closeChangeRequestReq.setLocalId(mergeRequestId);
+            try {
+                CloseChangeRequestResp closeChangeRequestResp = gitOpenApiFactory.closeMR(closeChangeRequestReq);
+                if (null == closeChangeRequestResp || !closeChangeRequestResp.getResult()) {
+                    throw new BizException("关闭合并请求失败 " + mixBranchId);
+                }
+            } catch (Exception e) {
+                GetChangeRequestResp queryMRNewResult = gitOpenApiFactory.queryMR(getChangeRequestReq);
+                if (null != queryMRNewResult && queryMRNewResult.getOpenFlag()) {
+                    throw new BizException(e.getMessage());
+                }
+            }
+        }
     }
 
     @Override
@@ -1088,6 +1105,11 @@ public class GitFlowServiceImpl implements GitFlowService {
         GitProjectDO gitProjectDb = gitProjectMapper.queryByProjectId(mixBranchDb.getProjectId());
         if (null == gitProjectDb) {
             throw new BizException("未找到git工程，数据库不存在 " + mixBranchDb.getProjectId());
+        }
+
+        // 若存在处理中的合并请求，即（git服务平台的）合并请求的id不为空，则先关闭这个合并请求
+        if (null != mixBranchDb.getMergeRequestId()) {
+            closeMRIfOpen(gitProjectDb, req.getMixBranchId(), mixBranchDb.getMergeRequestId());
         }
 
         // 当前集成分支
@@ -1473,13 +1495,14 @@ public class GitFlowServiceImpl implements GitFlowService {
         createChangeRequestReq.setTargetProjectId(repositoryId);
         createChangeRequestReq.setTitle(title);
         createChangeRequestReq.setDescription(title);
+        createChangeRequestReq.setOperator(operator);
 
         GitMixBranchDO gitMixBranchDO = gitMixBranchMapper.queryByMixBranchId(mixBranchId);
 
         CreateChangeRequestResp createChangeRequestResp = null;
         if (null == gitMixBranchDO.getMergeRequestId()) {
             // 调用 open api，创建合并请求
-            createChangeRequestResp = gitOpenApiFactory.createChangeRequest(createChangeRequestReq);
+            createChangeRequestResp = gitOpenApiFactory.createMR(createChangeRequestReq);
         }
         // 存在进行中的合并请求，则mock createChangeRequestResp
         else {
@@ -1501,7 +1524,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             setGitMergeFlowConfig(mergeChangeRequestReq, organizationId);
             mergeChangeRequestReq.setRepositoryId(repositoryId);
             mergeChangeRequestReq.setLocalId(createChangeRequestResp.getLocalId());
-            MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeChangeRequest(mergeChangeRequestReq);
+            MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeMR(mergeChangeRequestReq);
             if (Objects.equals(MergeTotalStatusEnum.MERGED.getStatus(), mergeChangeRequestResp.getMergeTotalStatus())) {
                 // 已合并
                 gitMixBranchMapper.updateMergeRequestId(mixBranchId, null);
@@ -1518,7 +1541,7 @@ public class GitFlowServiceImpl implements GitFlowService {
         boolean canMergeFlag = false;
         for (int i = 0; i < 2; i++) {
             // 调用 open api，查询合并请求
-            GetChangeRequestResp getChangeRequestResp = gitOpenApiFactory.getChangeRequest(getChangeRequestReq);
+            GetChangeRequestResp getChangeRequestResp = gitOpenApiFactory.queryMR(getChangeRequestReq);
 
             if (Objects.equals(MergeTotalStatusEnum.MERGED.getStatus(), getChangeRequestResp.getMergeTotalStatus())) {
                 // 已合并
@@ -1552,7 +1575,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             setGitMergeFlowConfig(mergeChangeRequestReq, organizationId);
             mergeChangeRequestReq.setRepositoryId(repositoryId);
             mergeChangeRequestReq.setLocalId(createChangeRequestResp.getLocalId());
-            MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeChangeRequest(mergeChangeRequestReq);
+            MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeMR(mergeChangeRequestReq);
             if (Objects.equals(MergeTotalStatusEnum.MERGED.getStatus(), mergeChangeRequestResp.getMergeTotalStatus())) {
                 // 已合并
                 gitMixBranchMapper.updateMergeRequestId(mixBranchId, null);
