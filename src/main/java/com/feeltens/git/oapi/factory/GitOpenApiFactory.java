@@ -122,8 +122,8 @@ public class GitOpenApiFactory {
     /**
      * CreateChangeRequest - 创建合并请求
      */
-    public CreateChangeRequestResp createChangeRequest(CreateChangeRequestReq req) {
-        return getProcess().createChangeRequest(req);
+    public CreateChangeRequestResp createMR(CreateChangeRequestReq req) {
+        return getProcess().createMR(req);
     }
 
     /**
@@ -136,15 +136,15 @@ public class GitOpenApiFactory {
     /**
      * GetChangeRequest - 查询合并请求
      */
-    public GetChangeRequestResp getChangeRequest(GetChangeRequestReq req) {
-        return getProcess().getChangeRequest(req);
+    public GetChangeRequestResp queryMR(GetChangeRequestReq req) {
+        return getProcess().queryMR(req);
     }
 
     /**
      * MergeChangeRequest - 合并合并请求
      */
-    public MergeChangeRequestResp mergeChangeRequest(MergeChangeRequestReq req) {
-        return getProcess().mergeChangeRequest(req);
+    public MergeChangeRequestResp mergeMR(MergeChangeRequestReq req) {
+        return getProcess().mergeMR(req);
     }
 
     /**

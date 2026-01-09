@@ -71,7 +71,7 @@ public interface GitOpenApiProcess {
     /**
      * CreateChangeRequest - 创建合并请求
      */
-    CreateChangeRequestResp createChangeRequest(CreateChangeRequestReq req);
+    CreateChangeRequestResp createMR(CreateChangeRequestReq req);
 
     /**
      * ListChangeRequests - 查询合并请求列表
@@ -79,14 +79,14 @@ public interface GitOpenApiProcess {
     // ListChangeRequestsResp listChangeRequests(ListChangeRequestsReq req);
 
     /**
-     * GetChangeRequest - 查询合并请求
+     * queryMR - 查询合并请求
      */
-    GetChangeRequestResp getChangeRequest(GetChangeRequestReq req);
+    GetChangeRequestResp queryMR(GetChangeRequestReq req);
 
     /**
-     * MergeChangeRequest - 合并合并请求
+     * mergeMR - 合并合并请求
      */
-    MergeChangeRequestResp mergeChangeRequest(MergeChangeRequestReq req);
+    MergeChangeRequestResp mergeMR(MergeChangeRequestReq req);
 
     /**
      * closeMR - 关闭合并请求

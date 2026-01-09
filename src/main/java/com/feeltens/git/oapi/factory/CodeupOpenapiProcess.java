@@ -56,6 +56,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
     private static final String HEADER_TOKEN_KEY = "x-yunxiao-token";
     private static final String ERROR_CODE = "errorCode";
     private static final String NOT_NEED_MERGE_RESPONSE_MSG = "源分支相对目标分支没有改动";
+    private static final String NOT_NEED_MERGE_RESPONSE_MSG2 = "The source branch has not changed relative to the target branch";
 
     /**
      * 获取git服务平台枚举
@@ -73,6 +74,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/platform/organizations
      * </pre>
      */
+    @Override
     public ListOrganizationsResp listOrganizations(ListOrganizationsReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -126,6 +128,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories
      * </pre>
      */
+    @Override
     public ListRepositoriesResp listRepositories(ListRepositoriesReq req) {
         int page = 1;
         List<ListRepositoriesResp.ListRepositoriesRespItem> resultList = Lists.newArrayList();
@@ -206,6 +209,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}
      * </pre>
      */
+    @Override
     public GetRepositoryResp getRepository(GetRepositoryReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -260,6 +264,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/branches
      * </pre>
      */
+    @Override
     public CreateBranchResp createBranch(CreateBranchReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -331,6 +336,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/branches/{branchName}
      * </pre>
      */
+    @Override
     public GetBranchResp getBranch(GetBranchReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -384,6 +390,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/branches
      * </pre>
      */
+    @Override
     public ListBranchesResp listBranches(ListBranchesReq req) {
         int page = 1;
         List<ListBranchesResp.BranchItem> resultList = Lists.newArrayList();
@@ -470,6 +477,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/branches/{branchName}
      * </pre>
      */
+    @Override
     public DeleteBranchResp deleteBranch(DeleteBranchReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -517,13 +525,14 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/changeRequests
      * </pre>
      */
-    public CreateChangeRequestResp createChangeRequest(CreateChangeRequestReq req) {
+    @Override
+    public CreateChangeRequestResp createMR(CreateChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
         req.setSourceProjectId(req.getRepositoryId());
         req.setTargetProjectId(req.getRepositoryId());
-        String title = String.format("GitMergeFlow: merge branch %s into %s", req.getSourceBranch(), req.getTargetBranch());
+        String title = String.format("%s GitMergeFlow: merge branch %s into %s", req.getOperator(), req.getSourceBranch(), req.getTargetBranch());
         req.setTitle(title);
         req.setDescription(title);
 
@@ -554,6 +563,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         }
 
         if (!responseBody.contains(NOT_NEED_MERGE_RESPONSE_MSG)
+                && !responseBody.contains(NOT_NEED_MERGE_RESPONSE_MSG2)
                 && responseBody.contains(ERROR_CODE)) {
             throw new RuntimeException("createChangeRequest codeup openApi failedWithMsg, responseBody:" + responseBody);
         }
@@ -667,7 +677,8 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/changeRequests/{localId}
      * </pre>
      */
-    public GetChangeRequestResp getChangeRequest(GetChangeRequestReq req) {
+    @Override
+    public GetChangeRequestResp queryMR(GetChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
@@ -724,7 +735,8 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/changeRequests/{localId}/merge
      * </pre>
      */
-    public MergeChangeRequestResp mergeChangeRequest(MergeChangeRequestReq req) {
+    @Override
+    public MergeChangeRequestResp mergeMR(MergeChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
 
@@ -781,6 +793,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *      /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/changeRequests/{localId}/close
      * </pre>
      */
+    @Override
     public CloseChangeRequestResp closeMR(CloseChangeRequestReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -829,6 +842,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
      *     /oapi/v1/codeup/organizations/{organizationId}/repositories/{repositoryId}/compares
      * </pre>
      */
+    @Override
     public GetCompareResp getCompare(GetCompareReq req) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HEADER_TOKEN_KEY, req.getAccessToken());
@@ -900,7 +914,10 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
     private MergeTotalStatusEnum getMergeTotalStatus(String responseBody,
                                                      JSONObject jsonObject) {
         if (StrUtil.isNotEmpty(responseBody)
-                && responseBody.contains(NOT_NEED_MERGE_RESPONSE_MSG)) {
+                && (
+                responseBody.contains(NOT_NEED_MERGE_RESPONSE_MSG)
+                        || responseBody.contains(NOT_NEED_MERGE_RESPONSE_MSG2)
+        )) {
             return MergeTotalStatusEnum.MERGED;
         }
 
