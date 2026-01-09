@@ -59,3 +59,15 @@ codeup:
     # codeup api 访问令牌
     # https://account-devops.aliyun.com/settings/personalAccessToken
     accessToken: set-your-codeup-access-token
+
+# JGit 冲突解决配置
+jgit:
+  conflict:
+    # 临时仓库根目录
+    temp-repo-path: /tmp/git-merge-flow
+    # 会话过期时间（小时）
+    session-expire-hours: 24
+    # 克隆超时时间（秒）
+    clone-timeout-seconds: 300
+    # 最大并发会话数
+    max-concurrent-sessions: 10

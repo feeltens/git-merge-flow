@@ -54,4 +54,12 @@ public class MenuController {
         return "mix-branch-detail";
     }
 
+    /**
+     * 冲突解决页面
+     */
+    @GetMapping("/conflict/resolve")
+    public String conflictResolve() {
+        return "conflict-resolve";
+    }
+
 }
