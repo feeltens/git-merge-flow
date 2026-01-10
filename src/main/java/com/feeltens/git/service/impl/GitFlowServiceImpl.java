@@ -1596,10 +1596,10 @@ public class GitFlowServiceImpl implements GitFlowService {
         String shellTemplate =
                 // "自动合并失败，请手动处理冲突，再重新合并\n" +
                 "git fetch origin; git checkout %s; git branch -D %s; git checkout -b %s origin/%s; git checkout %s; git pull\n" +
-                        "git merge origin/%s\n" +
+                        "git merge --no-ff origin/%s\n" +
                         "处理代码冲突\n" +
-                        "git add -u; git commit -m '解决代码冲突'; git push";
-        return String.format(shellTemplate, defaultBranchName, targetBranchName, targetBranchName, targetBranchName, targetBranchName, sourceBranchName);
+                        "git add -u; git commit -m 'Merge branch %s into %s (conflict resolved)'; git push";
+        return String.format(shellTemplate, defaultBranchName, targetBranchName, targetBranchName, targetBranchName, targetBranchName, sourceBranchName, sourceBranchName, targetBranchName);
     }
 
     private GitBranchDO buildGitBranchDO(CreateGitBranchReqVO req, CreateBranchResp createBranchResp) {
