@@ -454,7 +454,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
                     .name(jsonObject.getString(ListBranchesResp.BranchItem.Fields.name))
                     .authorName(commitJsonObj.getString(ListBranchesResp.BranchItem.Fields.authorName))
                     .authorEmail(commitJsonObj.getString(ListBranchesResp.BranchItem.Fields.authorEmail))
-                    .committedDate(DateTimeXUtil.isoString2Date(commitJsonObj.getString(ListBranchesResp.BranchItem.Fields.committedDate)))
+                    .authoredDate(DateTimeXUtil.isoString2Date(commitJsonObj.getString(ListBranchesResp.BranchItem.Fields.authoredDate)))
                     .webUrl(jsonObject.getString(ListBranchesResp.BranchItem.Fields.webUrl))
                     .defaultBranch(jsonObject.getBoolean(ListBranchesResp.BranchItem.Fields.defaultBranch))
                     .lastCommitTime(DateTimeXUtil.isoString2Date(commitJsonObj.getString(ListBranchesResp.BranchItem.Fields.committedDate)))

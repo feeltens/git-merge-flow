@@ -410,7 +410,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
                     .name(jsonObject.getString(ListBranchesResp.BranchItem.Fields.name))
                     .authorName(commitJsonObj.getString("author_name"))
                     .authorEmail(commitJsonObj.getString("author_email"))
-                    .committedDate(DateTimeXUtil.isoString2Date(commitJsonObj.getString("committed_date")))
+                    .authoredDate(DateTimeXUtil.isoString2Date(commitJsonObj.getString("authored_date")))
                     .webUrl(jsonObject.getString("web_url"))
                     .defaultBranch(jsonObject.getBoolean("default"))
                     .lastCommitTime(DateTimeXUtil.isoString2Date(commitJsonObj.getString("committed_date")))
