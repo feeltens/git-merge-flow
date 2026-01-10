@@ -109,6 +109,13 @@ public class ListBranchesResp {
 
         private String authorName;
         private String authorEmail;
+        /**
+         * 作者提交时间
+         */
+        private Date authoredDate;
+        /**
+         * 提交者提交时间
+         */
         private Date committedDate;
 
         private String webUrl;

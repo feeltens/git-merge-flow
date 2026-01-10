@@ -1644,7 +1644,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             gitBranchDO.setMergedMasterFlag(0);
             gitBranchDO.setSourceBranch(sourceBranchName);
             gitBranchDO.setCreateBy(branchItem.getAuthorName());
-            gitBranchDO.setCreateTime(branchItem.getCommittedDate());
+            gitBranchDO.setCreateTime(branchItem.getAuthoredDate());
             gitBranchDO.setUpdateBy(branchItem.getAuthorName());
             gitBranchDO.setUpdateTime(branchItem.getLastCommitTime());
             gitBranchDO.setLastCommitTime(branchItem.getLastCommitTime());
