@@ -97,3 +97,58 @@ CREATE TABLE `git_mix_branch_item` (
   PRIMARY KEY (`mix_branch_item_id`),
   UNIQUE KEY `uk_index` (`mix_branch_id`,`branch_name`,`deleted`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='git中间分支的条目';
+
+-- =============================================
+-- 用户权限相关表
+-- =============================================
+
+-- 系统用户表
+CREATE TABLE `sys_user` (
+                            `user_id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+                            `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
+                            `password` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码(BCrypt加密)',
+                            `nickname` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '昵称',
+                            `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱',
+                            `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-禁用, 1-启用',
+                            `create_by` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'SYSTEM' COMMENT '创建人',
+                            `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            `update_by` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'SYSTEM' COMMENT '更新人',
+                            `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                            `deleted` bigint NOT NULL DEFAULT '0' COMMENT '删除标识: 0代表未删除，>0代表已删除',
+                            PRIMARY KEY (`user_id`),
+                            UNIQUE KEY `uk_username` (`username`, `deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统用户表';
+
+-- 用户角色关联表
+CREATE TABLE `sys_user_role` (
+                                 `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                 `user_id` bigint NOT NULL COMMENT '用户ID',
+                                 `role_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色编码: ADMIN-管理员, USER-普通用户',
+                                 `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                 PRIMARY KEY (`id`),
+                                 UNIQUE KEY `uk_user_role` (`user_id`, `role_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色关联表';
+
+-- 用户Project权限表
+CREATE TABLE `sys_user_project_perm` (
+                                         `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                         `user_id` bigint NOT NULL COMMENT '用户ID',
+                                         `project_id` bigint NOT NULL COMMENT '工程ID',
+                                         `perm_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'READ_WRITE' COMMENT '权限类型: READ-只读, READ_WRITE-读写',
+                                         `create_by` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'SYSTEM' COMMENT '创建人',
+                                         `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                         PRIMARY KEY (`id`),
+                                         UNIQUE KEY `uk_user_project` (`user_id`, `project_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户Project权限表';
+
+-- =============================================
+-- 初始化数据
+-- =============================================
+
+-- 初始化管理员账号 (密码: admin123)
+-- 使用BCrypt加密，可通过 PasswordUtil.encode("admin123") 生成
+INSERT INTO `sys_user` (`username`, `password`, `nickname`, `status`)
+VALUES ('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '系统管理员', 1);
+
+-- 设置管理员角色
+INSERT INTO `sys_user_role` (`user_id`, `role_code`) VALUES (1, 'ADMIN');

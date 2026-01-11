@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - Git合流管理系统</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden; }
+        #app { margin: 0; padding: 0; width: 100%; min-height: 100vh; }
+        [v-cloak] { display: none !important; }
+        .page-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .loading-content { text-align: center; color: #409eff; }
+        .loading-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #409eff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .header { background-color: #545c64; color: #fff; line-height: 60px; padding: 0 20px; font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .user-info { color: #fff; font-size: 14px; font-weight: normal; }
+        .container { display: flex; height: calc(100vh - 60px); }
+        .sidebar { width: 200px; background-color: #324157; }
+        .main-content { flex: 1; padding: 10px; background-color: #f5f5f5; }
+        .content-card { background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04); }
+        .search-form { padding: 20px; border-bottom: 1px solid #e6e6e6; }
+        .table-container { padding: 20px; }
+        .page-title { margin-bottom: 20px; font-size: 24px; font-weight: bold; color: #303133; }
+        .el-table .cell { line-height: 1.5; }
+        .link-button { margin-right: 10px; color: #409eff; cursor: pointer; text-decoration: none; }
+        .link-button:hover { color: #66b1ff; }
+        .link-button.danger { color: #f56c6c; }
+        .link-button.danger:hover { color: #f78989; }
+        /* 用户下拉菜单样式 */
+        .user-dropdown { color: #fff; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; font-weight: normal; }
+        .user-dropdown:hover { color: #409eff; }
+        .user-dropdown i { font-size: 12px; }
+        /* 穿梭框样式 */
+        .el-transfer { display: flex; align-items: center; }
+        .el-transfer-panel { width: 220px; }
+        .el-transfer-panel__body { height: 250px; }
+    </style>
+</head>
+<body>
+<div id="page-loading" class="page-loading">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div>正在加载页面...</div>
+    </div>
+</div>
+
+<div id="app" v-cloak>
+    <div class="header">
+        <span>Git合流管理系统</span>
+        <div class="header-right">
+            <el-dropdown @command="handleCommand" trigger="click">
+                <span class="user-dropdown">
+                    {{currentUser.nickname || currentUser.username}}
+                    <i class="el-icon-arrow-down"></i>
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
+                    <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+            </el-dropdown>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <el-menu default-active="3" class="el-menu-vertical" background-color="#324157" text-color="#bfcbd9" active-text-color="#409EFF" @select="handleMenuSelect">
+                <el-menu-item index="1"><i class="el-icon-files"></i><span slot="title">Git工程管理</span></el-menu-item>
+                <el-menu-item index="2" v-if="currentUser.isAdmin"><i class="el-icon-office-building"></i><span slot="title">Git组织管理</span></el-menu-item>
+                <el-menu-item index="3" v-if="currentUser.isAdmin"><i class="el-icon-user"></i><span slot="title">用户管理</span></el-menu-item>
+            </el-menu>
+        </div>
+
+        <div class="main-content">
+            <div class="page-title">用户管理</div>
+            <div class="content-card">
+                <div class="search-form">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label>用户名</label>
+                            <el-input v-model="searchForm.username" placeholder="请输入用户名" clearable @keyup.enter.native="handleSearch" style="width: 150px;"></el-input>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label>昵称</label>
+                            <el-input v-model="searchForm.nickname" placeholder="请输入昵称" clearable @keyup.enter.native="handleSearch" style="width: 150px;"></el-input>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <el-button type="primary" @click="handleSearch" :loading="searchLoading">搜索</el-button>
+                            <el-button @click="handleReset">重置</el-button>
+                            <el-button type="success" @click="handleAddUser">新增用户</el-button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <el-table :data="tableData" v-loading="loading" style="width: 100%" element-loading-text="正在加载中...">
+                        <el-table-column prop="userId" label="ID" width="80"></el-table-column>
+                        <el-table-column prop="username" label="用户名" width="120"></el-table-column>
+                        <el-table-column prop="nickname" label="昵称" width="120"></el-table-column>
+                        <el-table-column prop="email" label="邮箱" width="180"></el-table-column>
+                        <el-table-column label="角色" width="120">
+                            <template slot-scope="scope">
+                                <el-tag v-for="role in scope.row.roleDescs" :key="role" size="small" :type="scope.row.isAdmin ? 'danger' : 'info'" style="margin-right: 5px;">{{role}}</el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="状态" width="80">
+                            <template slot-scope="scope">
+                                <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'" size="small">{{scope.row.statusDesc}}</el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="createTime" label="创建时间" width="160">
+                            <template slot-scope="scope">{{formatDate(scope.row.createTime)}}</template>
+                        </el-table-column>
+                        <el-table-column label="操作" min-width="200">
+                            <template slot-scope="scope">
+                                <a class="link-button" @click="handleEditUser(scope.row)">编辑</a>
+                                <a class="link-button" @click="handleResetPassword(scope.row)">重置密码</a>
+                                <a class="link-button danger" @click="handleDeleteUser(scope.row)" v-if="scope.row.username !== 'admin'">删除</a>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                    <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pagination.current" :page-sizes="[10, 20, 50, 100]" :page-size="pagination.size" layout="total, sizes, prev, pager, next, jumper" :total="pagination.total" style="margin-top: 20px; text-align: right;"></el-pagination>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑用户弹窗 -->
+    <el-dialog :title="dialogTitle" :visible.sync="userDialogVisible" width="650px" :close-on-click-modal="false">
+        <el-form :model="userForm" :rules="userRules" ref="userForm" label-width="80px">
+            <el-form-item label="用户名" prop="username">
+                <el-input v-model="userForm.username" placeholder="请输入用户名" :disabled="isEdit"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="password" v-if="!isEdit">
+                <el-input v-model="userForm.password" type="password" placeholder="请输入密码" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="昵称" prop="nickname">
+                <el-input v-model="userForm.nickname" placeholder="请输入昵称"></el-input>
+            </el-form-item>
+            <el-form-item label="邮箱" prop="email">
+                <el-input v-model="userForm.email" placeholder="请输入邮箱"></el-input>
+            </el-form-item>
+            <el-form-item label="角色" prop="roleCode">
+                <el-radio-group v-model="userForm.roleCode" @change="handleRoleChange">
+                    <el-radio label="ADMIN">管理员</el-radio>
+                    <el-radio label="USER">普通用户</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item label="权限" v-if="showProjectPerm">
+                <el-transfer
+                    v-model="userForm.projectIds"
+                    :data="projectTransferData"
+                    :titles="['可选项目', '已授权项目']"
+                    filterable
+                    filter-placeholder="搜索项目">
+                </el-transfer>
+            </el-form-item>
+            <el-form-item label="状态" prop="status" v-if="isEdit">
+                <el-radio-group v-model="userForm.status">
+                    <el-radio :label="1">启用</el-radio>
+                    <el-radio :label="0">禁用</el-radio>
+                </el-radio-group>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="userDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleSaveUser" :loading="saveLoading">保存</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 重置密码弹窗 -->
+    <el-dialog title="重置密码" :visible.sync="resetPwdDialogVisible" width="400px" :close-on-click-modal="false">
+        <el-form :model="resetPwdForm" :rules="resetPwdRules" ref="resetPwdForm" label-width="80px">
+            <el-form-item label="新密码" prop="newPassword">
+                <el-input v-model="resetPwdForm.newPassword" type="password" placeholder="请输入新密码" show-password></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="resetPwdDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleConfirmResetPassword" :loading="resetPwdLoading">确定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 修改自己密码弹窗 -->
+    <el-dialog title="修改密码" :visible.sync="changePwdDialogVisible" width="400px" :close-on-click-modal="false">
+        <el-form :model="changePwdForm" :rules="changePwdRules" ref="changePwdForm" label-width="80px">
+            <el-form-item label="旧密码" prop="oldPassword">
+                <el-input v-model="changePwdForm.oldPassword" type="password" placeholder="请输入旧密码" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+                <el-input v-model="changePwdForm.newPassword" type="password" placeholder="请输入新密码" show-password></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="changePwdDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleConfirmChangePassword" :loading="changePwdLoading">确定</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="/js/common.js"></script>
+<script>
+new Vue({
+    el: '#app',
+    data() {
+        return {
+            loading: false,
+            searchLoading: false,
+            saveLoading: false,
+            searchForm: { username: '', nickname: '' },
+            tableData: [],
+            pagination: { current: 1, size: 10, total: 0 },
+            currentUser: { username: '', nickname: '', isAdmin: false },
+            // 所有项目列表
+            allProjectList: [],
+            // 用户弹窗
+            userDialogVisible: false,
+            dialogTitle: '新增用户',
+            isEdit: false,
+            userForm: { userId: null, username: '', password: '', nickname: '', email: '', roleCode: 'USER', status: 1, projectIds: [] },
+            userRules: {
+                username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+                password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+                nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
+                roleCode: [{ required: true, message: '请选择角色', trigger: 'change' }]
+            },
+            // 重置密码弹窗
+            resetPwdDialogVisible: false,
+            resetPwdLoading: false,
+            resetPwdForm: { userId: null, newPassword: '' },
+            resetPwdRules: { newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }] },
+            // 修改自己密码弹窗
+            changePwdDialogVisible: false,
+            changePwdLoading: false,
+            changePwdForm: { oldPassword: '', newPassword: '' },
+            changePwdRules: {
+                oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+                newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }]
+            }
+        }
+    },
+    mounted() {
+        document.getElementById('page-loading').style.display = 'none';
+        this.initCurrentUser();
+        this.loadData();
+    },
+    computed: {
+        showProjectPerm() {
+            return this.userForm.roleCode === 'USER';
+        },
+        projectTransferData() {
+            return this.allProjectList.map(p => ({
+                key: p.projectId,
+                label: p.projectName
+            }));
+        }
+    },
+    methods: {
+        initCurrentUser() {
+            this.currentUser = {
+                username: localStorage.getItem('username') || '',
+                nickname: localStorage.getItem('nickname') || '',
+                isAdmin: localStorage.getItem('isAdmin') === 'true'
+            };
+            if (!this.currentUser.isAdmin) {
+                this.$message.warning('您没有权限访问此页面');
+                setTimeout(() => { window.location.href = '/project'; }, 1000);
+            }
+        },
+        loadData() {
+            this.loading = true;
+            const params = {
+                currentPage: this.pagination.current,
+                pageSize: this.pagination.size,
+                param: { username: this.searchForm.username || null, nickname: this.searchForm.nickname || null }
+            };
+            axios.post('/api/v1/user/pageUser', params)
+                .then(response => {
+                    if (response.data.code === 200) {
+                        this.tableData = response.data.data.records;
+                        this.pagination.total = response.data.data.total;
+                    } else {
+                        this.$message.error(response.data.message || '查询失败');
+                    }
+                })
+                .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                .finally(() => { this.loading = false; this.searchLoading = false; });
+        },
+        handleSearch() { this.searchLoading = true; this.pagination.current = 1; this.loadData(); },
+        handleReset() { this.searchForm = { username: '', nickname: '' }; this.pagination.current = 1; this.loadData(); },
+        handleSizeChange(val) { this.pagination.size = val; this.pagination.current = 1; this.loadData(); },
+        handleCurrentChange(val) { this.pagination.current = val; this.loadData(); },
+        handleMenuSelect(key) {
+            if (key === '1') window.location.href = '/project';
+            else if (key === '2') window.location.href = '/organization';
+            else if (key === '3') window.location.href = '/user';
+        },
+        handleCommand(command) {
+            if (command === 'changePassword') { this.changePwdForm = { oldPassword: '', newPassword: '' }; this.changePwdDialogVisible = true; }
+            else if (command === 'logout') { this.handleLogout(); }
+        },
+        handleLogout() {
+            axios.post('/auth/logout').finally(() => {
+                localStorage.clear();
+                window.location.href = '/login';
+            });
+        },
+        handleAddUser() {
+            this.dialogTitle = '新增用户';
+            this.isEdit = false;
+            this.userForm = { userId: null, username: '', password: '', nickname: '', email: '', roleCode: 'USER', status: 1, projectIds: [] };
+            this.loadAllProjects();
+            this.userDialogVisible = true;
+        },
+        handleEditUser(row) {
+            this.dialogTitle = '编辑用户';
+            this.isEdit = true;
+            // 取第一个角色作为单选值
+            const roleCode = (row.roleCodes && row.roleCodes.length > 0) ? row.roleCodes[0] : 'USER';
+            this.userForm = { userId: row.userId, username: row.username, password: '', nickname: row.nickname, email: row.email, roleCode: roleCode, status: row.status, projectIds: row.projectIds || [] };
+            this.loadAllProjects();
+            this.userDialogVisible = true;
+        },
+        loadAllProjects() {
+            axios.get('/api/v1/user/allProjects').then(response => {
+                if (response.data.code === 200) {
+                    this.allProjectList = response.data.data;
+                }
+            }).catch(error => { console.error(error); });
+        },
+        handleRoleChange(role) {
+            // 选择管理员时清空项目权限
+            if (role === 'ADMIN') {
+                this.userForm.projectIds = [];
+            }
+        },
+        handleSaveUser() {
+            this.$refs.userForm.validate((valid) => {
+                if (valid) {
+                    this.saveLoading = true;
+                    const url = this.isEdit ? '/api/v1/user/updateUser' : '/api/v1/user/addUser';
+                    // 将单选的roleCode转为数组传给后端
+                    const params = { 
+                        ...this.userForm, 
+                        roleCodes: [this.userForm.roleCode],
+                        operator: this.currentUser.nickname || this.currentUser.username 
+                    };
+                    // 管理员不传 projectIds
+                    if (this.userForm.roleCode === 'ADMIN') {
+                        params.projectIds = [];
+                    }
+                    axios.post(url, params)
+                        .then(response => {
+                            if (response.data.code === 200) {
+                                this.$message.success(this.isEdit ? '更新成功' : '新增成功');
+                                this.userDialogVisible = false;
+                                this.loadData();
+                            } else {
+                                this.$message.error(response.data.message || '操作失败');
+                            }
+                        })
+                        .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                        .finally(() => { this.saveLoading = false; });
+                }
+            });
+        },
+        handleDeleteUser(row) {
+            this.$confirm(`确定要删除用户 "${row.username}" 吗？`, '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
+                .then(() => {
+                    axios.post('/api/v1/user/deleteUser', { userId: row.userId, operator: this.currentUser.nickname || this.currentUser.username })
+                        .then(response => {
+                            if (response.data.code === 200) {
+                                this.$message.success('删除成功');
+                                this.loadData();
+                            } else {
+                                this.$message.error(response.data.message || '删除失败');
+                            }
+                        })
+                        .catch(error => { this.$message.error('网络请求失败'); console.error(error); });
+                }).catch(() => {});
+        },
+        handleResetPassword(row) {
+            this.resetPwdForm = { userId: row.userId, newPassword: '' };
+            this.resetPwdDialogVisible = true;
+        },
+        handleConfirmResetPassword() {
+            this.$refs.resetPwdForm.validate((valid) => {
+                if (valid) {
+                    this.resetPwdLoading = true;
+                    axios.post('/api/v1/user/resetPassword', { ...this.resetPwdForm, operator: this.currentUser.nickname || this.currentUser.username })
+                        .then(response => {
+                            if (response.data.code === 200) {
+                                this.$message.success('密码重置成功');
+                                this.resetPwdDialogVisible = false;
+                            } else {
+                                this.$message.error(response.data.message || '重置失败');
+                            }
+                        })
+                        .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                        .finally(() => { this.resetPwdLoading = false; });
+                }
+            });
+        },
+        handleConfirmChangePassword() {
+            this.$refs.changePwdForm.validate((valid) => {
+                if (valid) {
+                    this.changePwdLoading = true;
+                    axios.post('/api/v1/user/updateMyPassword', this.changePwdForm)
+                        .then(response => {
+                            if (response.data.code === 200) {
+                                this.$message.success('密码修改成功，请重新登录');
+                                this.changePwdDialogVisible = false;
+                                setTimeout(() => { this.handleLogout(); }, 1000);
+                            } else {
+                                this.$message.error(response.data.message || '修改失败');
+                            }
+                        })
+                        .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                        .finally(() => { this.changePwdLoading = false; });
+                }
+            });
+        },
+        formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+    }
+});
+</script>
+</body>
+</html>
