@@ -1,5 +1,6 @@
 package com.feeltens.git.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjUtil;
@@ -30,6 +31,7 @@ import com.feeltens.git.mapper.GitMixBranchItemMapper;
 import com.feeltens.git.mapper.GitMixBranchMapper;
 import com.feeltens.git.mapper.GitOrganizationMapper;
 import com.feeltens.git.mapper.GitProjectMapper;
+import com.feeltens.git.mapper.SysUserProjectPermMapper;
 import com.feeltens.git.oapi.dto.req.CloseChangeRequestReq;
 import com.feeltens.git.oapi.dto.req.CreateBranchReq;
 import com.feeltens.git.oapi.dto.req.CreateChangeRequestReq;
@@ -143,6 +145,8 @@ public class GitFlowServiceImpl implements GitFlowService {
     private GitMixBranchItemMapper gitMixBranchItemMapper;
     @Resource
     private ConflictSessionService conflictSessionService;
+    @Resource
+    private SysUserProjectPermMapper sysUserProjectPermMapper;
 
     @Override
     public CloudResponse<List<ListOrganizationsRespVO>> listOrganizations() {
@@ -376,6 +380,7 @@ public class GitFlowServiceImpl implements GitFlowService {
                 gitProjectMapper.deleteByProjectId(projectId);
                 gitBranchMapper.deleteByProjectId(projectId);
                 gitMixBranchMapper.deleteByProjectId(projectId);
+                sysUserProjectPermMapper.deleteByProjectId(projectId);
             }
             if (CollUtil.isNotEmpty(mixBranchIdList)) {
                 gitMixBranchItemMapper.deleteByMixBranchIds(mixBranchIdList);
@@ -515,11 +520,12 @@ public class GitFlowServiceImpl implements GitFlowService {
         // 处理参数：去除字符串左右空格
         req.getParam().setGitProjectName(StrUtil.trim(req.getParam().getGitProjectName()));
 
-        Long totalCount = gitProjectMapper.countProject(req.getParam());
-        if (totalCount <= 0) {
-            return PageResponse.build(Collections.emptyList(), req.getCurrentPage(), req.getPageSize(), 0L);
-        }
+        // 获取当前用户ID和角色
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        boolean isAdmin = StpUtil.hasRole("ADMIN");
 
+        Long totalCount;
+        List<GitProjectDO> list;
         Integer currentPage = req.getCurrentPage();
         Integer pageSize = req.getPageSize();
         Integer limitSize = null;
@@ -527,7 +533,23 @@ public class GitFlowServiceImpl implements GitFlowService {
         if (null != currentPage && null != pageSize) {
             limitSize = (currentPage - 1) * pageSize;
         }
-        List<GitProjectDO> list = gitProjectMapper.pageProject(req.getParam(), limitSize, pageSize);
+
+        if (isAdmin) {
+            // 管理员查询所有项目
+            totalCount = gitProjectMapper.countProject(req.getParam());
+            if (totalCount <= 0) {
+                return PageResponse.build(Collections.emptyList(), req.getCurrentPage(), req.getPageSize(), 0L);
+            }
+            list = gitProjectMapper.pageProject(req.getParam(), limitSize, pageSize);
+        } else {
+            // 普通用户只查询有权限的项目
+            totalCount = gitProjectMapper.countProjectByUserId(req.getParam(), currentUserId);
+            if (totalCount <= 0) {
+                return PageResponse.build(Collections.emptyList(), req.getCurrentPage(), req.getPageSize(), 0L);
+            }
+            list = gitProjectMapper.pageProjectByUserId(req.getParam(), currentUserId, limitSize, pageSize);
+        }
+
         List<PageGitProjectRespVO> pageVoList = GitProjectConverter.toPageVos(list);
         if (CollUtil.isNotEmpty(pageVoList)) {
             List<GitMixBranchDO> gitMixBranchList = gitMixBranchMapper.pageMixBranch(new PageMixBranchReqVO(), null, null);
@@ -1524,6 +1546,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             setGitMergeFlowConfig(mergeChangeRequestReq, organizationId);
             mergeChangeRequestReq.setRepositoryId(repositoryId);
             mergeChangeRequestReq.setLocalId(createChangeRequestResp.getLocalId());
+            mergeChangeRequestReq.setMergeMessage(String.format("Merge branch %s into %s by gitMergeFlow", sourceBranchName, targetBranchName));
             MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeMR(mergeChangeRequestReq);
             if (Objects.equals(MergeTotalStatusEnum.MERGED.getStatus(), mergeChangeRequestResp.getMergeTotalStatus())) {
                 // 已合并
@@ -1575,6 +1598,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             setGitMergeFlowConfig(mergeChangeRequestReq, organizationId);
             mergeChangeRequestReq.setRepositoryId(repositoryId);
             mergeChangeRequestReq.setLocalId(createChangeRequestResp.getLocalId());
+            mergeChangeRequestReq.setMergeMessage(String.format("Merge branch %s into %s by gitMergeFlow", sourceBranchName, targetBranchName));
             MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeMR(mergeChangeRequestReq);
             if (Objects.equals(MergeTotalStatusEnum.MERGED.getStatus(), mergeChangeRequestResp.getMergeTotalStatus())) {
                 // 已合并

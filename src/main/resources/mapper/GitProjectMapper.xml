@@ -108,4 +108,47 @@
         where project_id = #{projectId}
     </update>
 
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM git_project
+        WHERE deleted = 0
+        ORDER BY project_id
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT p.project_id, p.project_name, p.repository_url, p.organization_id, p.repository_id,
+               p.project_username, p.project_email, p.default_branch, p.web_url,
+               p.create_by, p.create_time, p.update_by, p.update_time, p.deleted
+        FROM git_project p
+        INNER JOIN sys_user_project_perm perm ON p.project_id = perm.project_id
+        WHERE perm.user_id = #{userId} AND p.deleted = 0
+        ORDER BY p.project_id
+    </select>
+
+    <select id="countProjectByUserId" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM git_project p
+        INNER JOIN sys_user_project_perm perm ON p.project_id = perm.project_id
+        WHERE perm.user_id = #{userId} AND p.deleted = 0
+        <if test="req.gitProjectName != null and req.gitProjectName != ''">
+            AND p.project_name LIKE CONCAT('%', #{req.gitProjectName}, '%')
+        </if>
+    </select>
+
+    <select id="pageProjectByUserId" resultMap="BaseResultMap">
+        SELECT p.project_id, p.project_name, p.repository_url, p.organization_id, p.repository_id,
+               p.project_username, p.project_email, p.default_branch, p.web_url,
+               p.create_by, p.create_time, p.update_by, p.update_time, p.deleted
+        FROM git_project p
+        INNER JOIN sys_user_project_perm perm ON p.project_id = perm.project_id
+        WHERE perm.user_id = #{userId} AND p.deleted = 0
+        <if test="req.gitProjectName != null and req.gitProjectName != ''">
+            AND p.project_name LIKE CONCAT('%', #{req.gitProjectName}, '%')
+        </if>
+        ORDER BY p.project_id DESC
+        <if test="limitSize != null and pageSize != null">
+            LIMIT #{limitSize}, #{pageSize}
+        </if>
+    </select>
+
 </mapper>

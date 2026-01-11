@@ -154,6 +154,23 @@
             font-size: 16px;
             color: #606266;
         }
+
+        /* 用户下拉菜单样式 */
+        .user-dropdown {
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+        }
+        .user-dropdown:hover {
+            color: #409eff;
+        }
+        .user-dropdown i {
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -169,8 +186,17 @@
     <!-- 头部 -->
     <div class="header">
         <span>Git合流管理系统</span>
-        <div style="float: right;">
-            <el-button type="primary" @click="handleOperatorLogin">{{operatorButtonText}}</el-button>
+        <div class="header-right" style="float: right; display: flex; align-items: center;">
+            <el-dropdown @command="handleUserCommand" trigger="click">
+                <span class="user-dropdown">
+                    {{currentUser.nickname || currentUser.username}}
+                    <i class="el-icon-arrow-down"></i>
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
+                    <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+            </el-dropdown>
         </div>
     </div>
 
@@ -189,9 +215,13 @@
                     <i class="el-icon-files"></i>
                     <span slot="title">Git工程管理</span>
                 </el-menu-item>
-                <el-menu-item index="2">
+                <el-menu-item index="2" v-if="currentUser.isAdmin">
                     <i class="el-icon-office-building"></i>
                     <span slot="title">Git组织管理</span>
+                </el-menu-item>
+                <el-menu-item index="3" v-if="currentUser.isAdmin">
+                    <i class="el-icon-user"></i>
+                    <span slot="title">用户管理</span>
                 </el-menu-item>
             </el-menu>
         </div>
@@ -260,8 +290,8 @@
         </div>
     </el-dialog>
 
-    <!-- 操作人登录弹窗 -->
-    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px" :close-on-click-modal="false" :close-on-press-escape="false">
+    <!-- 操作人登录弹窗 - 已废弃 -->
+    <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px" :close-on-click-modal="false" :close-on-press-escape="false" v-if="false">
         <div style="padding: 20px;">
             <div style="display: flex; align-items: center; margin-bottom: 20px;">
                 <label style="width: 80px; text-align: right; margin-right: 10px;">操作人：</label>
@@ -272,6 +302,22 @@
         <div slot="footer" class="dialog-footer">
             <el-button @click="handleCloseOperatorDialog">关闭</el-button>
             <el-button type="primary" @click="handleSaveOperator">保存</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 修改密码弹窗 -->
+    <el-dialog title="修改密码" :visible.sync="changePwdDialogVisible" width="400px" :close-on-click-modal="false">
+        <el-form :model="changePwdForm" :rules="changePwdRules" ref="changePwdForm" label-width="80px">
+            <el-form-item label="旧密码" prop="oldPassword">
+                <el-input v-model="changePwdForm.oldPassword" type="password" placeholder="请输入旧密码" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+                <el-input v-model="changePwdForm.newPassword" type="password" placeholder="请输入新密码" show-password></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="changePwdDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleConfirmChangePassword" :loading="changePwdLoading">确定</el-button>
         </div>
     </el-dialog>
 
@@ -288,6 +334,7 @@
 <script src="https://unpkg.com/vue@2/dist/vue.js"></script>
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="/js/common.js"></script>
 
 <script>
     new Vue({
@@ -297,233 +344,153 @@
                 loading: false,
                 saveOrgLoading: false,
                 tableData: [],
-                pagination: {
-                    current: 1,
-                    size: 10,
-                    total: 0
-                },
+                pagination: { current: 1, size: 10, total: 0 },
                 addOrgVisible: false,
-                addOrgForm: {
-                    organizationId: ''
-                },
-                addOrgRules: {
-                    organizationId: [
-                        {required: true, message: '请选择组织', trigger: 'change'}
-                    ]
-                },
+                addOrgForm: { organizationId: '' },
+                addOrgRules: { organizationId: [{ required: true, message: '请选择组织', trigger: 'change' }] },
                 allOrganizations: [],
-                // 操作人相关
                 operatorLoginVisible: false,
-                operatorForm: {
-                    operator: ''
-                },
+                operatorForm: { operator: '' },
                 operatorButtonText: '登录',
-                // 全局加载状态
                 globalLoading: false,
-                globalLoadingText: '处理中...'
+                globalLoadingText: '处理中...',
+                currentUser: { username: '', nickname: '', isAdmin: false },
+                changePwdDialogVisible: false,
+                changePwdLoading: false,
+                changePwdForm: { oldPassword: '', newPassword: '' },
+                changePwdRules: {
+                    oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+                    newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }]
+                }
             }
         },
         mounted() {
-            // 隐藏初始loading页面
+            const token = localStorage.getItem('satoken');
+            if (!token) { window.location.href = '/login'; return; }
             const pageLoading = document.getElementById('page-loading');
-            if (pageLoading) {
-                pageLoading.style.display = 'none';
-            }
-
-            this.initOperator();
+            if (pageLoading) { pageLoading.style.display = 'none'; }
+            this.initCurrentUser();
             this.loadData();
-            
-            // 添加全局回车键事件监听，阻止除特定输入框外的回车键事件
             this.addGlobalEnterKeyHandler();
         },
         methods: {
-            // 加载数据
+            initCurrentUser() {
+                this.currentUser = {
+                    username: localStorage.getItem('username') || '',
+                    nickname: localStorage.getItem('nickname') || localStorage.getItem('operator') || '',
+                    isAdmin: localStorage.getItem('isAdmin') === 'true'
+                };
+                // 非管理员跳转到工程管理页面
+                if (!this.currentUser.isAdmin) {
+                    this.$message.warning('您没有权限访问此页面');
+                    setTimeout(() => { window.location.href = '/project'; }, 1000);
+                }
+            },
+            handleUserCommand(command) {
+                if (command === 'changePassword') {
+                    this.changePwdForm = { oldPassword: '', newPassword: '' };
+                    this.changePwdDialogVisible = true;
+                } else if (command === 'logout') { this.handleLogout(); }
+            },
+            handleLogout() {
+                axios.post('/auth/logout').finally(() => {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                });
+            },
+            handleConfirmChangePassword() {
+                this.$refs.changePwdForm.validate((valid) => {
+                    if (valid) {
+                        this.changePwdLoading = true;
+                        axios.post('/api/v1/user/updateMyPassword', this.changePwdForm)
+                            .then(response => {
+                                if (response.data.code === 200) {
+                                    this.$message.success('密码修改成功，请重新登录');
+                                    this.changePwdDialogVisible = false;
+                                    setTimeout(() => { this.handleLogout(); }, 1000);
+                                } else { this.$message.error(response.data.message || '修改失败'); }
+                            })
+                            .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                            .finally(() => { this.changePwdLoading = false; });
+                    }
+                });
+            },
             loadData() {
                 this.loading = true;
-                const params = {
-                    currentPage: this.pagination.current,
-                    pageSize: this.pagination.size,
-                    param: {}
-                };
-
+                const params = { currentPage: this.pagination.current, pageSize: this.pagination.size, param: {} };
                 axios.post('/api/v1/git-merge-flow/pageGitOrganization', params)
                     .then(response => {
                         if (response?.data?.code === 200) {
                             this.tableData = response.data.data.records;
                             this.pagination.total = response.data.data.total;
-                        } else {
-                            this.$message.error(response.data.message || '查询失败');
-                        }
+                        } else { this.$message.error(response.data.message || '查询失败'); }
                     })
-                    .catch(error => {
-                        this.$message.error('网络请求失败');
-                        console.error(error);
-                    })
-                    .finally(() => {
-                        this.loading = false;
-                    });
+                    .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                    .finally(() => { this.loading = false; });
             },
-
-            // 分页大小改变
-            handleSizeChange(val) {
-                this.pagination.size = val;
-                this.pagination.current = 1;
-                this.loadData();
-            },
-
-            // 当前页改变
-            handleCurrentChange(val) {
-                this.pagination.current = val;
-                this.loadData();
-            },
-
-            // 菜单选择
+            handleSizeChange(val) { this.pagination.size = val; this.pagination.current = 1; this.loadData(); },
+            handleCurrentChange(val) { this.pagination.current = val; this.loadData(); },
             handleMenuSelect(key) {
-                if (key === '1') {
-                    window.location.href = '/project';
-                } else if (key === '2') {
-                    window.location.href = '/organization';
-                }
+                if (key === '1') window.location.href = '/project';
+                else if (key === '2') window.location.href = '/organization';
+                else if (key === '3') window.location.href = '/user';
             },
-
-            // 添加组织
-            handleAddOrganization() {
-                this.loadAllOrganizations();
-                this.addOrgVisible = true;
-            },
-
-            // 加载所有组织列表
+            handleAddOrganization() { this.loadAllOrganizations(); this.addOrgVisible = true; },
             loadAllOrganizations() {
                 axios.get('/api/v1/git-merge-flow/listOrganizations')
                     .then(response => {
-                        if (response?.data?.code === 200) {
-                            this.allOrganizations = response.data.data;
-                        } else {
-                            this.$message.error('获取组织列表失败');
-                        }
+                        if (response?.data?.code === 200) { this.allOrganizations = response.data.data; }
+                        else { this.$message.error('获取组织列表失败'); }
                     })
-                    .catch(error => {
-                        this.$message.error('网络请求失败');
-                        console.error(error);
-                    });
+                    .catch(error => { this.$message.error('网络请求失败'); console.error(error); });
             },
-
-            // 保存组织
             handleSaveOrganization() {
                 this.$refs.addOrgForm.validate((valid) => {
                     if (valid) {
-                        const operator = localStorage.getItem('operator');
-                        if (!operator) {
-                            this.$message.error('请先登录设置操作人');
-                            return;
-                        }
-
+                        const operator = localStorage.getItem('operator') || localStorage.getItem('nickname');
+                        if (!operator) { this.$message.error('请先登录'); return; }
                         if (this.globalLoading) return;
                         this.globalLoading = true;
                         this.globalLoadingText = '正在添加组织...';
                         this.saveOrgLoading = true;
-
-                        const params = {
-                            ...this.addOrgForm,
-                            operator: operator
-                        };
-
+                        const params = { ...this.addOrgForm, operator: operator };
                         axios.post('/api/v1/git-merge-flow/addGitOrganization', params)
                             .then(response => {
                                 if (response?.data?.code === 200) {
                                     this.$message.success('添加成功');
                                     this.addOrgVisible = false;
-                                    this.addOrgForm = {
-                                        organizationId: ''
-                                    };
+                                    this.addOrgForm = { organizationId: '' };
                                     this.loadData();
-                                } else {
-                                    this.$message.error(response.data.message || '添加失败');
-                                }
+                                } else { this.$message.error(response.data.message || '添加失败'); }
                             })
-                            .catch(error => {
-                                this.$message.error('网络请求失败');
-                                console.error(error);
-                            })
-                            .finally(() => {
-                                this.saveOrgLoading = false;
-                                this.globalLoading = false;
-                            });
+                            .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                            .finally(() => { this.saveOrgLoading = false; this.globalLoading = false; });
                     }
                 });
             },
-
-            // 初始化操作人
             initOperator() {
                 const operator = localStorage.getItem('operator');
-                if (operator) {
-                    this.operatorButtonText = operator;
-                } else {
-                    this.operatorButtonText = '登录';
-                }
+                this.operatorButtonText = operator || '登录';
             },
-
-            // 操作人登录
-            handleOperatorLogin() {
-                const operator = localStorage.getItem('operator');
-                this.operatorForm.operator = operator || '';
-                this.operatorLoginVisible = true;
-            },
-
-            // 回车键保存操作人
+            handleOperatorLogin() { this.operatorForm.operator = localStorage.getItem('operator') || ''; this.operatorLoginVisible = true; },
             handleEnterKeySave(event) {
-                // 彻底阻止所有默认行为
-                if (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    event.stopImmediatePropagation();
-                    
-                    // 阻止表单提交
-                    if (event.target && event.target.form) {
-                        event.target.form.onsubmit = function() { return false; };
-                    }
-                }
-                
-                // 延迟执行保存，确保事件完全处理完毕
-                this.$nextTick(() => {
-                    this.handleSaveOperator();
-                });
+                if (event) { event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); }
+                this.$nextTick(() => { this.handleSaveOperator(); });
             },
-
-            // 关闭操作人对话框
-            handleCloseOperatorDialog() {
-                this.operatorLoginVisible = false;
-            },
-
-            // 保存操作人
+            handleCloseOperatorDialog() { this.operatorLoginVisible = false; },
             handleSaveOperator() {
-                // 手动验证操作人输入
-                if (!this.operatorForm.operator || this.operatorForm.operator.trim() === '') {
-                    this.$message.error('请输入操作人');
-                    return;
-                }
-                
-                // 保存到localStorage
+                if (!this.operatorForm.operator || this.operatorForm.operator.trim() === '') { this.$message.error('请输入操作人'); return; }
                 localStorage.setItem('operator', this.operatorForm.operator.trim());
                 this.operatorButtonText = this.operatorForm.operator.trim();
                 this.operatorLoginVisible = false;
                 this.$message.success('操作人设置成功');
             },
-
-            // 添加全局回车键事件处理
             addGlobalEnterKeyHandler() {
                 document.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') {
-                        // 检查当前焦点是否在允许回车键的输入框上
                         const activeElement = document.activeElement;
-                        const isOperatorInput = activeElement && 
-                            activeElement.getAttribute('placeholder') === '请输入操作人';
-                        
-                        // 如果不在允许的输入框上，阻止回车键事件
-                        if (!isOperatorInput) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
+                        const isOperatorInput = activeElement && activeElement.getAttribute('placeholder') === '请输入操作人';
+                        if (!isOperatorInput) { event.preventDefault(); event.stopPropagation(); }
                     }
                 });
             }

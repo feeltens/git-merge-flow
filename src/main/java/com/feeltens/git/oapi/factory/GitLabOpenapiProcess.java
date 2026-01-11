@@ -726,7 +726,7 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
 
         Map<String, Object> formMap = new HashMap<>();
         formMap.put("auto_merge", "true");
-        formMap.put("merge_commit_message", "merge by GitMergeFlow");
+        formMap.put("merge_commit_message", req.getMergeMessage());
 
         String url = "{baseUrl}/api/v4/projects/{id}/merge_requests/{merge_request_iid}/merge";
         url = url.replace("{baseUrl}", req.getBaseUrl());

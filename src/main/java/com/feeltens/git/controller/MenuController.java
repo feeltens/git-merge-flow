@@ -15,11 +15,27 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class MenuController {
 
     /**
-     * 首页
+     * 首页 - 重定向到工程管理
      */
     @GetMapping("/")
     public String index() {
         return "project";
+    }
+
+    /**
+     * 登录页面
+     */
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+
+    /**
+     * 用户管理页面
+     */
+    @GetMapping("/user")
+    public String user() {
+        return "user";
     }
 
     /**

@@ -133,6 +133,20 @@
             <version>5.13.5.202508271544-r</version>
         </dependency>
 
+        <!-- Sa-Token 权限认证 -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot-starter</artifactId>
+            <version>1.37.0</version>
+        </dependency>
+
+        <!-- 密码加密 (BCrypt) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>5.2.1.RELEASE</version>
+        </dependency>
+
         <!-- 集成 jenkins -->
         <dependency>
             <groupId>io.github.cdancy</groupId>
