@@ -71,3 +71,13 @@ jgit:
     clone-timeout-seconds: 300
     # 最大并发会话数
     max-concurrent-sessions: 10
+
+# Sa-Token 配置
+sa-token:
+  token-name: satoken
+  timeout: 86400
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: false
+  is-print: false
