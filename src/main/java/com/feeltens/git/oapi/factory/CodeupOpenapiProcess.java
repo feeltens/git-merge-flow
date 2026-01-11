@@ -752,7 +752,7 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
         try {
             HttpResponse execute = HttpUtil.createPost(url)
                     .addHeaders(headers)
-                    .body(JSON.toJSONString(new MergeChangeRequestReq()))
+                    .body(JSON.toJSONString(req))
                     .execute();
             status = execute.getStatus();
             responseBody = execute.body();
