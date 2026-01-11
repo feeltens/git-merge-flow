@@ -1,7 +1,9 @@
 package com.feeltens.git.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.alibaba.fastjson.JSON;
 import com.feeltens.git.service.GitFlowService;
+import com.feeltens.git.util.PermissionUtil;
 import com.feeltens.git.vo.base.CloudResponse;
 import com.feeltens.git.vo.base.PageRequest;
 import com.feeltens.git.vo.base.PageResponse;
@@ -60,10 +62,14 @@ public class GitMergeFlowController {
     @Resource
     private GitFlowService gitFlowService;
 
+    @Resource
+    private PermissionUtil permissionUtil;
+
     /**
      * 查询组织列表 (from open api)
      */
     @GetMapping("/listOrganizations")
+    @SaCheckRole("ADMIN")
     public CloudResponse<List<ListOrganizationsRespVO>> listOrganizations() {
         try {
             return gitFlowService.listOrganizations();
@@ -77,6 +83,7 @@ public class GitMergeFlowController {
      * 分页查询git组织
      */
     @PostMapping("/pageGitOrganization")
+    @SaCheckRole("ADMIN")
     public CloudResponse<PageResponse<PageGitOrganizationRespVO>> pageGitOrganization(@RequestBody PageRequest<PageGitOrganizationReqVO> req) {
         PageResponse<PageGitOrganizationRespVO> res = gitFlowService.pageGitOrganization(req);
         // log.info("pageGitOrganization hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
@@ -87,6 +94,7 @@ public class GitMergeFlowController {
      * 列表查询git组织 (from db)
      */
     @PostMapping("/listGitOrganization")
+    @SaCheckRole("ADMIN")
     public CloudResponse<List<PageGitOrganizationRespVO>> listGitOrganization() {
         List<PageGitOrganizationRespVO> res = gitFlowService.listGitOrganization();
         return CloudResponse.success(res);
@@ -96,6 +104,7 @@ public class GitMergeFlowController {
      * 添加git组织
      */
     @PostMapping("/addGitOrganization")
+    @SaCheckRole("ADMIN")
     public CloudResponse<String> addGitOrganization(@RequestBody AddGitOrganizationReqVO req) {
         try {
             CloudResponse<String> res = gitFlowService.addGitOrganization(req);
@@ -111,6 +120,7 @@ public class GitMergeFlowController {
      * 添加git工程
      */
     @PostMapping("/addGitProject")
+    @SaCheckRole("ADMIN")
     public CloudResponse<String> addGitProject(@RequestBody AddGitProjectReqVO req) {
         try {
             long start = System.currentTimeMillis();
@@ -149,6 +159,8 @@ public class GitMergeFlowController {
      */
     @PostMapping("/pullRemoteBranch")
     public CloudResponse<String> pullRemoteBranch(@RequestBody PullRemoteBranchReqVO req) {
+        // 权限校验
+        permissionUtil.checkProjectPermission(req.getGitProjectId());
         long start = System.currentTimeMillis();
         gitFlowService.pullRemoteBranch(req);
         log.info("pullRemoteBranch hasResult, param:{}    costTime:{}ms", JSON.toJSONString(req), System.currentTimeMillis() - start);
@@ -170,6 +182,8 @@ public class GitMergeFlowController {
      */
     @PostMapping("/pageGitBranch")
     public CloudResponse<PageResponse<PageGitBranchRespVO>> pageGitBranch(@RequestBody PageRequest<PageGitBranchReqVO> req) {
+        // 权限校验
+        permissionUtil.checkProjectPermission(req.getParam().getGitProjectId());
         PageResponse<PageGitBranchRespVO> res = gitFlowService.pageGitBranch(req);
         // log.info("pageGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
@@ -180,6 +194,8 @@ public class GitMergeFlowController {
      */
     @PostMapping("/listGitBranch")
     public CloudResponse<List<ListGitBranchRespVO>> listGitBranch(@RequestBody ListGitBranchReqVO req) {
+        // 权限校验
+        permissionUtil.checkProjectPermission(req.getGitProjectId());
         List<ListGitBranchRespVO> res = gitFlowService.listGitBranch(req);
         // log.info("listGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
@@ -190,6 +206,8 @@ public class GitMergeFlowController {
      */
     @PostMapping("/queryGitBranch")
     public CloudResponse<QueryGitBranchRespVO> queryGitBranch(@RequestBody QueryGitBranchReqVO req) {
+        // 权限校验
+        permissionUtil.checkPermissionByBranchId(req.getBranchId());
         QueryGitBranchRespVO res = gitFlowService.queryGitBranch(req);
         // log.info("queryGitBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
@@ -201,6 +219,8 @@ public class GitMergeFlowController {
     @PostMapping("/updateGitBranch")
     public CloudResponse<Boolean> updateGitBranch(@RequestBody UpdateGitBranchReqVO req) {
         try {
+            // 权限校验
+            permissionUtil.checkPermissionByBranchId(req.getBranchId());
             long start = System.currentTimeMillis();
             Boolean res = gitFlowService.updateGitBranch(req);
             log.info("updateGitBranch hasResult, param:{}    result:{}    costTime:{}ms",
@@ -218,6 +238,8 @@ public class GitMergeFlowController {
     @PostMapping("/createGitBranch")
     public CloudResponse<CreateGitBranchRespVO> createGitBranch(@RequestBody CreateGitBranchReqVO req) {
         try {
+            // 权限校验
+            permissionUtil.checkProjectPermission(req.getGitProjectId());
             long start = System.currentTimeMillis();
             CloudResponse<CreateGitBranchRespVO> res = gitFlowService.createGitBranch(req);
             log.info("createGitBranch hasResult, param:{}    result:{}    costTime:{}ms",
@@ -234,6 +256,8 @@ public class GitMergeFlowController {
      */
     @PostMapping("/pageMixBranch")
     public CloudResponse<PageResponse<PageMixBranchRespVO>> pageMixBranch(@RequestBody PageRequest<PageMixBranchReqVO> req) {
+        // 权限校验
+        permissionUtil.checkProjectPermission(req.getParam().getGitProjectId());
         PageResponse<PageMixBranchRespVO> res = gitFlowService.pageMixBranch(req);
         // log.info("pageMixBranch hasResult, param:{}    result:{}", JSON.toJSONString(req), JSON.toJSONString(res));
         return CloudResponse.success(res);
@@ -255,6 +279,8 @@ public class GitMergeFlowController {
     @PostMapping("/queryMixBranch")
     public CloudResponse<QueryMixBranchRespVO> queryMixBranch(@RequestBody QueryMixBranchReqVO req) {
         try {
+            // 权限校验
+            permissionUtil.checkPermissionByMixBranchId(req.getMixBranchId());
             // long start = System.currentTimeMillis();
             QueryMixBranchRespVO res = gitFlowService.queryMixBranch(req);
             // log.info("queryMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
@@ -275,6 +301,8 @@ public class GitMergeFlowController {
     @PostMapping("/addIntoMixBranch")
     public CloudResponse<AddIntoMixBranchRespVO> addIntoMixBranch(@RequestBody AddIntoMixBranchReqVO req) {
         try {
+            // 权限校验
+            permissionUtil.checkPermissionByMixBranchId(req.getMixBranchId());
             long start = System.currentTimeMillis();
             AddIntoMixBranchRespVO res = gitFlowService.addIntoMixBranch(req);
             log.info("addIntoMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
@@ -292,6 +320,8 @@ public class GitMergeFlowController {
     @PostMapping("/remergeMixBranch")
     public CloudResponse<RemergeMixBranchRespVO> remergeMixBranch(@RequestBody RemergeMixBranchReqVO req) {
         try {
+            // 权限校验
+            permissionUtil.checkPermissionByMixBranchId(req.getMixBranchId());
             long start = System.currentTimeMillis();
             RemergeMixBranchRespVO res = gitFlowService.remergeMixBranch(req);
             log.info("remergeMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
@@ -309,6 +339,8 @@ public class GitMergeFlowController {
     @PostMapping("/removeFromMixBranch")
     public CloudResponse<RemoveFromMixBranchRespVO> removeFromMixBranch(@RequestBody RemoveFromMixBranchReqVO req) {
         try {
+            // 权限校验
+            permissionUtil.checkPermissionByMixBranchId(req.getMixBranchId());
             long start = System.currentTimeMillis();
             RemoveFromMixBranchRespVO res = gitFlowService.removeFromMixBranch(req);
             log.info("removeFromMixBranch hasResult, param:{}    result:{}    costTime:{}ms",
@@ -326,6 +358,12 @@ public class GitMergeFlowController {
     @PostMapping("/deleteGitBranch")
     public CloudResponse<DeleteGitBranchRespVO> deleteGitBranch(@RequestBody DeleteGitBranchReqVO req) {
         try {
+            // 权限校验：优先使用projectId，否则使用mixBranchId
+            if (req.getProjectId() != null) {
+                permissionUtil.checkProjectPermission(req.getProjectId());
+            } else if (req.getMixBranchId() != null) {
+                permissionUtil.checkPermissionByMixBranchId(req.getMixBranchId());
+            }
             long start = System.currentTimeMillis();
             DeleteGitBranchRespVO res = gitFlowService.deleteGitBranch(req);
             log.info("deleteGitBranch hasResult, param:{}    result:{}    costTime:{}ms",

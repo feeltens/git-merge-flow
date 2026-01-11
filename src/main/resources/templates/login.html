@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Git合流管理系统</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        [v-cloak] {
+            display: none !important;
+        }
+        .login-container {
+            width: 400px;
+            padding: 40px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        .login-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #303133;
+        }
+        .login-title h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .login-title p {
+            color: #909399;
+            font-size: 14px;
+        }
+        .login-form .el-form-item {
+            margin-bottom: 25px;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 12px 0;
+            font-size: 16px;
+        }
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #909399;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <div class="login-container">
+        <div class="login-title">
+            <h2>Git合流管理系统</h2>
+            <p>请登录您的账号</p>
+        </div>
+        <el-form :model="loginForm" :rules="loginRules" ref="loginForm" class="login-form">
+            <el-form-item prop="username">
+                <el-input v-model="loginForm.username" 
+                          placeholder="请输入用户名" 
+                          prefix-icon="el-icon-user"
+                          @keyup.enter.native="handleLogin">
+                </el-input>
+            </el-form-item>
+            <el-form-item prop="password">
+                <el-input v-model="loginForm.password" 
+                          type="password" 
+                          placeholder="请输入密码" 
+                          prefix-icon="el-icon-lock"
+                          show-password
+                          @keyup.enter.native="handleLogin">
+                </el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" 
+                           class="login-btn" 
+                           :loading="loading" 
+                           @click="handleLogin">
+                    登 录
+                </el-button>
+            </el-form-item>
+        </el-form>
+        <div class="login-footer">
+            <span>默认管理员账号: admin / admin123</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+new Vue({
+    el: '#app',
+    data() {
+        return {
+            loading: false,
+            loginForm: {
+                username: '',
+                password: ''
+            },
+            loginRules: {
+                username: [
+                    { required: true, message: '请输入用户名', trigger: 'blur' }
+                ],
+                password: [
+                    { required: true, message: '请输入密码', trigger: 'blur' }
+                ]
+            }
+        }
+    },
+    mounted() {
+        // 如果有 token，验证是否有效
+        const token = localStorage.getItem('satoken');
+        if (token) {
+            axios.get('/api/v1/user/currentUser', {
+                headers: { 'satoken': token }
+            }).then(response => {
+                if (response.data.code === 200) {
+                    // token 有效，跳转到首页
+                    window.location.href = '/project';
+                }
+            }).catch(() => {
+                // token 无效，清除本地存储
+                localStorage.clear();
+            });
+        }
+    },
+    methods: {
+        handleLogin() {
+            this.$refs.loginForm.validate((valid) => {
+                if (valid) {
+                    this.loading = true;
+                    axios.post('/auth/login', this.loginForm)
+                        .then(response => {
+                            if (response.data.code === 200) {
+                                const data = response.data.data;
+                                // 保存token和用户信息
+                                localStorage.setItem('satoken', data.tokenValue);
+                                localStorage.setItem('userId', data.userId);
+                                localStorage.setItem('username', data.username);
+                                localStorage.setItem('nickname', data.nickname || data.username);
+                                localStorage.setItem('isAdmin', data.isAdmin);
+                                localStorage.setItem('roles', JSON.stringify(data.roles));
+                                // 兼容原有的operator
+                                localStorage.setItem('operator', data.nickname || data.username);
+                                
+                                this.$message.success('登录成功');
+                                setTimeout(() => {
+                                    window.location.href = '/project';
+                                }, 500);
+                            } else {
+                                this.$message.error(response.data.message || '登录失败');
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error('网络请求失败');
+                            console.error(error);
+                        })
+                        .finally(() => {
+                            this.loading = false;
+                        });
+                }
+            });
+        }
+    }
+});
+</script>
+</body>
+</html>

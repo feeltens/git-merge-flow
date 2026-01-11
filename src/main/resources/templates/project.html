@@ -169,6 +169,23 @@
             font-size: 16px;
             color: #606266;
         }
+
+        /* 用户下拉菜单样式 */
+        .user-dropdown {
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+        }
+        .user-dropdown:hover {
+            color: #409eff;
+        }
+        .user-dropdown i {
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -184,8 +201,17 @@
     <!-- 头部 -->
     <div class="header">
         <span>Git合流管理系统</span>
-        <div style="float: right;">
-            <el-button type="primary" @click="handleOperatorLogin">{{operatorButtonText}}</el-button>
+        <div class="header-right" style="float: right; display: flex; align-items: center;">
+            <el-dropdown @command="handleUserCommand" trigger="click">
+                <span class="user-dropdown">
+                    {{currentUser.nickname || currentUser.username}}
+                    <i class="el-icon-arrow-down"></i>
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
+                    <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+            </el-dropdown>
         </div>
     </div>
 
@@ -204,9 +230,13 @@
                     <i class="el-icon-files"></i>
                     <span slot="title">Git工程管理</span>
                 </el-menu-item>
-                <el-menu-item index="2">
+                <el-menu-item index="2" v-if="currentUser.isAdmin">
                     <i class="el-icon-office-building"></i>
                     <span slot="title">Git组织管理</span>
+                </el-menu-item>
+                <el-menu-item index="3" v-if="currentUser.isAdmin">
+                    <i class="el-icon-user"></i>
+                    <span slot="title">用户管理</span>
                 </el-menu-item>
             </el-menu>
         </div>
@@ -229,7 +259,7 @@
                         <div style="display: flex; gap: 10px;">
                             <el-button type="primary" @click="handleSearch" :loading="searchLoading">搜索</el-button>
                             <el-button @click="handleReset">重置</el-button>
-                            <el-button type="success" @click="handleAddProject">添加Git工程</el-button>
+                            <el-button type="success" @click="handleAddProject" v-if="currentUser.isAdmin">添加Git工程</el-button>
                         </div>
                     </div>
                 </div>
@@ -312,9 +342,9 @@
         </div>
     </el-dialog>
 
-    <!-- 操作人登录弹窗 -->
+    <!-- 操作人登录弹窗 - 已废弃，保留兼容 -->
     <el-dialog title="操作人登录" :visible.sync="operatorLoginVisible" width="400px" :close-on-click-modal="false"
-               :close-on-press-escape="false">
+               :close-on-press-escape="false" v-if="false">
         <div style="padding: 20px;">
             <div style="display: flex; align-items: center; margin-bottom: 20px;">
                 <label style="width: 80px; text-align: right; margin-right: 10px;">操作人：</label>
@@ -325,6 +355,22 @@
         <div slot="footer" class="dialog-footer">
             <el-button @click="handleCloseOperatorDialog">关闭</el-button>
             <el-button type="primary" @click="handleSaveOperator">保存</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 修改密码弹窗 -->
+    <el-dialog title="修改密码" :visible.sync="changePwdDialogVisible" width="400px" :close-on-click-modal="false">
+        <el-form :model="changePwdForm" :rules="changePwdRules" ref="changePwdForm" label-width="80px">
+            <el-form-item label="旧密码" prop="oldPassword">
+                <el-input v-model="changePwdForm.oldPassword" type="password" placeholder="请输入旧密码" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+                <el-input v-model="changePwdForm.newPassword" type="password" placeholder="请输入新密码" show-password></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="changePwdDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleConfirmChangePassword" :loading="changePwdLoading">确定</el-button>
         </div>
     </el-dialog>
 
@@ -341,6 +387,7 @@
 <script src="https://unpkg.com/vue@2/dist/vue.js"></script>
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="/js/common.js"></script>
 
 <script>
     new Vue({
@@ -381,7 +428,7 @@
                 repositoryList: [],
                 filteredRepositoryList: [],
                 repositoryLoading: false,
-                // 操作人相关
+                // 操作人相关 (兼容)
                 operatorLoginVisible: false,
                 operatorForm: {
                     operator: ''
@@ -389,10 +436,31 @@
                 operatorButtonText: '登录',
                 // 全局加载状态
                 globalLoading: false,
-                globalLoadingText: '处理中...'
+                globalLoadingText: '处理中...',
+                // 当前用户
+                currentUser: {
+                    username: '',
+                    nickname: '',
+                    isAdmin: false
+                },
+                // 修改密码
+                changePwdDialogVisible: false,
+                changePwdLoading: false,
+                changePwdForm: { oldPassword: '', newPassword: '' },
+                changePwdRules: {
+                    oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+                    newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }]
+                }
             }
         },
         mounted() {
+            // 检查登录状态
+            const token = localStorage.getItem('satoken');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
             // 隐藏初始loading页面
             const pageLoading = document.getElementById('page-loading');
             if (pageLoading) {
@@ -401,19 +469,64 @@
 
             // 确保searchForm初始化
             this.$nextTick(() => {
-                // 强制重新设置searchForm以确保响应式
                 this.$set(this, 'searchForm', {
                     gitProjectName: ''
                 });
             });
 
-            this.initOperator();
+            this.initCurrentUser();
             this.loadData();
-
-            // 添加全局回车键事件监听，阻止除特定输入框外的回车键事件
             this.addGlobalEnterKeyHandler();
         },
         methods: {
+            // 初始化当前用户
+            initCurrentUser() {
+                this.currentUser = {
+                    username: localStorage.getItem('username') || '',
+                    nickname: localStorage.getItem('nickname') || localStorage.getItem('operator') || '',
+                    isAdmin: localStorage.getItem('isAdmin') === 'true'
+                };
+            },
+
+            // 用户菜单命令
+            handleUserCommand(command) {
+                if (command === 'changePassword') {
+                    this.changePwdForm = { oldPassword: '', newPassword: '' };
+                    this.changePwdDialogVisible = true;
+                } else if (command === 'logout') {
+                    this.handleLogout();
+                }
+            },
+
+            // 退出登录
+            handleLogout() {
+                axios.post('/auth/logout').finally(() => {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                });
+            },
+
+            // 确认修改密码
+            handleConfirmChangePassword() {
+                this.$refs.changePwdForm.validate((valid) => {
+                    if (valid) {
+                        this.changePwdLoading = true;
+                        axios.post('/api/v1/user/updateMyPassword', this.changePwdForm)
+                            .then(response => {
+                                if (response.data.code === 200) {
+                                    this.$message.success('密码修改成功，请重新登录');
+                                    this.changePwdDialogVisible = false;
+                                    setTimeout(() => { this.handleLogout(); }, 1000);
+                                } else {
+                                    this.$message.error(response.data.message || '修改失败');
+                                }
+                            })
+                            .catch(error => { this.$message.error('网络请求失败'); console.error(error); })
+                            .finally(() => { this.changePwdLoading = false; });
+                    }
+                });
+            },
+
             // 加载数据
             loadData() {
                 this.loading = true;
@@ -488,6 +601,8 @@
                     window.location.href = '/project';
                 } else if (key === '2') {
                     window.location.href = '/organization';
+                } else if (key === '3') {
+                    window.location.href = '/user';
                 }
             },
 

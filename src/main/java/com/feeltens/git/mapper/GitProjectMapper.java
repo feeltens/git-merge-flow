@@ -32,4 +32,28 @@ public interface GitProjectMapper {
 
     int deleteByProjectId(@Param("projectId") Long projectId);
 
+    /**
+     * 查询所有项目
+     */
+    List<GitProjectDO> selectAll();
+
+    /**
+     * 根据用户ID查询有权限的项目
+     */
+    List<GitProjectDO> selectByUserId(@Param("userId") Long userId);
+
+    /**
+     * 按用户权限统计项目数量
+     */
+    Long countProjectByUserId(@Param("req") PageGitProjectReqVO req,
+                              @Param("userId") Long userId);
+
+    /**
+     * 按用户权限分页查询项目
+     */
+    List<GitProjectDO> pageProjectByUserId(@Param("req") PageGitProjectReqVO req,
+                                           @Param("userId") Long userId,
+                                           @Param("limitSize") Integer limitSize,
+                                           @Param("pageSize") Integer pageSize);
+
 }
