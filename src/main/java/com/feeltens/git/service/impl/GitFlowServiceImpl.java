@@ -1524,6 +1524,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             setGitMergeFlowConfig(mergeChangeRequestReq, organizationId);
             mergeChangeRequestReq.setRepositoryId(repositoryId);
             mergeChangeRequestReq.setLocalId(createChangeRequestResp.getLocalId());
+            mergeChangeRequestReq.setMergeMessage(String.format("Merge branch %s into %s by gitMergeFlow", sourceBranchName, targetBranchName));
             MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeMR(mergeChangeRequestReq);
             if (Objects.equals(MergeTotalStatusEnum.MERGED.getStatus(), mergeChangeRequestResp.getMergeTotalStatus())) {
                 // 已合并
@@ -1575,6 +1576,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             setGitMergeFlowConfig(mergeChangeRequestReq, organizationId);
             mergeChangeRequestReq.setRepositoryId(repositoryId);
             mergeChangeRequestReq.setLocalId(createChangeRequestResp.getLocalId());
+            mergeChangeRequestReq.setMergeMessage(String.format("Merge branch %s into %s by gitMergeFlow", sourceBranchName, targetBranchName));
             MergeChangeRequestResp mergeChangeRequestResp = gitOpenApiFactory.mergeMR(mergeChangeRequestReq);
             if (Objects.equals(MergeTotalStatusEnum.MERGED.getStatus(), mergeChangeRequestResp.getMergeTotalStatus())) {
                 // 已合并
