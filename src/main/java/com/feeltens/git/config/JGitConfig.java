@@ -36,4 +36,10 @@ public class JGitConfig {
      */
     private Integer maxSessionsPerProject = 10;
 
+    /**
+     * 单个冲突文件最大大小（字节），默认 10MB
+     * 超过此大小的文件不支持在线解决冲突
+     */
+    private Long maxConflictFileSize = 10L * 1024 * 1024;
+
 }

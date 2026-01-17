@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>代码冲突解决</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <!-- Element UI CSS -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-    <!-- CodeMirror CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/idea.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -49,11 +45,7 @@
         .stats-resolved { color: #67c23a; font-weight: 600; }
         .stats-total { color: #909399; }
 
-        .main-content {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
+        .main-content { flex: 1; display: flex; overflow: hidden; }
 
         /* 文件列表侧边栏 */
         .file-sidebar {
@@ -89,12 +81,7 @@
         .file-status .conflict-count { color: #f56c6c; }
 
         /* 三面板编辑器容器 */
-        .editor-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+        .editor-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
         .panel-headers {
             display: flex;
@@ -117,11 +104,7 @@
         .panel-header.theirs { background: #ecf5ff; color: #409eff; }
 
         /* 三面板合并视图 */
-        .merge-panels {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
+        .merge-panels { flex: 1; display: flex; overflow: hidden; }
         .merge-panel {
             flex: 1;
             display: flex;
@@ -135,153 +118,212 @@
         .merge-panel.center { background: #fafff9; }
         .merge-panel.right { background: #f8faff; }
 
-        /* 代码行容器 - 双层结构实现整体水平滚动 */
+        /* 代码行容器 */
         .code-lines {
             flex: 1;
             display: flex;
             overflow: hidden;
             font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 21px;
         }
-        /* 行号列 - 固定不滚动 */
+        /* 行号列 */
         .line-numbers {
             flex-shrink: 0;
             overflow-y: auto;
             background: #f8f8f8;
             border-right: 1px solid #e8e8e8;
-            /* 隐藏滚动条 */
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
         .line-numbers::-webkit-scrollbar { display: none; }
         .line-num {
             width: 45px;
-            min-height: 21px;
+            height: 21px;
             padding: 0 8px;
             text-align: right;
             color: #999;
             user-select: none;
             border-bottom: 1px solid #f0f0f0;
             box-sizing: border-box;
+            line-height: 21px;
         }
-        /* 行号列的冲突样式 - 与代码行保持一致 */
-        .line-num.conflict-ours { 
-            background: rgba(245, 108, 108, 0.25); 
-            border-left: 3px solid #f56c6c;
-        }
-        .line-num.conflict-theirs { 
-            background: rgba(64, 158, 255, 0.25); 
-            border-left: 3px solid #409eff;
-        }
+        .line-num.conflict-ours { background: rgba(245, 108, 108, 0.25); border-left: 3px solid #f56c6c; }
+        .line-num.conflict-theirs { background: rgba(64, 158, 255, 0.25); border-left: 3px solid #409eff; }
         .line-num.conflict-resolved { background: rgba(103, 194, 58, 0.1); }
-        .line-num.conflict-pending { background: rgba(230, 162, 60, 0.15); }
-        .line-num.conflict-default-pending { 
-            background: rgba(230, 162, 60, 0.2); 
-            border-left: 3px solid #e6a23c; 
-        }
-        .line-num.conflict-selected { background: rgba(103, 194, 58, 0.2); }
-        .line-num.conflict-confirmed-selected { background: rgba(103, 194, 58, 0.25); }
-        .line-num.conflict-confirmed-rejected { background: rgba(200, 200, 200, 0.2); }
-        /* 代码内容区 - 可水平和垂直滚动 */
+        .line-num.conflict-rejected { background: rgba(200, 200, 200, 0.15); }
+        .line-num.placeholder { background: #f0f0f0; color: transparent; }
+
+        /* 代码内容区 */
         .code-content-wrapper {
             flex: 1;
             overflow: auto;
-            /* 隐藏水平滚动条但保留滚动功能 */
             scrollbar-width: thin;
             scrollbar-color: #ccc transparent;
         }
-        .code-content-wrapper::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
-        }
-        .code-content-wrapper::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 4px;
-        }
-        .code-content-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #999;
-        }
-        .code-content-inner {
-            display: inline-block;
-            min-width: 100%;
-        }
+        .code-content-wrapper::-webkit-scrollbar { height: 8px; width: 8px; }
+        .code-content-wrapper::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        .code-content-wrapper::-webkit-scrollbar-thumb:hover { background: #999; }
+        .code-content-inner { display: inline-block; min-width: 100%; }
+        
         .code-line {
             display: flex;
-            min-height: 21px;
+            height: 21px;
             border-bottom: 1px solid #f0f0f0;
             white-space: pre;
+            line-height: 21px;
         }
         .line-content {
             flex: 1;
             padding: 0 10px;
             white-space: pre;
-        }
-        /* 可编辑的代码区域 */
-        .code-content-editable {
-            outline: none;
-            cursor: text;
-        }
-        .code-content-editable:focus {
-            outline: 2px solid rgba(64, 158, 255, 0.3);
-        }
-        .code-content-editable .line-content:empty::before {
-            content: '\00a0';
-        }
-        /* 选中文本的样式 */
-        .code-content-editable ::selection {
-            background: rgba(64, 158, 255, 0.3);
+            overflow: visible;
         }
 
-        /* 中间面板 textarea 编辑器样式 */
-        .result-editor-container {
+        /* 冲突高亮样式 */
+        .code-line.conflict-ours { background: rgba(245, 108, 108, 0.25); border-left: 3px solid #f56c6c; }
+        .code-line.conflict-theirs { background: rgba(64, 158, 255, 0.25); border-left: 3px solid #409eff; }
+        .code-line.conflict-resolved { background: rgba(103, 194, 58, 0.1); }
+        .code-line.conflict-rejected { background: rgba(200, 200, 200, 0.15); }
+        .code-line.same { background: transparent; }
+        .code-line.placeholder {
+            background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(200, 200, 200, 0.1) 5px, rgba(200, 200, 200, 0.1) 10px);
+        }
+
+        /* 中间面板 Textarea + 背景层样式 */
+        .center-panel-container {
             flex: 1;
             display: flex;
-            overflow: hidden;
+            overflow: auto;
             position: relative;
         }
-        .result-textarea {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            border: none;
-            outline: none;
-            resize: none;
-            padding: 0 10px;
-            margin: 0;
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-            font-size: 13px;
-            line-height: 21px;
-            background: transparent;
-            color: #333;
-            white-space: pre;
-            overflow: auto;
-        }
-        .result-textarea:focus {
-            outline: none;
-        }
-        /* 行高亮覆盖层 */
-        .line-highlight-overlay {
+        
+        /* 背景层：行号 + 冲突高亮 + 按钮 */
+        .center-background-layer {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
+            bottom: 0;
             pointer-events: none;
-            z-index: 0;
+            overflow: hidden;
+            z-index: 1;
+            display: flex;
         }
-        .highlight-line {
+        
+        .center-line-numbers {
+            width: 45px;
+            flex-shrink: 0;
+            background: #f8f8f8;
+            border-right: 1px solid #e8e8e8;
+            pointer-events: auto;
+        }
+        
+        .center-bg-content {
+            flex: 1;
+            position: relative;
+        }
+        
+        .center-bg-line {
             height: 21px;
-            width: 100%;
+            line-height: 21px;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
         }
-        .highlight-line.conflict-resolved { background: rgba(103, 194, 58, 0.1); }
-        .highlight-line.conflict-pending { background: rgba(230, 162, 60, 0.15); }
-        .highlight-line.conflict-default-pending { 
-            background: rgba(230, 162, 60, 0.2); 
+        
+        .center-bg-line.conflict-block {
+            background: rgba(103, 194, 58, 0.08);
+            border-left: 3px solid #67c23a;
         }
-        .highlight-line.conflict-selected { background: rgba(103, 194, 58, 0.2); }
-        .highlight-line.conflict-confirmed-selected { background: rgba(103, 194, 58, 0.25); }
-        .highlight-line.same { background: transparent; }
+        
+        .center-bg-line.conflict-pending {
+            background: rgba(230, 162, 60, 0.08);
+            border-left: 3px solid #e6a23c;
+        }
+        
+        .center-line-num {
+            width: 45px;
+            height: 21px;
+            padding: 0 8px;
+            text-align: right;
+            color: #999;
+            user-select: none;
+            border-bottom: 1px solid #f0f0f0;
+            box-sizing: border-box;
+            line-height: 21px;
+        }
+        
+        .center-line-num.conflict-block {
+            background: rgba(103, 194, 58, 0.1);
+        }
+        
+        .center-line-num.conflict-pending {
+            background: rgba(230, 162, 60, 0.1);
+        }
+        
+        .center-line-num.placeholder {
+            background: #f0f0f0;
+            color: transparent;
+        }
+        
+        /* Textarea 编辑层 */
+        .result-textarea {
+            position: absolute;
+            top: 0;
+            left: 45px;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+            background: transparent;
+            color: #303133;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 0 10px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 13px;
+            line-height: 21px;
+            white-space: pre;
+            word-wrap: normal;
+            word-break: normal;
+            overflow: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc transparent;
+            box-sizing: border-box;
+            width: auto;
+            min-width: calc(100% - 45px);
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .result-textarea-inner {
+            min-width: 100%;
+            display: inline-block;
+        }
+        
+        .result-textarea::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        
+        .result-textarea::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+        
+        .result-textarea::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+        
+        .result-textarea:focus {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 确保 textarea 内容不会自动换行 */
+        .result-textarea::placeholder {
+            white-space: pre;
+        }
 
+        /* 操作按钮 */
         .line-actions {
             width: 50px;
             display: flex;
@@ -292,53 +334,22 @@
             right: 0;
             background: inherit;
             gap: 2px;
+            transition: opacity 0.3s ease;
         }
-        .line-actions-left {
-            position: sticky;
+        .line-actions-floating {
+            position: absolute;
             left: 0;
-            background: inherit;
+            top: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            z-index: 10;
+            padding: 0 4px;
+            background: linear-gradient(to right, rgba(248, 250, 255, 0.95) 85%, transparent);
+            transition: opacity 0.3s ease;
         }
-
-        /* 冲突高亮 - 增强冲突块的视觉效果 */
-        .code-line.conflict-ours { 
-            background: rgba(245, 108, 108, 0.25); 
-            border-left: 3px solid #f56c6c;
-        }
-        .code-line.conflict-theirs { 
-            background: rgba(64, 158, 255, 0.25); 
-            border-left: 3px solid #409eff;
-        }
-        .code-line.conflict-resolved { background: rgba(103, 194, 58, 0.1); }
-        .code-line.conflict-pending { background: rgba(230, 162, 60, 0.15); }
-        /* 默认显示目标分支代码，待确认状态（橙色边框） */
-        .code-line.conflict-default-pending { 
-            background: rgba(230, 162, 60, 0.2); 
-            border-left: 3px solid #e6a23c;
-        }
-        /* 已选择的状态 */
-        .code-line.conflict-selected { background: rgba(103, 194, 58, 0.2); }
-        /* 已确认并被选中 */
-        .code-line.conflict-confirmed-selected { background: rgba(103, 194, 58, 0.25); }
-        /* 已确认但被舍弃 */
-        .code-line.conflict-confirmed-rejected { background: rgba(200, 200, 200, 0.2); }
-        .code-line.same { background: transparent; }
-        .code-line.empty { background: #f5f5f5; }
-        .code-line.empty .line-content { color: #ccc; }
-
-        /* 差异部分高亮 - 行内不同的字符 */
-        .diff-highlight {
-            background: rgba(255, 213, 0, 0.4);
-            border-radius: 2px;
-            padding: 0 1px;
-        }
-        .diff-highlight-ours {
-            background: rgba(245, 108, 108, 0.4);
-        }
-        .diff-highlight-theirs {
-            background: rgba(64, 158, 255, 0.4);
-        }
-
-        /* 操作按钮 */
         .action-btn {
             width: 20px;
             height: 20px;
@@ -351,30 +362,54 @@
             font-size: 12px;
             transition: all 0.2s;
         }
-        .accept-btn {
-            background: #67c23a;
-            color: #fff;
+        .action-btn:active {
+            transform: scale(0.95);
         }
+        .accept-btn { background: #67c23a; color: #fff; }
         .accept-btn:hover { background: #85ce61; }
-        .accept-btn.to-right { background: #67c23a; }
-        .accept-btn.to-left { background: #67c23a; }
-        .reject-btn {
-            background: #909399;
-            color: #fff;
-        }
+        .reject-btn { background: #909399; color: #fff; }
         .reject-btn:hover { background: #a6a9ad; }
-        /* 追加按钮（向下箭头） */
-        .append-btn {
-            background: #409eff;
-            color: #fff;
-        }
+        .append-btn { background: #409eff; color: #fff; }
         .append-btn:hover { background: #66b1ff; }
 
-        /* 冲突导航按钮 */
-        .conflict-nav {
+        /* 中间面板分段编辑样式 */
+        .result-segments-wrapper {
+            flex: 1;
+            overflow: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc transparent;
+        }
+        .result-segments-wrapper::-webkit-scrollbar { height: 8px; width: 8px; }
+        .result-segments-wrapper::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        .result-segments-inner { display: inline-block; min-width: 100%; }
+        
+        .segment-line {
             display: flex;
-            gap: 5px;
-            margin-left: 15px;
+            height: 21px;
+            border-bottom: 1px solid #f0f0f0;
+            line-height: 21px;
+        }
+        .segment-line .line-content {
+            flex: 1;
+            padding: 0 10px;
+            white-space: pre;
+            overflow: visible;
+            outline: none;
+            min-height: 21px;
+        }
+        .segment-line .line-content:focus { background: rgba(64, 158, 255, 0.05); }
+        
+        /* 冲突块段落样式 */
+        .result-segment.conflict-segment { background: rgba(103, 194, 58, 0.05); border-left: 2px solid #67c23a; }
+        .result-segment.conflict-segment.pending { background: rgba(230, 162, 60, 0.1); border-left-color: #e6a23c; }
+        
+        /* 占位行样式 */
+        .segment-line.placeholder-line {
+            background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(200, 200, 200, 0.08) 5px, rgba(200, 200, 200, 0.08) 10px);
+        }
+        .segment-line.placeholder-line .line-content {
+            color: transparent;
+            user-select: none;
         }
 
         /* 可拖拽分隔条 */
@@ -387,9 +422,7 @@
             position: relative;
             z-index: 10;
         }
-        .resizer:hover, .resizer.active {
-            background: #409eff;
-        }
+        .resizer:hover, .resizer.active { background: #409eff; }
         .resizer::after {
             content: '';
             position: absolute;
@@ -398,27 +431,12 @@
             transform: translate(-50%, -50%);
             width: 3px;
             height: 30px;
-            background: repeating-linear-gradient(
-                to bottom,
-                #999 0px,
-                #999 2px,
-                transparent 2px,
-                transparent 4px
-            );
+            background: repeating-linear-gradient(to bottom, #999 0px, #999 2px, transparent 2px, transparent 4px);
             opacity: 0.5;
         }
-        .resizer:hover::after, .resizer.active::after {
-            opacity: 1;
-        }
-
-        /* 拖拽时禁止选择文本 */
-        body.resizing {
-            cursor: col-resize !important;
-            user-select: none !important;
-        }
-        body.resizing * {
-            cursor: col-resize !important;
-        }
+        .resizer:hover::after, .resizer.active::after { opacity: 1; }
+        body.resizing { cursor: col-resize !important; user-select: none !important; }
+        body.resizing * { cursor: col-resize !important; }
 
         /* 底部操作栏 */
         .action-bar {
@@ -431,17 +449,13 @@
             flex-shrink: 0;
         }
         .action-bar .spacer { flex: 1; }
+        .conflict-nav { display: flex; gap: 5px; margin-left: 15px; }
 
-        /* 提交对话框 */
+        /* 对话框和加载 */
         .commit-dialog .el-dialog__body { padding: 20px 30px; }
-
-        /* 全局加载模态框 */
         .global-loading-mask {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
@@ -458,22 +472,15 @@
             gap: 15px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
-        .global-loading-content i {
-            font-size: 36px;
-            color: #409eff;
-        }
-        .global-loading-content span {
-            font-size: 16px;
-            color: #606266;
-        }
+        .global-loading-content i { font-size: 36px; color: #409eff; }
+        .global-loading-content span { font-size: 16px; color: #606266; }
 
-        /* 语法高亮 - 简单实现 */
+        /* 语法高亮 */
         .syntax-keyword { color: #0000ff; font-weight: bold; }
         .syntax-string { color: #008000; }
         .syntax-comment { color: #808080; font-style: italic; }
         .syntax-number { color: #0000ff; }
         .syntax-annotation { color: #808000; }
-        .syntax-type { color: #267f99; }
     </style>
 </head>
 <body>
@@ -488,10 +495,7 @@
         </span>
         <div class="header-actions">
             <el-button size="small" @click="handleCancel">取消</el-button>
-            <el-button size="small" type="success" @click="handleCommit" 
-                       :disabled="!allResolved" :loading="commitLoading">
-                提交并推送
-            </el-button>
+            <el-button size="small" type="success" @click="handleCommit" :disabled="!allResolved" :loading="commitLoading">提交并推送</el-button>
         </div>
     </div>
 
@@ -499,23 +503,16 @@
     <div class="toolbar">
         <el-select v-model="currentFile" placeholder="选择文件" class="file-selector" @change="handleFileChange">
             <el-option v-for="file in conflictFiles" :key="file.filePath"
-                       :label="file.fileName + (file.fullyResolved ? ' ✓' : '')"
-                       :value="file.filePath">
-            </el-option>
+                       :label="file.fileName + (file.fullyResolved ? ' ✓' : '')" :value="file.filePath"></el-option>
         </el-select>
-
         <div class="conflict-stats">
             <span class="stats-resolved">{{resolvedCount}}</span>
             <span class="stats-total"> / {{totalFiles}} 文件已解决</span>
         </div>
-
         <div style="flex: 1;"></div>
-
-        <el-button size="small" type="warning" @click="mergeAllImports" :disabled="!currentFile || importConflictCount === 0">
-            合并 Import ({{importConflictCount}})
-        </el-button>
         <el-button size="small" @click="acceptAllOurs" :disabled="!currentFile">全部采用左侧</el-button>
         <el-button size="small" @click="acceptAllTheirs" :disabled="!currentFile">全部采用右侧</el-button>
+        <el-button size="small" type="primary" @click="acceptAllBoth" :disabled="!currentFile">全部合并（左+右）</el-button>
         <el-button size="small" icon="el-icon-refresh" @click="handleReset" :disabled="!currentFile">重置</el-button>
     </div>
 
@@ -525,8 +522,7 @@
         <div class="file-sidebar" ref="fileSidebar" :style="{ width: sidebarWidth + 'px' }">
             <div class="file-sidebar-header">冲突文件 ({{conflictFiles.length}})</div>
             <div class="file-list">
-                <div v-for="file in conflictFiles" :key="file.filePath"
-                     class="file-item"
+                <div v-for="file in conflictFiles" :key="file.filePath" class="file-item"
                      :class="{ active: currentFile === file.filePath, resolved: file.fullyResolved }"
                      @click="handleFileChange(file.filePath)">
                     <div class="file-name">{{file.fileName}}</div>
@@ -538,9 +534,7 @@
             </div>
         </div>
 
-        <!-- 侧边栏与编辑器之间的分隔条 -->
-        <div class="resizer" :class="{ active: resizing === 'sidebar' }"
-             @mousedown="startResize($event, 'sidebar')"></div>
+        <div class="resizer" :class="{ active: resizing === 'sidebar' }" @mousedown="startResize($event, 'sidebar')"></div>
 
         <!-- 编辑器区域 -->
         <div class="editor-container" v-loading="fileLoading">
@@ -551,43 +545,26 @@
             </div>
 
             <div class="merge-panels" ref="mergePanels">
-                <!-- 左侧面板 - Ours (目标分支) -->
+                <!-- 左侧面板 -->
                 <div class="merge-panel left" :style="{ flex: leftPanelFlex }">
                     <div class="code-lines">
-                        <!-- 行号列 -->
                         <div class="line-numbers" ref="leftLineNums">
-                            <div v-for="(line, idx) in mergeLines" :key="'left-num-'+idx" 
-                                 class="line-num" :class="getLineClass(line, 'left')">
-                                {{line.leftLineNum || ''}}
-                            </div>
+                            <div v-for="(item, idx) in alignedOursData" :key="'ln-'+idx" 
+                                 class="line-num" :class="getLineNumClass(item, 'ours')">{{item.lineNum || ''}}</div>
                         </div>
-                        <!-- 代码内容区 -->
                         <div class="code-content-wrapper" ref="leftPanel" @scroll="syncScroll('left', $event)">
-                            <div class="code-content-inner">
-                                <div v-for="(line, idx) in mergeLines" :key="'left-'+idx" 
-                                     class="code-line" :class="getLineClass(line, 'left')">
-                                    <div class="line-content" v-html="highlightDiff(line, 'left')"></div>
-                                    <div class="line-actions">
-                                        <!-- 只在冲突块的第一行显示按钮，且左侧未确认时才显示 -->
-                                        <template v-if="line.type === 'conflict' && !line.resolved && line.isBlockStart && !line.oursConfirmed">
-                                            <!-- 状态1: 右侧已确认选了theirs，左侧显示追加按钮 -->
-                                            <template v-if="line.theirsConfirmed">
-                                                <button class="action-btn reject-btn" 
-                                                        @click="rejectBlock(line.conflictBlockId, 'ours')"
-                                                        title="舍弃此版本">✕</button>
-                                                <button class="action-btn append-btn" 
-                                                        @click="appendBlock(line.conflictBlockId, 'ours')"
-                                                        title="追加到下一代码片段">↘</button>
-                                            </template>
-                                            <!-- 状态2: 右侧未确认，显示正常按钮 -->
-                                            <template v-else>
-                                                <button class="action-btn reject-btn" 
-                                                        @click="rejectBlock(line.conflictBlockId, 'ours')"
-                                                        title="舍弃此版本">✕</button>
-                                                <button class="action-btn accept-btn to-right" 
-                                                        @click="acceptBlock(line.conflictBlockId, 'ours')"
-                                                        title="采用此版本">»</button>
-                                            </template>
+                            <div class="code-content-inner" :style="{ minWidth: maxLineWidth + 'px' }">
+                                <div v-for="(item, idx) in alignedOursData" :key="'lc-'+idx" 
+                                     class="code-line" :class="getLineClass(item, 'ours')">
+                                    <div class="line-content" v-html="item.isPlaceholder ? '&nbsp;' : highlightSyntax(item.content)"></div>
+                                    <div class="line-actions" v-if="item.showButton && getOursButtonType(item.blockId) !== 'none'">
+                                        <template v-if="getOursButtonType(item.blockId) === 'accept-or-close'">
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭">✕</button>
+                                            <button class="action-btn accept-btn" @click="acceptBlock(item.blockId, 'ours')" title="采用">»</button>
+                                        </template>
+                                        <template v-else-if="getOursButtonType(item.blockId) === 'append-or-close'">
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭">✕</button>
+                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'ours')" title="追加到下一行">↘</button>
                                         </template>
                                     </div>
                                 </div>
@@ -596,85 +573,68 @@
                     </div>
                 </div>
 
-                <!-- 左侧与中间面板之间的分隔条 -->
-                <div class="resizer" :class="{ active: resizing === 'left' }"
-                     @mousedown="startResize($event, 'left')"></div>
+                <div class="resizer" :class="{ active: resizing === 'left' }" @mousedown="startResize($event, 'left')"></div>
 
-                <!-- 中间面板 - Result (合并结果) -->
+                <!-- 中间面板 - Textarea + 背景层 -->
                 <div class="merge-panel center" :style="{ flex: centerPanelFlex }">
-                    <div class="code-lines">
-                        <!-- 行号列 -->
-                        <div class="line-numbers" ref="centerLineNums">
-                            <div v-for="(line, idx) in mergeLines" :key="'center-num-'+idx" 
-                                 class="line-num" :class="getLineClass(line, 'center')">
-                                {{line.resultLineNum || ''}}
-                            </div>
-                        </div>
-                        <!-- 代码内容区 - 使用 textarea 实现所见即所得 -->
-                        <div class="result-editor-container" ref="centerPanel">
-                            <!-- 行高亮覆盖层 -->
-                            <div class="line-highlight-overlay" :style="{ top: -centerScrollTop + 'px' }">
-                                <div v-for="(line, idx) in mergeLines" :key="'highlight-'+idx" 
-                                     class="highlight-line" :class="getLineClass(line, 'center')">
+                    <div class="center-panel-container">
+                        <!-- 背景层：行号 + 冲突高亮 + 操作按钮 -->
+                        <div class="center-background-layer" ref="centerBackground">
+                            <div class="center-line-numbers">
+                                <div v-for="(item, idx) in alignedResultData" :key="'cn-'+idx"
+                                     class="center-line-num" :class="getCenterLineNumClass(item)">
+                                    {{item.isPlaceholder ? '' : item.lineNum || ''}}
                                 </div>
                             </div>
-                            <!-- textarea 编辑器 -->
-                            <textarea 
-                                ref="resultEditor"
-                                class="result-textarea"
-                                v-model="resultText"
-                                @scroll="syncScroll('center', $event)"
-                                @input="onResultTextInput"
-                                @paste="onResultPaste"
-                                spellcheck="false"
-                            ></textarea>
+                            <div class="center-bg-content">
+                                <div v-for="(item, idx) in alignedResultData" :key="'cb-'+idx"
+                                     class="center-bg-line" :class="getCenterBgLineClass(item)">
+                                    <!-- 中间面板不显示任何操作按钮 -->
+                                </div>
+                            </div>
                         </div>
+                        
+                        <!-- Textarea 编辑层 -->
+                        <textarea 
+                            ref="resultTextarea"
+                            class="result-textarea"
+                            v-model="resultText"
+                            spellcheck="false"
+                            wrap="off"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            @scroll="syncScrollFromTextarea"
+                            @input="onTextareaInput"
+                            @paste="handlePaste"
+                        ></textarea>
                     </div>
                 </div>
 
-                <!-- 中间与右侧面板之间的分隔条 -->
-                <div class="resizer" :class="{ active: resizing === 'right' }"
-                     @mousedown="startResize($event, 'right')"></div>
+                <div class="resizer" :class="{ active: resizing === 'right' }" @mousedown="startResize($event, 'right')"></div>
 
-                <!-- 右侧面板 - Theirs (源分支) -->
+                <!-- 右侧面板 -->
                 <div class="merge-panel right" :style="{ flex: rightPanelFlex }">
                     <div class="code-lines">
-                        <!-- 行号列 -->
                         <div class="line-numbers" ref="rightLineNums">
-                            <div v-for="(line, idx) in mergeLines" :key="'right-num-'+idx" 
-                                 class="line-num" :class="getLineClass(line, 'right')">
-                                {{line.rightLineNum || ''}}
-                            </div>
+                            <div v-for="(item, idx) in alignedTheirsData" :key="'rn-'+idx" 
+                                 class="line-num" :class="getLineNumClass(item, 'theirs')">{{item.lineNum || ''}}</div>
                         </div>
-                        <!-- 代码内容区 -->
                         <div class="code-content-wrapper" ref="rightPanel" @scroll="syncScroll('right', $event)">
-                            <div class="code-content-inner">
-                                <div v-for="(line, idx) in mergeLines" :key="'right-'+idx" 
-                                     class="code-line" :class="getLineClass(line, 'right')">
-                                    <div class="line-actions line-actions-left">
-                                        <!-- 只在冲突块的第一行显示按钮，且右侧未确认时才显示 -->
-                                        <template v-if="line.type === 'conflict' && !line.resolved && line.isBlockStart && !line.theirsConfirmed">
-                                            <!-- 状态1: 左侧已确认选了ours，右侧显示追加按钮 -->
-                                            <template v-if="line.oursConfirmed">
-                                                <button class="action-btn append-btn" 
-                                                        @click="appendBlock(line.conflictBlockId, 'theirs')"
-                                                        title="追加到下一代码片段">↙</button>
-                                                <button class="action-btn reject-btn" 
-                                                        @click="rejectBlock(line.conflictBlockId, 'theirs')"
-                                                        title="舍弃此版本">✕</button>
-                                            </template>
-                                            <!-- 状态2: 左侧未确认，显示正常按钮 -->
-                                            <template v-else>
-                                                <button class="action-btn accept-btn to-left" 
-                                                        @click="acceptBlock(line.conflictBlockId, 'theirs')"
-                                                        title="采用此版本">«</button>
-                                                <button class="action-btn reject-btn" 
-                                                        @click="rejectBlock(line.conflictBlockId, 'theirs')"
-                                                        title="舍弃此版本">✕</button>
-                                            </template>
+                            <div class="code-content-inner" :style="{ minWidth: maxLineWidth + 'px' }">
+                                <div v-for="(item, idx) in alignedTheirsData" :key="'rc-'+idx" 
+                                     class="code-line" :class="getLineClass(item, 'theirs')" style="position: relative;">
+                                    <div class="line-actions-floating" v-if="item.showButton && getTheirsButtonType(item.blockId) !== 'none'">
+                                        <template v-if="getTheirsButtonType(item.blockId) === 'accept-or-close'">
+                                            <button class="action-btn accept-btn" @click="acceptBlock(item.blockId, 'theirs')" title="采用">«</button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭">✕</button>
+                                        </template>
+                                        <template v-else-if="getTheirsButtonType(item.blockId) === 'append-or-close'">
+                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'theirs')" title="追加到下一行">↙</button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭">✕</button>
                                         </template>
                                     </div>
-                                    <div class="line-content" v-html="highlightDiff(line, 'right')"></div>
+                                    <div class="line-content" v-html="item.isPlaceholder ? '&nbsp;' : highlightSyntax(item.content)"></div>
                                 </div>
                             </div>
                         </div>
@@ -687,37 +647,19 @@
     <!-- 底部操作栏 -->
     <div class="action-bar">
         <span>未解决冲突: <strong style="color: #f56c6c;">{{unresolvedConflicts}}</strong></span>
-        
-        <!-- 冲突跳转按钮 -->
         <div class="conflict-nav">
-            <el-button size="mini" icon="el-icon-arrow-up" 
-                       @click="goToPrevConflict" 
-                       :disabled="unresolvedConflicts === 0"
-                       title="上一个冲突">
-            </el-button>
-            <el-button size="mini" icon="el-icon-arrow-down" 
-                       @click="goToNextConflict" 
-                       :disabled="unresolvedConflicts === 0"
-                       title="下一个冲突">
-            </el-button>
+            <el-button size="mini" icon="el-icon-arrow-up" @click="goToPrevConflict" :disabled="unresolvedConflicts === 0"></el-button>
+            <el-button size="mini" icon="el-icon-arrow-down" @click="goToNextConflict" :disabled="unresolvedConflicts === 0"></el-button>
         </div>
-        
         <div class="spacer"></div>
-        <el-button size="small" type="primary" @click="saveCurrentFile" 
-                   :disabled="!currentFile" :loading="saveLoading">
-            保存当前文件
-        </el-button>
+        <el-button size="small" type="primary" @click="saveCurrentFile" :disabled="!currentFile" :loading="saveLoading">保存当前文件</el-button>
     </div>
 
     <!-- 提交对话框 -->
     <el-dialog title="提交冲突解决" :visible.sync="commitDialogVisible" width="500px" class="commit-dialog" :close-on-click-modal="false">
         <el-form :model="commitForm" label-width="100px">
-            <el-form-item label="提交信息">
-                <el-input type="textarea" v-model="commitForm.commitMessage" :rows="3"></el-input>
-            </el-form-item>
-            <el-form-item label="作者名称">
-                <span style="line-height: 40px;">{{commitForm.authorName}}</span>
-            </el-form-item>
+            <el-form-item label="提交信息"><el-input type="textarea" v-model="commitForm.commitMessage" :rows="3"></el-input></el-form-item>
+            <el-form-item label="作者名称"><span style="line-height: 40px;">{{commitForm.authorName}}</span></el-form-item>
         </el-form>
         <div slot="footer">
             <el-button @click="commitDialogVisible = false">取消</el-button>
@@ -725,7 +667,7 @@
         </div>
     </el-dialog>
 
-    <!-- 全局加载模态框 -->
+    <!-- 全局加载 -->
     <div v-if="globalLoading" class="global-loading-mask">
         <div class="global-loading-content">
             <i class="el-icon-loading"></i>
@@ -734,7 +676,6 @@
     </div>
 </div>
 
-<!-- Vue & Element UI -->
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -754,123 +695,133 @@ new Vue({
         saveLoading: false,
         commitLoading: false,
         commitDialogVisible: false,
-        // 全局加载状态
         globalLoading: false,
         globalLoadingText: '处理中...',
-        commitForm: {
-            commitMessage: '',
-            authorName: '',
-            authorEmail: ''
-        },
-        // 合并行数据（用于显示行号和高亮）
-        mergeLines: [],
-        // 上一个文件路径（用于切换时保存）
-        previousFile: '',
-        // 文件编辑状态缓存 (filePath -> { resultText, mergeLines, unresolvedConflicts })
-        fileEditCache: {},
-        // textarea 的文本内容（所见即所得）
+        commitForm: { commitMessage: '', authorName: '', authorEmail: '' },
+        // 原始内容
+        oursContent: '',
+        theirsContent: '',
+        // 结果文本（直接绑定到 textarea）
         resultText: '',
-        // 中间面板滚动位置（用于同步高亮层）
-        centerScrollTop: 0,
-        // 代码块数据结构（核心数据）
-        // 每个块要么是 same 类型（非冲突），要么是 conflict 类型（冲突）
-        // { type: 'same', lines: [...] }
-        // { type: 'conflict', blockId, oursLines: [...], theirsLines: [...], resultLines: [...], resolved, oursConfirmed, theirsConfirmed }
-        codeBlocks: [],
-        // 滚动同步标志
+        // 冲突块映射
+        conflictBlockMap: {},
+        // 从 mergedContent 解析出的冲突块信息
+        parsedConflicts: [],
+        // 全局对齐区间: [{ type, oursLines, theirsLines, resultLines, maxLines, blockId }]
+        alignmentSections: [],
+        previousFile: '',
+        fileEditCache: {},
         scrolling: false,
-        // 面板宽度控制
         sidebarWidth: 260,
         leftPanelFlex: 1,
         centerPanelFlex: 1,
         rightPanelFlex: 1,
-        // 拖拽状态
         resizing: null,
         resizeStartX: 0,
         resizeStartWidth: 0,
         resizeStartFlex: { left: 1, center: 1, right: 1 },
-        // 跨页面通信
-        broadcastChannel: null
+        broadcastChannel: null,
+        _measureCanvas: null,
+        _measureContext: null
     },
+
     computed: {
-        totalFiles() {
-            return this.conflictFiles.length;
+        oursLines() { return (this.oursContent || '').split('\n'); },
+        theirsLines() { return (this.theirsContent || '').split('\n'); },
+        // 从 resultText 获取结果行
+        resultLines() { return (this.resultText || '').split('\n'); },
+        maxLineWidth() {
+            const allLines = [...this.oursLines, ...this.theirsLines, ...this.resultLines];
+            let maxLen = 0;
+            allLines.forEach(line => {
+                // 使用更精确的字符宽度计算
+                const width = this.calculateTextWidth(line || '');
+                maxLen = Math.max(maxLen, width);
+            });
+            // 添加额外的边距，确保内容不会被截断
+            return Math.max(maxLen + 100, 300);
         },
-        resolvedCount() {
-            return this.conflictFiles.filter(f => f.fullyResolved).length;
-        },
-        allResolved() {
-            return this.totalFiles > 0 && this.resolvedCount === this.totalFiles;
-        },
+        
+        // 生成全局对齐后的左侧数据
+        alignedOursData() { return this.buildAlignedPanelData('ours'); },
+        // 生成全局对齐后的右侧数据
+        alignedTheirsData() { return this.buildAlignedPanelData('theirs'); },
+        // 生成全局对齐后的中间数据
+        alignedResultData() { return this.buildAlignedPanelData('result'); },
+        
+        totalFiles() { return this.conflictFiles.length; },
+        resolvedCount() { return this.conflictFiles.filter(f => f.fullyResolved).length; },
+        allResolved() { return this.totalFiles > 0 && this.resolvedCount === this.totalFiles; },
         unresolvedConflicts() {
-            // 统计未解决的冲突块数量（按 conflictBlockId 去重）
-            const unresolvedBlockIds = new Set();
-            this.mergeLines.forEach(line => {
-                if (line.type === 'conflict' && !line.resolved && line.conflictBlockId !== undefined) {
-                    unresolvedBlockIds.add(line.conflictBlockId);
+            // 统计未完全解决的冲突块数量
+            let count = 0;
+            
+            Object.keys(this.conflictBlockMap).forEach(blockId => {
+                const block = this.conflictBlockMap[blockId];
+                if (!block) return;
+                
+                // 只有两侧都已解决（closed/accepted/appended），才算已解决
+                const oursResolved = block.oursStatus === 'closed' || block.oursStatus === 'accepted' || block.oursStatus === 'appended';
+                const theirsResolved = block.theirsStatus === 'closed' || block.theirsStatus === 'accepted' || block.theirsStatus === 'appended';
+                
+                if (!oursResolved || !theirsResolved) {
+                    count++;
                 }
             });
-            return unresolvedBlockIds.size;
-        },
-        // 未解决的 import 冲突数量
-        importConflictCount() {
-            // 按 conflictBlockId 去重统计未解决的 import 冲突块
-            const importBlockIds = new Set();
-            this.mergeLines.forEach(line => {
-                if (line.type !== 'conflict' || line.resolved || line.conflictBlockId === undefined) return;
-                if (this.isImportLine(line.leftContent, line.rightContent)) {
-                    importBlockIds.add(line.conflictBlockId);
-                }
-            });
-            return importBlockIds.size;
+            
+            return count;
         }
     },
+
     mounted() {
         const urlParams = new URLSearchParams(window.location.search);
         this.sessionId = urlParams.get('sessionId');
-        if (!this.sessionId) {
-            this.$message.error('缺少会话ID参数');
-            return;
-        }
-        
-        // 初始化跨页面通信
+        if (!this.sessionId) { this.$message.error('缺少会话ID参数'); return; }
         this.initBroadcastChannel();
-        
         this.loadConflictFiles();
     },
     beforeDestroy() {
-        // 清理缓存
         this.fileEditCache = {};
-        // 关闭 BroadcastChannel
-        if (this.broadcastChannel) {
-            this.broadcastChannel.close();
+        if (this.broadcastChannel) this.broadcastChannel.close();
+        // 清理 Canvas 资源
+        if (this._measureCanvas) {
+            this._measureCanvas = null;
+            this._measureContext = null;
         }
     },
     methods: {
-        // 初始化跨页面通信
+        // 计算文本宽度（使用 Canvas 精确测量）
+        calculateTextWidth(text) {
+            if (!text) return 0;
+            
+            // 初始化 Canvas 测量工具
+            if (!this._measureCanvas) {
+                this._measureCanvas = document.createElement('canvas');
+                this._measureContext = this._measureCanvas.getContext('2d');
+                this._measureContext.font = '13px "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace';
+            }
+            
+            // 处理 Tab 字符（转换为 4 个空格）
+            const processedText = text.replace(/\t/g, '    ');
+            
+            // 使用 Canvas 精确测量
+            const metrics = this._measureContext.measureText(processedText);
+            return Math.ceil(metrics.width);
+        },
+        
         initBroadcastChannel() {
             if (typeof BroadcastChannel !== 'undefined') {
                 this.broadcastChannel = new BroadcastChannel('git_conflict_resolve_channel');
             }
         },
-
-        // 通知父页面冲突已解决，触发重新合并
         notifyConflictResolved() {
             const message = { type: 'conflict_resolved', sessionId: this.sessionId, timestamp: Date.now() };
-            
-            if (this.broadcastChannel) {
-                // 优先使用 BroadcastChannel
-                this.broadcastChannel.postMessage(message);
-            } else {
-                // 降级使用 localStorage
-                localStorage.setItem('conflict_resolved_' + this.sessionId, JSON.stringify(message));
-            }
+            if (this.broadcastChannel) this.broadcastChannel.postMessage(message);
+            else localStorage.setItem('conflict_resolved_' + this.sessionId, JSON.stringify(message));
         },
 
-        // 加载冲突文件列表
         async loadConflictFiles() {
-            if (this.globalLoading) return;  // 防止重复调用
-            
+            if (this.globalLoading) return;
             this.globalLoading = true;
             this.globalLoadingText = '正在加载文件列表...';
             try {
@@ -879,28 +830,18 @@ new Vue({
                     this.conflictFiles = res.data.data;
                     if (this.conflictFiles.length > 0 && !this.currentFile) {
                         this.currentFile = this.conflictFiles[0].filePath;
-                        this.previousFile = this.currentFile;  // 初始化 previousFile
-                        // 加载文件详情时不重复显示loading
+                        this.previousFile = this.currentFile;
                         this.globalLoading = false;
                         this.loadFileDetail(this.currentFile);
                         return;
                     }
-                } else {
-                    this.$message.error(res.data.message || '加载文件列表失败');
-                }
-            } catch (error) {
-                console.error('加载文件列表失败:', error);
-                this.$message.error('加载文件列表失败');
-            } finally {
-                this.globalLoading = false;
-            }
+                } else { this.$message.error(res.data.message || '加载失败'); }
+            } catch (e) { this.$message.error('加载文件列表失败'); }
+            finally { this.globalLoading = false; }
         },
 
-        // 加载文件详情
         async loadFileDetail(filePath) {
-            if (!filePath) return;
-            if (this.globalLoading) return;  // 防止重复调用
-            
+            if (!filePath || this.globalLoading) return;
             this.globalLoading = true;
             this.globalLoadingText = '正在加载文件内容...';
             this.fileLoading = true;
@@ -910,93 +851,826 @@ new Vue({
                     this.currentDetail = res.data.data;
                     this.sourceBranch = this.currentDetail.sourceBranch || '源分支';
                     this.targetBranch = this.currentDetail.targetBranch || '目标分支';
-                    // 解析并生成合并行
-                    this.parseMergeLines();
-                } else {
-                    this.$message.error(res.data.message || '加载文件详情失败');
-                }
-            } catch (error) {
-                console.error('加载文件详情失败:', error);
-                this.$message.error('加载文件详情失败');
-            } finally {
-                this.fileLoading = false;
-                this.globalLoading = false;
-            }
+                    this.parseFileContent();
+                } else { this.$message.error(res.data.message || '加载失败'); }
+            } catch (e) { this.$message.error('加载文件详情失败'); }
+            finally { this.fileLoading = false; this.globalLoading = false; }
         },
 
-        // 解析合并行 - 核心逻辑
-        parseMergeLines() {
-            // 如果文件已解决，直接使用 currentContent 显示
-            if (this.currentDetail.resolved && this.currentDetail.currentContent) {
-                const lines = this.currentDetail.currentContent.split('\n');
-                this.mergeLines = lines.map((content, idx) => ({
-                    type: 'same',
-                    leftContent: content,
-                    rightContent: content,
-                    resultContent: content,
-                    leftLineNum: idx + 1,
-                    rightLineNum: idx + 1,
-                    resultLineNum: idx + 1,
-                    resolved: true
-                }));
-                this.syncResultTextFromMergeLines();
-                // 更新文件列表的冲突数量
-                this.updateFileConflictCount();
-                return;
+        // 解析文件内容
+        parseFileContent() {
+            // 始终保留原始的 ours/theirs 用于左右面板显示
+            this.oursContent = this.currentDetail.oursContent || '';
+            this.theirsContent = this.currentDetail.theirsContent || '';
+            
+            const currentContent = this.currentDetail.currentContent || '';
+            
+            // 检查 currentContent 是否还有冲突标记
+            const hasConflictMarkers = currentContent.includes('<<<<<<<') && currentContent.includes('>>>>>>>');
+            
+            if (this.currentDetail.resolved && !hasConflictMarkers) {
+                // 真正已解决：无冲突块，中间面板显示解决后的内容
+                this.conflictBlockMap = {};
+                this.parsedConflicts = [];
+                this.resultText = currentContent;
+            } else if (hasConflictMarkers) {
+                // currentContent 中有冲突标记：从中解析并构建初始 resultText
+                this.parsedConflicts = [];
+                this.buildResultTextFromMerged(currentContent);
+                this.buildConflictBlockMapFromParsed();
+            } else {
+                // currentContent 无冲突标记，但后端说未解决
+                // 使用后端的 conflictBlocks 作为冲突信息
+                const conflictBlocks = this.currentDetail.conflictBlocks || [];
+                if (conflictBlocks.length > 0) {
+                    this.buildFromBackendConflictBlocks(currentContent, conflictBlocks);
+                } else {
+                    // 没有冲突信息，当作已解决处理
+                    this.conflictBlockMap = {};
+                    this.parsedConflicts = [];
+                    this.resultText = currentContent;
+                }
             }
             
-            const oursLines = (this.currentDetail.oursContent || '').split('\n');
-            const theirsLines = (this.currentDetail.theirsContent || '').split('\n');
+            this.buildAlignmentSections();
+            this.updateFileConflictCount();
+        },
+
+        // 使用后端的 conflictBlocks 构建冲突信息
+        buildFromBackendConflictBlocks(currentContent, conflictBlocks) {
+            const oursLines = this.oursContent.split('\n');
+            const theirsLines = this.theirsContent.split('\n');
             
-            // 先提取并合并 import 区域
-            const oursImports = this.extractImports(oursLines);
-            const theirsImports = this.extractImports(theirsLines);
+            // 构建 parsedConflicts
+            this.parsedConflicts = conflictBlocks.map(block => ({
+                oursContent: block.oursContent || '',
+                theirsContent: block.theirsContent || ''
+            }));
             
-            // 合并 import
-            const mergedImports = this.mergeImports(oursImports.imports, theirsImports.imports);
+            // 构建 conflictBlockMap
+            const map = {};
+            let lastOursEnd = -1, lastTheirsEnd = -1;
             
-            // 获取非 import 部分
-            const oursRest = oursLines.slice(oursImports.endIndex);
-            const theirsRest = theirsLines.slice(theirsImports.endIndex);
-            
-            // 构建合并后的行
-            const result = [];
-            let resultNum = 1;
-            
-            // 添加合并后的 import（已解决）
-            mergedImports.forEach((importLine, idx) => {
-                result.push({
-                    type: 'same',
-                    leftContent: importLine,
-                    rightContent: importLine,
-                    resultContent: importLine,
-                    leftLineNum: idx + 1,
-                    rightLineNum: idx + 1,
-                    resultLineNum: resultNum++,
-                    resolved: true
-                });
+            this.parsedConflicts.forEach((conflict, idx) => {
+                const oursRange = this.findContentRange(oursLines, conflict.oursContent, lastOursEnd + 1);
+                if (oursRange) lastOursEnd = oursRange.end;
+                
+                const theirsRange = this.findContentRange(theirsLines, conflict.theirsContent, lastTheirsEnd + 1);
+                if (theirsRange) lastTheirsEnd = theirsRange.end;
+                
+                map[idx] = {
+                    oursContent: conflict.oursContent,
+                    theirsContent: conflict.theirsContent,
+                    oursRange,
+                    theirsRange,
+                    oursStatus: 'pending',
+                    theirsStatus: 'pending'
+                };
             });
             
-            // 对剩余部分进行差异比较
-            const restDiff = this.computeDiff(oursRest, theirsRest, 
-                oursImports.endIndex + 1, theirsImports.endIndex + 1, resultNum);
-            result.push(...restDiff);
+            this.conflictBlockMap = map;
             
-            this.mergeLines = result;
+            // 构建 resultText：以 oursContent 为基础
+            this.resultText = currentContent || this.oursContent;
+        },
+
+        findContentRange(lines, content, startFrom) {
+            if (!content) return null;
+            const contentLines = content.split('\n');
+            if (!contentLines.length) return null;
+            for (let i = Math.max(0, startFrom); i <= lines.length - contentLines.length; i++) {
+                if (lines[i] === contentLines[0]) {
+                    let match = true;
+                    for (let j = 1; j < contentLines.length; j++) {
+                        if (lines[i + j] !== contentLines[j]) { match = false; break; }
+                    }
+                    if (match) return { start: i, end: i + contentLines.length - 1 };
+                }
+            }
+            return null;
+        },
+        
+        // 基于 parsedConflicts 构建冲突块映射
+        buildConflictBlockMapFromParsed() {
+            const map = {};
+            const oursLines = this.oursContent.split('\n');
+            const theirsLines = this.theirsContent.split('\n');
             
-            // 同步更新 textarea 的内容
-            this.syncResultTextFromMergeLines();
+            let lastOursEnd = -1, lastTheirsEnd = -1;
             
-            // 更新文件列表的冲突数量
+            this.parsedConflicts.forEach((conflict, idx) => {
+                const oursContent = conflict.oursContent || '';
+                const theirsContent = conflict.theirsContent || '';
+                
+                // 在 oursLines 中查找位置
+                const oursRange = this.findContentRange(oursLines, oursContent, lastOursEnd + 1);
+                if (oursRange) lastOursEnd = oursRange.end;
+                
+                // 在 theirsLines 中查找位置
+                const theirsRange = this.findContentRange(theirsLines, theirsContent, lastTheirsEnd + 1);
+                if (theirsRange) lastTheirsEnd = theirsRange.end;
+                
+                map[idx] = {
+                    oursContent,
+                    theirsContent,
+                    oursRange,
+                    theirsRange,
+                    oursStatus: 'pending',
+                    theirsStatus: 'pending',
+                    // 记录冲突块在 resultText 中的位置（用于更新）
+                    resultRange: null
+                };
+            });
+            
+            this.conflictBlockMap = map;
+            
+            // 计算每个冲突块在 resultText 中的位置
+            this.updateConflictBlockResultRanges();
+        },
+        
+        // 更新冲突块在 resultText 中的位置
+        updateConflictBlockResultRanges() {
+            const resultLines = this.resultLines;
+            
+            Object.keys(this.conflictBlockMap).forEach(blockId => {
+                const block = this.conflictBlockMap[blockId];
+                
+                // 根据当前状态确定应该在 resultText 中查找的内容
+                let searchContent = '';
+                if (block.oursStatus === 'accepted' || (block.oursStatus === 'pending' && block.theirsStatus === 'pending')) {
+                    searchContent = block.oursContent;
+                } else if (block.theirsStatus === 'accepted') {
+                    searchContent = block.theirsContent;
+                } else if (block.oursStatus === 'appended' || block.theirsStatus === 'appended') {
+                    // 追加模式下，内容可能已经合并，暂不处理
+                    searchContent = block.oursContent;
+                }
+                
+                if (searchContent) {
+                    const range = this.findContentRange(resultLines, searchContent, 0);
+                    if (range) {
+                        this.$set(this.conflictBlockMap[blockId], 'resultRange', range);
+                    }
+                }
+            });
+        },
+
+        // 从 mergedContent 构建 resultText（包含 Git 自动合并的内容）
+        // 同时提取冲突块的 ours 和 theirs 内容到 parsedConflicts
+        buildResultTextFromMerged(mergedContent) {
+            const lines = mergedContent.split('\n');
+            const resultLines = [];
+            this.parsedConflicts = [];
+            
+            let lineIdx = 0;
+            
+            while (lineIdx < lines.length) {
+                const line = lines[lineIdx];
+                
+                // 检测冲突开始标记 <<<<<<<
+                if (line.startsWith('<<<<<<<')) {
+                    // 收集 ours 部分（<<<<<<< 和 ======= 之间）
+                    lineIdx++;
+                    const oursLines = [];
+                    while (lineIdx < lines.length && !lines[lineIdx].startsWith('=======') && !lines[lineIdx].startsWith('|||||||')) {
+                        oursLines.push(lines[lineIdx]);
+                        lineIdx++;
+                    }
+                    
+                    // 跳过 ||||||| base 部分（如果存在，diff3 格式）
+                    if (lineIdx < lines.length && lines[lineIdx].startsWith('|||||||')) {
+                        lineIdx++;
+                        while (lineIdx < lines.length && !lines[lineIdx].startsWith('=======')) {
+                            lineIdx++;
+                        }
+                    }
+                    
+                    // 跳过 =======
+                    if (lineIdx < lines.length && lines[lineIdx].startsWith('=======')) {
+                        lineIdx++;
+                    }
+                    
+                    // 收集 theirs 部分（======= 和 >>>>>>> 之间）
+                    const theirsLines = [];
+                    while (lineIdx < lines.length && !lines[lineIdx].startsWith('>>>>>>>')) {
+                        theirsLines.push(lines[lineIdx]);
+                        lineIdx++;
+                    }
+                    
+                    // 跳过 >>>>>>>
+                    if (lineIdx < lines.length && lines[lineIdx].startsWith('>>>>>>>')) {
+                        lineIdx++;
+                    }
+                    
+                    // 保存解析出的冲突块信息
+                    this.parsedConflicts.push({
+                        oursContent: oursLines.join('\n'),
+                        theirsContent: theirsLines.join('\n')
+                    });
+                    
+                    // 添加到 resultText（初始使用 ours 内容）
+                    oursLines.forEach(l => resultLines.push(l));
+                } else {
+                    // 普通行
+                    resultLines.push(line);
+                    lineIdx++;
+                }
+            }
+            
+            this.resultText = resultLines.join('\n');
+        },
+
+        // 构建全局对齐区间
+        buildAlignmentSections() {
+            const sections = [];
+            const oursLines = this.oursLines;
+            const theirsLines = this.theirsLines;
+            const resultLines = this.resultLines;
+            
+            // 获取排序后的冲突块
+            const blocks = Object.entries(this.conflictBlockMap)
+                .map(([id, b]) => ({ id: parseInt(id), ...b }))
+                .sort((a, b) => {
+                    const aStart = a.oursRange?.start ?? a.theirsRange?.start ?? 0;
+                    const bStart = b.oursRange?.start ?? b.theirsRange?.start ?? 0;
+                    return aStart - bStart;
+                });
+            
+            let oursIdx = 0, theirsIdx = 0, resultIdx = 0;
+            
+            blocks.forEach((block) => {
+                const oursStart = block.oursRange?.start ?? -1;
+                const oursEnd = block.oursRange?.end ?? -1;
+                const theirsStart = block.theirsRange?.start ?? -1;
+                const theirsEnd = block.theirsRange?.end ?? -1;
+                const resultStart = block.resultRange?.start ?? -1;
+                const resultEnd = block.resultRange?.end ?? -1;
+                
+                // 计算冲突块之前的普通区间
+                const oursNormalCount = oursStart >= 0 ? oursStart - oursIdx : 0;
+                const theirsNormalCount = theirsStart >= 0 ? theirsStart - theirsIdx : 0;
+                const resultNormalCount = resultStart >= 0 ? resultStart - resultIdx : 0;
+                
+                // 使用三者的最大值作为对齐高度
+                const maxNormal = Math.max(oursNormalCount, theirsNormalCount, resultNormalCount);
+                
+                if (maxNormal > 0) {
+                    sections.push({
+                        type: 'normal',
+                        oursStart: oursIdx,
+                        oursCount: oursNormalCount,
+                        theirsStart: theirsIdx,
+                        theirsCount: theirsNormalCount,
+                        resultStart: resultIdx,
+                        resultCount: resultNormalCount,
+                        maxCount: maxNormal,
+                        blockId: null
+                    });
+                }
+                
+                // 冲突块区间
+                const oursConflictCount = oursEnd >= 0 ? oursEnd - oursStart + 1 : 0;
+                const theirsConflictCount = theirsEnd >= 0 ? theirsEnd - theirsStart + 1 : 0;
+                const resultConflictCount = resultEnd >= 0 ? resultEnd - resultStart + 1 : 0;
+                const maxConflict = Math.max(oursConflictCount, theirsConflictCount, resultConflictCount);
+                
+                sections.push({
+                    type: 'conflict',
+                    oursStart: oursStart >= 0 ? oursStart : oursIdx,
+                    oursCount: oursConflictCount,
+                    theirsStart: theirsStart >= 0 ? theirsStart : theirsIdx,
+                    theirsCount: theirsConflictCount,
+                    resultStart: resultStart >= 0 ? resultStart : resultIdx,
+                    resultCount: resultConflictCount,
+                    maxCount: maxConflict,
+                    blockId: block.id
+                });
+                
+                oursIdx = oursEnd >= 0 ? oursEnd + 1 : oursIdx;
+                theirsIdx = theirsEnd >= 0 ? theirsEnd + 1 : theirsIdx;
+                resultIdx = resultEnd >= 0 ? resultEnd + 1 : resultIdx;
+            });
+            
+            // 最后的普通区间
+            const oursRemain = oursLines.length - oursIdx;
+            const theirsRemain = theirsLines.length - theirsIdx;
+            const resultRemain = resultLines.length - resultIdx;
+            const maxRemain = Math.max(oursRemain, theirsRemain, resultRemain);
+            
+            if (maxRemain > 0) {
+                sections.push({
+                    type: 'normal',
+                    oursStart: oursIdx,
+                    oursCount: oursRemain,
+                    theirsStart: theirsIdx,
+                    theirsCount: theirsRemain,
+                    resultStart: resultIdx,
+                    resultCount: resultRemain,
+                    maxCount: maxRemain,
+                    blockId: null
+                });
+            }
+            
+            this.alignmentSections = sections;
+        },
+
+        // 构建对齐后的面板数据
+        buildAlignedPanelData(panel) {
+            const result = [];
+            const lines = panel === 'ours' ? this.oursLines : 
+                          panel === 'theirs' ? this.theirsLines : this.resultLines;
+            
+            this.alignmentSections.forEach(section => {
+                let count, start;
+                if (panel === 'ours') {
+                    count = section.oursCount;
+                    start = section.oursStart;
+                } else if (panel === 'theirs') {
+                    count = section.theirsCount;
+                    start = section.theirsStart;
+                } else {
+                    count = section.resultCount;
+                    start = section.resultStart;
+                }
+                
+                const padding = section.maxCount - count;
+                const isConflict = section.type === 'conflict';
+                
+                // 添加实际内容行
+                for (let i = 0; i < count; i++) {
+                    const lineNum = start >= 0 ? start + i + 1 : null;
+                    const content = start >= 0 && lines[start + i] !== undefined ? lines[start + i] : '';
+                    
+                    result.push({
+                        isPlaceholder: false,
+                        lineNum: lineNum,
+                        content: content,
+                        blockId: isConflict ? section.blockId : null,
+                        showButton: isConflict && i === 0
+                    });
+                }
+                
+                // 添加占位行
+                for (let i = 0; i < padding; i++) {
+                    result.push({
+                        isPlaceholder: true,
+                        lineNum: null,
+                        content: '',
+                        blockId: isConflict ? section.blockId : null,
+                        showButton: false
+                    });
+                }
+            });
+            
+            return result;
+        },
+
+        // 样式类
+        getLineClass(item, side) {
+            if (item.isPlaceholder) return 'placeholder';
+            if (item.blockId === null) return 'same';
+            const block = this.conflictBlockMap[item.blockId];
+            if (!block) return 'same';
+            const status = side === 'ours' ? block.oursStatus : block.theirsStatus;
+            if (status === 'accepted' || status === 'appended') return 'conflict-resolved';
+            if (status === 'rejected') return 'conflict-rejected';
+            return side === 'ours' ? 'conflict-ours' : 'conflict-theirs';
+        },
+        getLineNumClass(item, side) {
+            if (item.isPlaceholder) return 'placeholder';
+            return this.getLineClass(item, side);
+        },
+        
+        // 中间面板样式类
+        getCenterLineNumClass(item) {
+            if (item.isPlaceholder) return 'placeholder';
+            if (item.blockId === null) return '';
+            const block = this.conflictBlockMap[item.blockId];
+            if (!block) return '';
+            // 如果两侧都是 pending，显示为待解决
+            if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                return 'conflict-pending';
+            }
+            // 否则显示为已解决
+            return 'conflict-block';
+        },
+        
+        getCenterBgLineClass(item) {
+            if (item.isPlaceholder) return '';
+            if (item.blockId === null) return '';
+            const block = this.conflictBlockMap[item.blockId];
+            if (!block) return '';
+            // 如果两侧都是 pending，显示为待解决
+            if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                return 'conflict-pending';
+            }
+            // 否则显示为已解决
+            return 'conflict-block';
+        },
+        
+        // 获取左侧（ours）按钮类型
+        getOursButtonType(blockId) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return 'none';
+            
+            // 只要本侧不是 pending，就不显示按钮
+            if (block.oursStatus !== 'pending') {
+                return 'none';
+            }
+            
+            // 根据对侧状态决定显示什么按钮
+            if (block.theirsStatus === 'pending' || block.theirsStatus === 'closed') {
+                // 对侧是 pending 或 closed，显示采用/关闭按钮
+                return 'accept-or-close';
+            }
+            
+            if (block.theirsStatus === 'accepted') {
+                // 对侧已采用，显示追加/关闭按钮
+                return 'append-or-close';
+            }
+            
+            return 'none';
+        },
+        
+        // 获取右侧（theirs）按钮类型
+        getTheirsButtonType(blockId) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return 'none';
+            
+            // 只要本侧不是 pending，就不显示按钮
+            if (block.theirsStatus !== 'pending') {
+                return 'none';
+            }
+            
+            // 根据对侧状态决定显示什么按钮
+            if (block.oursStatus === 'pending' || block.oursStatus === 'closed') {
+                // 对侧是 pending 或 closed，显示采用/关闭按钮
+                return 'accept-or-close';
+            }
+            
+            if (block.oursStatus === 'accepted') {
+                // 对侧已采用，显示追加/关闭按钮
+                return 'append-or-close';
+            }
+            
+            return 'none';
+        },
+        
+        // 判断冲突是否已解决
+        isConflictResolved(blockId) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return false;
+            
+            const oursResolved = block.oursStatus === 'closed' || block.oursStatus === 'accepted' || block.oursStatus === 'appended';
+            const theirsResolved = block.theirsStatus === 'closed' || block.theirsStatus === 'accepted' || block.theirsStatus === 'appended';
+            
+            return oursResolved && theirsResolved;
+        },
+
+        // 采用冲突块（点击 » 或 «）
+        acceptBlock(blockId, choice) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return;
+            
+            const content = choice === 'ours' ? block.oursContent : block.theirsContent;
+            
+            // 替换 resultText 中的冲突块内容
+            this.replaceConflictBlockInResult(blockId, content);
+            
+            // 更新状态：本侧变为 accepted
+            const updated = { ...block };
+            if (choice === 'ours') {
+                updated.oursStatus = 'accepted';
+            } else {
+                updated.theirsStatus = 'accepted';
+            }
+            this.$set(this.conflictBlockMap, blockId, updated);
+            
+            // 重新计算对齐
+            this.updateConflictBlockResultRanges();
+            this.buildAlignmentSections();
+            this.updateFileConflictCount();
+        },
+
+        // 追加内容（点击 ↙ 或 ↘）
+        appendBlock(blockId, side) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return;
+            
+            const appendContent = side === 'ours' ? block.oursContent : block.theirsContent;
+            if (!appendContent) return;
+            
+            // 在 resultText 中追加内容
+            this.appendToConflictBlockInResult(blockId, appendContent);
+            
+            // 更新状态：本侧变为 appended
+            const updated = { ...block };
+            if (side === 'ours') {
+                updated.oursStatus = 'appended';
+            } else {
+                updated.theirsStatus = 'appended';
+            }
+            this.$set(this.conflictBlockMap, blockId, updated);
+            
+            // 重新计算对齐
+            this.updateConflictBlockResultRanges();
+            this.buildAlignmentSections();
             this.updateFileConflictCount();
         },
         
-        // 从 mergeLines 同步内容到 resultText
-        syncResultTextFromMergeLines() {
-            this.resultText = this.mergeLines.map(line => line.resultContent).join('\n');
+        // 关闭冲突块（点击 ✕）
+        closeBlock(blockId, side) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return;
+            
+            // 更新状态：本侧变为 closed
+            const updated = { ...block };
+            if (side === 'ours') {
+                updated.oursStatus = 'closed';
+            } else {
+                updated.theirsStatus = 'closed';
+            }
+            this.$set(this.conflictBlockMap, blockId, updated);
+            
+            // 不修改中间面板内容，只更新按钮显示
+            this.buildAlignmentSections();
+            this.updateFileConflictCount();
+        },
+
+        
+        // 替换 resultText 中的冲突块内容
+        replaceConflictBlockInResult(blockId, newContent) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block || !block.resultRange) return;
+            
+            const resultLines = this.resultLines;
+            const { start, end } = block.resultRange;
+            
+            // 替换指定范围的行
+            const newLines = newContent ? newContent.split('\n') : [];
+            resultLines.splice(start, end - start + 1, ...newLines);
+            
+            // 更新 resultText
+            this.resultText = resultLines.join('\n');
         },
         
-        // 更新文件列表中当前文件的冲突数量
+        // 在 resultText 中追加内容到冲突块
+        appendToConflictBlockInResult(blockId, appendContent) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block || !block.resultRange) return;
+            
+            const resultLines = this.resultLines;
+            const { end } = block.resultRange;
+            
+            // 在冲突块末尾追加内容
+            const appendLines = appendContent ? appendContent.split('\n') : [];
+            resultLines.splice(end + 1, 0, ...appendLines);
+            
+            // 更新 resultText
+            this.resultText = resultLines.join('\n');
+        },
+
+        // Textarea 输入事件
+        onTextareaInput() {
+            // resultText 已通过 v-model 自动更新
+            // 需要重新计算冲突块位置
+            this.$nextTick(() => {
+                this.updateConflictBlockResultRanges();
+                this.buildAlignmentSections();
+            });
+        },
+        
+        // Textarea 粘贴事件处理（确保所见即所得）
+        handlePaste(event) {
+            // 阻止默认粘贴行为，防止浏览器自动添加空格或格式化
+            event.preventDefault();
+            
+            // 获取纯文本内容（不包含格式）
+            const clipboardData = event.clipboardData || window.clipboardData;
+            if (!clipboardData) return;
+            
+            let text = clipboardData.getData('text/plain');
+            if (!text) return;
+            
+            // 统一换行符为 \n
+            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            
+            // 获取当前光标位置
+            const textarea = event.target;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            
+            // 手动插入文本到正确位置
+            const before = this.resultText.substring(0, start);
+            const after = this.resultText.substring(end);
+            this.resultText = before + text + after;
+            
+            // 恢复光标位置到粘贴内容之后
+            this.$nextTick(() => {
+                const newPosition = start + text.length;
+                textarea.selectionStart = newPosition;
+                textarea.selectionEnd = newPosition;
+                textarea.focus();
+                
+                // 触发内容更新
+                this.updateConflictBlockResultRanges();
+                this.buildAlignmentSections();
+            });
+        },
+        
+        // Textarea 滚动同步（优化版）
+        syncScrollFromTextarea() {
+            if (this.scrolling) return;
+            this.scrolling = true;
+            
+            const textarea = this.$refs.resultTextarea;
+            if (!textarea) {
+                this.scrolling = false;
+                return;
+            }
+            
+            const { scrollTop, scrollLeft } = textarea;
+            
+            // 使用 requestAnimationFrame 优化性能
+            requestAnimationFrame(() => {
+                // 同步背景层滚动
+                const background = this.$refs.centerBackground;
+                if (background) {
+                    background.scrollTop = scrollTop;
+                }
+                
+                // 同步左右面板滚动
+                ['leftPanel', 'rightPanel'].forEach(ref => {
+                    if (this.$refs[ref]) {
+                        this.$refs[ref].scrollTop = scrollTop;
+                        this.$refs[ref].scrollLeft = scrollLeft;
+                    }
+                });
+                
+                // 同步行号列滚动
+                ['leftLineNums', 'rightLineNums'].forEach(ref => {
+                    if (this.$refs[ref]) {
+                        this.$refs[ref].scrollTop = scrollTop;
+                    }
+                });
+                
+                this.scrolling = false;
+            });
+        },
+
+        // 全部采用左侧
+        acceptAllOurs() {
+            Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
+                if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                    // 采用左侧
+                    this.replaceConflictBlockInResult(parseInt(blockId), block.oursContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        oursStatus: 'accepted'
+                        // theirsStatus 保持 pending
+                    });
+                }
+            });
+            
+            // 关闭所有右侧
+            Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
+                if (block.theirsStatus === 'pending') {
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        theirsStatus: 'closed'
+                    });
+                }
+            });
+            
+            this.updateConflictBlockResultRanges();
+            this.buildAlignmentSections();
+            this.updateFileConflictCount();
+        },
+        
+        acceptAllTheirs() {
+            Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
+                if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                    // 采用右侧
+                    this.replaceConflictBlockInResult(parseInt(blockId), block.theirsContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        theirsStatus: 'accepted'
+                        // oursStatus 保持 pending
+                    });
+                }
+            });
+            
+            // 关闭所有左侧
+            Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
+                if (block.oursStatus === 'pending') {
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        oursStatus: 'closed'
+                    });
+                }
+            });
+            
+            this.updateConflictBlockResultRanges();
+            this.buildAlignmentSections();
+            this.updateFileConflictCount();
+        },
+        
+        // 全部合并（先采用左侧，再追加右侧）
+        acceptAllBoth() {
+            const blockIds = Object.keys(this.conflictBlockMap).map(id => parseInt(id)).sort((a, b) => a - b);
+            
+            // 第一步：采用所有左侧
+            blockIds.forEach(blockId => {
+                const block = this.conflictBlockMap[blockId];
+                if (block && block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                    this.replaceConflictBlockInResult(blockId, block.oursContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        oursStatus: 'accepted'
+                    });
+                }
+            });
+            
+            // 重新计算位置
+            this.updateConflictBlockResultRanges();
+            
+            // 第二步：追加所有右侧
+            blockIds.forEach(blockId => {
+                const block = this.conflictBlockMap[blockId];
+                if (block && block.oursStatus === 'accepted' && block.theirsStatus === 'pending') {
+                    this.appendToConflictBlockInResult(blockId, block.theirsContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        theirsStatus: 'appended'
+                    });
+                }
+            });
+            
+            // 第三步：关闭所有（不需要，因为 appended 状态已经不显示按钮）
+            
+            this.updateConflictBlockResultRanges();
+            this.buildAlignmentSections();
+            this.updateFileConflictCount();
+        },
+
+        // 冲突导航
+        goToPrevConflict() { this.goToConflict(); },
+        goToNextConflict() { this.goToConflict(); },
+        goToConflict() {
+            const unresolved = Object.entries(this.conflictBlockMap)
+                .filter(([, b]) => b.oursStatus === 'pending' && b.theirsStatus === 'pending')
+                .sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+            if (!unresolved.length) return;
+            const block = unresolved[0][1];
+            if (block.oursRange) this.scrollToLine(block.oursRange.start);
+        },
+        scrollToLine(lineIdx) {
+            const scrollTop = lineIdx * 21;
+            ['leftPanel', 'rightPanel', 'centerPanel'].forEach(ref => {
+                if (this.$refs[ref]) this.$refs[ref].scrollTop = scrollTop;
+            });
+            ['leftLineNums', 'centerLineNums', 'rightLineNums'].forEach(ref => {
+                if (this.$refs[ref]) this.$refs[ref].scrollTop = scrollTop;
+            });
+        },
+
+        // 滚动同步（左右面板触发，优化版）
+        syncScroll(source, event) {
+            if (this.scrolling) return;
+            this.scrolling = true;
+            const el = this.$refs[source + 'Panel'];
+            if (!el) { this.scrolling = false; return; }
+            const { scrollTop, scrollLeft } = el;
+            
+            // 使用 requestAnimationFrame 优化性能
+            requestAnimationFrame(() => {
+                // 同步另一侧面板
+                const otherPanel = source === 'left' ? 'rightPanel' : 'leftPanel';
+                if (this.$refs[otherPanel]) {
+                    this.$refs[otherPanel].scrollTop = scrollTop;
+                    this.$refs[otherPanel].scrollLeft = scrollLeft;
+                }
+                
+                // 同步 textarea
+                if (this.$refs.resultTextarea) {
+                    this.$refs.resultTextarea.scrollTop = scrollTop;
+                    this.$refs.resultTextarea.scrollLeft = scrollLeft;
+                }
+                
+                // 同步背景层
+                if (this.$refs.centerBackground) {
+                    this.$refs.centerBackground.scrollTop = scrollTop;
+                }
+                
+                // 同步行号列
+                ['leftLineNums', 'rightLineNums'].forEach(ref => {
+                    if (this.$refs[ref]) this.$refs[ref].scrollTop = scrollTop;
+                });
+                
+                this.scrolling = false;
+            });
+        },
+
         updateFileConflictCount() {
             const file = this.conflictFiles.find(f => f.filePath === this.currentFile);
             if (file) {
@@ -1005,1188 +1679,210 @@ new Vue({
             }
         },
 
-        // 提取 import 区域
-        extractImports(lines) {
+        // Java import 处理
+        isJavaFile(filePath) { return filePath && filePath.toLowerCase().endsWith('.java'); },
+        isImportContent(content) { return /^\s*(import\s+|from\s+['"])/m.test(content || ''); },
+        extractJavaImports(content) {
+            if (!content) return { imports: [], start: -1, end: -1 };
+            const lines = content.split('\n');
             const imports = [];
-            let endIndex = 0;
-            const importPattern = /^\s*(import\s+|from\s+['"])/;
-            const packagePattern = /^\s*package\s+/;
-            
+            let start = -1, end = -1, inImport = false;
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const trimmed = line.trim();
-                
-                // 跳过空行和 package 声明
-                if (!trimmed || packagePattern.test(line)) {
-                    if (imports.length === 0) {
-                        imports.push(line);
-                        endIndex = i + 1;
-                    }
-                    continue;
-                }
-                
-                // 检查是否是 import 语句
-                if (importPattern.test(line)) {
-                    imports.push(line);
-                    endIndex = i + 1;
-                } else if (imports.length > 0) {
-                    // 遇到非 import 行，结束提取
-                    break;
-                }
+                const t = lines[i].trim();
+                if (t.startsWith('import ')) {
+                    if (start === -1) start = i;
+                    end = i;
+                    imports.push(lines[i]);
+                    inImport = true;
+                } else if (inImport && t !== '' && !t.startsWith('import ')) break;
             }
-            
-            return { imports, endIndex };
+            return { imports, start, end };
         },
 
-        // 合并两边的 import
-        mergeImports(oursImports, theirsImports) {
-            const importSet = new Set();
-            const result = [];
-            const packageLines = [];
-            
-            // 收集所有 import，去重
-            [...oursImports, ...theirsImports].forEach(line => {
-                const trimmed = line.trim();
-                if (!trimmed) {
-                    // 保留一个空行
-                    if (result.length > 0 && result[result.length - 1].trim() !== '') {
-                        result.push('');
-                    }
-                } else if (/^\s*package\s+/.test(line)) {
-                    // package 声明只保留一个
-                    if (packageLines.length === 0) {
-                        packageLines.push(line);
-                    }
-                } else if (/^\s*import\s+/.test(line)) {
-                    // import 语句去重
-                    if (!importSet.has(trimmed)) {
-                        importSet.add(trimmed);
-                        result.push(line);
-                    }
-                } else {
-                    result.push(line);
-                }
-            });
-            
-            // 对 import 进行排序（可选）
-            const sortedImports = result
-                .filter(l => /^\s*import\s+/.test(l))
-                .sort((a, b) => a.trim().localeCompare(b.trim()));
-            
-            // 组合结果：package + 空行 + 排序后的 import
-            const finalResult = [...packageLines];
-            if (packageLines.length > 0 && sortedImports.length > 0) {
-                finalResult.push('');
-            }
-            finalResult.push(...sortedImports);
-            
-            return finalResult;
-        },
-
-        // 计算差异 (简化的 LCS 差异算法)
-        computeDiff(oursLines, theirsLines, leftStartNum = 1, rightStartNum = 1, resultStartNum = 1) {
-            const result = [];
-            let leftNum = leftStartNum, rightNum = rightStartNum, resultNum = resultStartNum;
-            let conflictBlockId = 0;  // 冲突块ID
-            
-            // 使用简单的逐行比较
-            let i = 0, j = 0;
-            let inConflictBlock = false;  // 是否在冲突块中
-            let currentBlockId = null;    // 当前冲突块ID
-            
-            while (i < oursLines.length || j < theirsLines.length) {
-                const leftLine = i < oursLines.length ? oursLines[i] : null;
-                const rightLine = j < theirsLines.length ? theirsLines[j] : null;
-                
-                if (leftLine === rightLine) {
-                    // 相同行，结束当前冲突块
-                    inConflictBlock = false;
-                    currentBlockId = null;
-                    // 相同行
-                    result.push({
-                        type: 'same',
-                        leftContent: leftLine,
-                        rightContent: rightLine,
-                        resultContent: leftLine,
-                        leftLineNum: leftNum++,
-                        rightLineNum: rightNum++,
-                        resultLineNum: resultNum++,
-                        resolved: true
-                    });
-                    i++; j++;
-                } else if (leftLine !== null && rightLine !== null) {
-                    // 冲突行 - 开始或继续冲突块
-                    if (!inConflictBlock) {
-                        inConflictBlock = true;
-                        currentBlockId = conflictBlockId++;
-                    }
-                    result.push({
-                        type: 'conflict',
-                        leftContent: leftLine,
-                        rightContent: rightLine,
-                        resultContent: leftLine,  // 默认显示目标分支代码
-                        leftLineNum: leftNum++,
-                        rightLineNum: rightNum++,
-                        resultLineNum: resultNum++,
-                        resolved: false,
-                        choice: null, // 'ours' or 'theirs'
-                        oursConfirmed: false,   // 左侧是否已确认
-                        theirsConfirmed: false, // 右侧是否已确认
-                        conflictBlockId: currentBlockId,  // 冲突块ID
-                        isBlockStart: result.filter(r => r.conflictBlockId === currentBlockId).length === 0  // 是否是块的第一行
-                    });
-                    i++; j++;
-                } else if (leftLine !== null) {
-                    // 只有左侧有 - 开始或继续冲突块
-                    if (!inConflictBlock) {
-                        inConflictBlock = true;
-                        currentBlockId = conflictBlockId++;
-                    }
-                    result.push({
-                        type: 'conflict',
-                        leftContent: leftLine,
-                        rightContent: '',
-                        resultContent: leftLine,  // 默认显示目标分支代码
-                        leftLineNum: leftNum++,
-                        rightLineNum: null,
-                        resultLineNum: resultNum++,
-                        resolved: false,
-                        choice: null,
-                        oursConfirmed: false,
-                        theirsConfirmed: false,
-                        conflictBlockId: currentBlockId,
-                        isBlockStart: result.filter(r => r.conflictBlockId === currentBlockId).length === 0
-                    });
-                    i++;
-                } else {
-                    // 只有右侧有 - 开始或继续冲突块
-                    if (!inConflictBlock) {
-                        inConflictBlock = true;
-                        currentBlockId = conflictBlockId++;
-                    }
-                    result.push({
-                        type: 'conflict',
-                        leftContent: '',
-                        rightContent: rightLine,
-                        resultContent: rightLine,  // 只有右侧有时显示右侧代码
-                        leftLineNum: null,
-                        rightLineNum: rightNum++,
-                        resultLineNum: resultNum++,
-                        resolved: false,
-                        choice: null,
-                        oursConfirmed: false,
-                        theirsConfirmed: false,
-                        conflictBlockId: currentBlockId,
-                        isBlockStart: result.filter(r => r.conflictBlockId === currentBlockId).length === 0
-                    });
-                    j++;
-                }
-            }
-            
-            return result;
-        },
-
-        // 获取行样式类
-        getLineClass(line, panel) {
-            if (line.type === 'same') return 'same';
-            if (line.resolved) return 'conflict-resolved';
-            
-            // 根据确认状态显示样式
-            if (panel === 'left') {
-                if (line.oursConfirmed) {
-                    return line.choice === 'ours' ? 'conflict-confirmed-selected' : 'conflict-confirmed-rejected';
-                }
-                return 'conflict-ours';
-            }
-            if (panel === 'right') {
-                if (line.theirsConfirmed) {
-                    return line.choice === 'theirs' ? 'conflict-confirmed-selected' : 'conflict-confirmed-rejected';
-                }
-                return 'conflict-theirs';
-            }
-            // 中间面板
-            if (line.choice) {
-                return 'conflict-selected';
-            }
-            // 未解决的冲突，显示默认值待确认样式
-            return 'conflict-default-pending';
-        },
-
-        // 采用整个冲突块
-        acceptBlock(blockId, choice) {
-            // 获取当前 resultText 的所有行
-            const lines = this.resultText.split('\n');
-            
-            this.mergeLines.forEach((line, idx) => {
-                if (line.conflictBlockId === blockId && line.type === 'conflict') {
-                    line.choice = choice;
-                    const newContent = choice === 'ours' ? line.leftContent : line.rightContent;
-                    line.resultContent = newContent;
-                    
-                    // 只修改对应行，保留其他行的用户编辑
-                    if (idx < lines.length) {
-                        lines[idx] = newContent;
-                    }
-                    
-                    if (choice === 'ours') {
-                        line.oursConfirmed = true;
-                    } else {
-                        line.theirsConfirmed = true;
-                    }
-                    
-                    // 如果两边都已确认，则标记为已解决
-                    if (line.oursConfirmed && line.theirsConfirmed) {
-                        line.resolved = true;
-                    }
-                    
-                    // 触发响应式更新
-                    this.mergeLines.splice(idx, 1, {...line});
-                }
-            });
-            
-            // 重新组合 resultText（只修改了目标行，保留其他行）
-            this.resultText = lines.join('\n');
-            
-            // 更新文件解决状态
-            this.updateFileResolvedStatus();
-        },
-
-        // 舍弃整个冲突块（只标记该侧已确认，不修改合并结果内容）
-        rejectBlock(blockId, side) {
-            this.mergeLines.forEach((line, idx) => {
-                if (line.conflictBlockId === blockId && line.type === 'conflict') {
-                    // 标记该侧已确认（不采用）
-                    if (side === 'ours') {
-                        line.oursConfirmed = true;
-                    } else {
-                        line.theirsConfirmed = true;
-                    }
-                    
-                    // 如果两边都已确认，则标记为已解决
-                    if (line.oursConfirmed && line.theirsConfirmed) {
-                        line.resolved = true;
-                    }
-                    
-                    // 触发响应式更新
-                    this.mergeLines.splice(idx, 1, {...line});
-                }
-            });
-            
-            // 注意：不调用 syncResultTextFromMergeLines()
-            // 保持 textarea 内容不变，只更新状态标记
-            
-            // 更新文件解决状态
-            this.updateFileResolvedStatus();
-        },
-
-        // 追加整个冲突块到结果（将该侧的代码追加到合并结果框当前内容的后面）
-        appendBlock(blockId, side) {
-            // 找到该冲突块的所有原始行（非追加行）
-            const blockLines = [];
-            
-            this.mergeLines.forEach((line, idx) => {
-                if (line.conflictBlockId === blockId && line.type === 'conflict' && !line.isAppended) {
-                    blockLines.push({ line, idx });
-                }
-            });
-            
-            if (blockLines.length === 0) return;
-            
-            // 收集要追加的内容（该侧的所有行，保留空行）
-            const appendContents = blockLines.map(({ line }) => 
-                side === 'ours' ? line.leftContent : line.rightContent
-            ).filter(content => content != null);  // 只过滤 null/undefined，保留空行
-            
-            if (appendContents.length === 0) {
-                // 没有内容要追加，只标记确认
-                blockLines.forEach(({ line, idx }) => {
-                    if (side === 'ours') {
-                        line.oursConfirmed = true;
-                    } else {
-                        line.theirsConfirmed = true;
-                    }
-                    if (line.oursConfirmed && line.theirsConfirmed) {
-                        line.resolved = true;
-                    }
-                    this.$set(this.mergeLines, idx, {...line});
-                });
-                this.updateFileResolvedStatus();
-                return;
-            }
-            
-            // 找到该冲突块（包括已追加行）的最后一行索引
-            let lastBlockIdx = blockLines[blockLines.length - 1].idx;
-            // 如果已有追加行，找到最后一个追加行的索引
-            this.mergeLines.forEach((line, idx) => {
-                if (line.conflictBlockId === blockId && line.isAppended) {
-                    lastBlockIdx = Math.max(lastBlockIdx, idx);
-                }
-            });
-            
-            // 创建新的行对象，插入到冲突块最后一行的后面
-            // 追加行只在合并结果框显示，左侧和右侧面板都不显示
-            const newLines = appendContents.map((content, i) => ({
-                type: 'conflict',
-                leftContent: '',      // 追加行不在左侧显示
-                rightContent: '',     // 追加行不在右侧显示
-                resultContent: content,  // 只在合并结果框显示
-                leftLineNum: null,
-                rightLineNum: null,
-                resultLineNum: null,
-                resolved: true,           // 追加行视为已解决
-                choice: side,
-                oursConfirmed: true,      // 两侧都标记为已确认
-                theirsConfirmed: true,    // 两侧都标记为已确认
-                conflictBlockId: blockId,
-                isAppended: true
-            }));
-            
-            // 在 mergeLines 中插入新行
-            this.mergeLines.splice(lastBlockIdx + 1, 0, ...newLines);
-            
-            // 在 resultText 中对应位置插入新内容
-            const lines = this.resultText.split('\n');
-            const insertContent = appendContents.join('\n');
-            if (lastBlockIdx < lines.length) {
-                // 在 lastBlockIdx 行后面插入
-                lines.splice(lastBlockIdx + 1, 0, ...appendContents);
-            } else {
-                // 如果索引超出，追加到末尾
-                lines.push(...appendContents);
-            }
-            this.resultText = lines.join('\n');
-            
-            // 标记原有行该侧已确认
-            blockLines.forEach(({ line, idx }) => {
-                if (side === 'ours') {
-                    line.oursConfirmed = true;
-                } else {
-                    line.theirsConfirmed = true;
-                }
-                if (line.oursConfirmed && line.theirsConfirmed) {
-                    line.resolved = true;
-                }
-                this.$set(this.mergeLines, idx, {...line});
-            });
-            
-            // 更新文件解决状态
-            this.updateFileResolvedStatus();
-        },
-
-        // 采用某一行（确认当前代码块的选择）- 保留兼容
-        acceptLine(idx, choice) {
-            const line = this.mergeLines[idx];
-            if (!line || line.type !== 'conflict') return;
-            
-            // 获取当前 resultText 的所有行
-            const lines = this.resultText.split('\n');
-            
-            // 直接修改属性
-            line.choice = choice;
-            const newContent = choice === 'ours' ? line.leftContent : line.rightContent;
-            line.resultContent = newContent;
-            
-            // 只修改对应行，保留其他行的用户编辑
-            if (idx < lines.length) {
-                lines[idx] = newContent;
-            }
-            
-            if (choice === 'ours') {
-                line.oursConfirmed = true;
-            } else {
-                line.theirsConfirmed = true;
-            }
-            
-            // 如果两边都已确认，则标记为已解决
-            if (line.oursConfirmed && line.theirsConfirmed) {
-                line.resolved = true;
-            }
-            
-            // 使用 splice 触发响应式更新
-            this.mergeLines.splice(idx, 1, {...line});
-            
-            // 重新组合 resultText（只修改了目标行，保留其他行）
-            this.resultText = lines.join('\n');
-            
-            // 更新文件解决状态
-            this.updateFileResolvedStatus();
-        },
-
-        // 舍弃某一行（关闭按钮，只标记该侧已确认，不修改合并结果内容）
-        rejectLine(idx, side) {
-            const line = this.mergeLines[idx];
-            if (!line || line.type !== 'conflict') return;
-            
-            // 标记该侧已确认（不采用）
-            if (side === 'ours') {
-                line.oursConfirmed = true;
-            } else {
-                line.theirsConfirmed = true;
-            }
-            
-            // 如果两边都已确认，则标记为已解决
-            if (line.oursConfirmed && line.theirsConfirmed) {
-                line.resolved = true;
-            }
-            
-            // 触发响应式更新
-            this.$set(this.mergeLines, idx, {...line});
-            
-            // 注意：不调用 syncResultTextFromMergeLines()
-            // 保持 textarea 内容不变，只更新状态标记
-            
-            // 更新文件解决状态
-            this.updateFileResolvedStatus();
-        },
-
-        // 追加代码到下一行（向下箭头按钮）
-        appendLine(idx, side) {
-            const line = this.mergeLines[idx];
-            if (!line || line.type !== 'conflict') return;
-            
-            // 获取要追加的内容
-            const appendContent = side === 'ours' ? line.leftContent : line.rightContent;
-            
-            // 获取当前 resultText 的所有行
-            const lines = this.resultText.split('\n');
-            
-            // 将当前行的结果内容追加新行
-            line.resultContent = line.resultContent + '\n' + appendContent;
-            line.choice = 'both';
-            line.oursConfirmed = true;
-            line.theirsConfirmed = true;
-            line.resolved = true;
-            
-            // 在 resultText 中对应位置追加内容
-            if (idx < lines.length) {
-                lines[idx] = lines[idx] + '\n' + appendContent;
-            }
-            this.resultText = lines.join('\n');
-            
-            // 触发响应式更新
-            this.$set(this.mergeLines, idx, {...line});
-            
-            // 更新文件解决状态
-            this.updateFileResolvedStatus();
-        },
-
-        // 跳转到上一个冲突块
-        goToPrevConflict() {
-            // 获取当前滚动位置对应的行索引
-            const scrollTop = this.$refs.resultEditor ? this.$refs.resultEditor.scrollTop : 0;
-            const lineHeight = 21; // 每行高度
-            const currentIdx = Math.floor(scrollTop / lineHeight);
-            
-            // 获取当前行所在的冲突块ID
-            const currentLine = this.mergeLines[currentIdx];
-            const currentBlockId = currentLine ? currentLine.conflictBlockId : null;
-            
-            // 从当前位置向上查找未解决的冲突块的第一行
-            for (let i = currentIdx - 1; i >= 0; i--) {
-                const line = this.mergeLines[i];
-                if (line.type === 'conflict' && !line.resolved && line.isBlockStart && line.conflictBlockId !== currentBlockId) {
-                    this.scrollToLine(i);
-                    return;
-                }
-            }
-            
-            // 如果没找到，从末尾开始找（循环）
-            for (let i = this.mergeLines.length - 1; i > currentIdx; i--) {
-                const line = this.mergeLines[i];
-                if (line.type === 'conflict' && !line.resolved && line.isBlockStart && line.conflictBlockId !== currentBlockId) {
-                    this.scrollToLine(i);
-                    return;
-                }
-            }
-        },
-
-        // 跳转到下一个冲突块
-        goToNextConflict() {
-            // 获取当前滚动位置对应的行索引
-            const scrollTop = this.$refs.resultEditor ? this.$refs.resultEditor.scrollTop : 0;
-            const lineHeight = 21; // 每行高度
-            const currentIdx = Math.floor(scrollTop / lineHeight);
-            
-            // 获取当前行所在的冲突块ID
-            const currentLine = this.mergeLines[currentIdx];
-            const currentBlockId = currentLine ? currentLine.conflictBlockId : null;
-            
-            // 从当前位置向下查找未解决的冲突块的第一行
-            for (let i = currentIdx + 1; i < this.mergeLines.length; i++) {
-                const line = this.mergeLines[i];
-                if (line.type === 'conflict' && !line.resolved && line.isBlockStart && line.conflictBlockId !== currentBlockId) {
-                    this.scrollToLine(i);
-                    return;
-                }
-            }
-            
-            // 如果没找到，从开头开始找（循环）
-            for (let i = 0; i < currentIdx; i++) {
-                const line = this.mergeLines[i];
-                if (line.type === 'conflict' && !line.resolved && line.isBlockStart && line.conflictBlockId !== currentBlockId) {
-                    this.scrollToLine(i);
-                    return;
-                }
-            }
-        },
-
-        // 滚动到指定行
-        scrollToLine(idx) {
-            const lineHeight = 21;
-            const scrollTop = idx * lineHeight;
-            
-            // 同步滚动所有面板
-            ['leftPanel', 'rightPanel'].forEach(ref => {
-                if (this.$refs[ref]) {
-                    this.$refs[ref].scrollTop = scrollTop;
-                }
-            });
-            
-            // 滚动 textarea
-            if (this.$refs.resultEditor) {
-                this.$refs.resultEditor.scrollTop = scrollTop;
-                this.centerScrollTop = scrollTop;
-            }
-            
-            ['leftLineNums', 'centerLineNums', 'rightLineNums'].forEach(ref => {
-                if (this.$refs[ref]) {
-                    this.$refs[ref].scrollTop = scrollTop;
-                }
-            });
-        },
-
-        // 全部采用左侧
-        acceptAllOurs() {
-            // 获取当前 resultText 的所有行
-            const lines = this.resultText.split('\n');
-            
-            this.mergeLines.forEach((line, idx) => {
-                if (line.type === 'conflict' && !line.resolved) {
-                    line.choice = 'ours';
-                    line.oursConfirmed = true;
-                    line.theirsConfirmed = true;
-                    line.resolved = true;
-                    line.resultContent = line.leftContent;
-                    
-                    // 只修改对应行
-                    if (idx < lines.length) {
-                        lines[idx] = line.leftContent;
-                    }
-                    
-                    this.$set(this.mergeLines, idx, {...line});
-                }
-            });
-            
-            // 重新组合 resultText
-            this.resultText = lines.join('\n');
-            this.updateFileResolvedStatus();
-        },
-
-        // 全部采用右侧
-        acceptAllTheirs() {
-            // 获取当前 resultText 的所有行
-            const lines = this.resultText.split('\n');
-            
-            this.mergeLines.forEach((line, idx) => {
-                if (line.type === 'conflict' && !line.resolved) {
-                    line.choice = 'theirs';
-                    line.oursConfirmed = true;
-                    line.theirsConfirmed = true;
-                    line.resolved = true;
-                    line.resultContent = line.rightContent;
-                    
-                    // 只修改对应行
-                    if (idx < lines.length) {
-                        lines[idx] = line.rightContent;
-                    }
-                    
-                    this.$set(this.mergeLines, idx, {...line});
-                }
-            });
-            
-            // 重新组合 resultText
-            this.resultText = lines.join('\n');
-            this.updateFileResolvedStatus();
-        },
-
-        // 判断是否是 import 语句
-        isImportLine(leftContent, rightContent) {
-            const importPattern = /^\s*(import\s+|from\s+['"])/;
-            const left = leftContent || '';
-            const right = rightContent || '';
-            return importPattern.test(left) || importPattern.test(right);
-        },
-
-        // 合并所有 import 冲突
-        mergeAllImports() {
-            let mergedCount = 0;
-            
-            // 获取当前 resultText 的所有行
-            const lines = this.resultText.split('\n');
-            
-            this.mergeLines.forEach((line, idx) => {
-                if (line.type === 'conflict' && !line.resolved && this.isImportLine(line.leftContent, line.rightContent)) {
-                    const merged = this.mergeImportLine(line.leftContent, line.rightContent);
-                    line.choice = 'merged';
-                    line.oursConfirmed = true;
-                    line.theirsConfirmed = true;
-                    line.resolved = true;
-                    line.resultContent = merged;
-                    
-                    // 只修改对应行
-                    if (idx < lines.length) {
-                        lines[idx] = merged;
-                    }
-                    
-                    this.$set(this.mergeLines, idx, {...line});
-                    mergedCount++;
-                }
-            });
-            
-            if (mergedCount > 0) {
-                // 重新组合 resultText
-                this.resultText = lines.join('\n');
-                this.$message.success(`已合并 ${mergedCount} 个 import 冲突`);
-                this.updateFileResolvedStatus();
-            }
-        },
-
-        // 合并单个 import 行
-        mergeImportLine(leftContent, rightContent) {
-            const left = (leftContent || '').trim();
-            const right = (rightContent || '').trim();
-            
-            // 如果两边相同，返回任意一边
-            if (left === right) {
-                return left || right;
-            }
-            
-            // 如果一边为空，返回另一边
-            if (!left) return right;
-            if (!right) return left;
-            
-            // 两边都有内容且不同，需要智能合并
-            // 对于 Java import，通常两边都保留（按行合并）
-            // 这里返回左边的，因为右边的会在下一行处理
-            // 实际上需要更复杂的逻辑来处理多行 import 合并
-            
-            // 简单策略：如果两边都是 import 语句，保留两边（用换行分隔）
-            // 但由于是单行处理，这里选择保留内容更长的那个，或者左边的
-            return left;
-        },
-
-        // 更新文件解决状态
-        updateFileResolvedStatus() {
-            const file = this.conflictFiles.find(f => f.filePath === this.currentFile);
-            if (file) {
-                file.fullyResolved = this.unresolvedConflicts === 0;
-            }
-        },
-
-        // textarea 输入事件 - 用户编辑时触发
-        onResultTextInput() {
-            // 用户编辑了 textarea，标记为手动编辑状态
-            // 注意：此时 mergeLines 和 resultText 可能不同步
-            // 保存时直接使用 resultText，不需要同步回 mergeLines
-        },
-
-        // textarea 粘贴事件 - 确保粘贴内容不被修改
-        onResultPaste(event) {
-            // 阻止默认行为
-            event.preventDefault();
-            
-            // 获取纯文本内容
-            const text = (event.clipboardData || window.clipboardData).getData('text/plain');
-            
-            // 获取当前光标位置
-            const textarea = this.$refs.resultEditor;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            
-            // 在光标位置插入文本（替换选中内容）
-            this.resultText = this.resultText.substring(0, start) + text + this.resultText.substring(end);
-            
-            // 恢复光标位置
-            this.$nextTick(() => {
-                textarea.selectionStart = textarea.selectionEnd = start + text.length;
-            });
-        },
-
-        // 【核心方法】直接从 textarea 获取所见即所得的内容
-        getResolvedContent() {
-            // textarea 的 value 就是所见即所得的内容
-            return this.resultText;
-        },
-
-        // 高亮差异部分 - 对比两边代码，标记不同的字符
-        highlightDiff(line, side) {
-            if (line.type !== 'conflict' || line.resolved) {
-                // 非冲突行或已解决，直接语法高亮
-                const content = side === 'left' ? line.leftContent : line.rightContent;
-                return this.highlightSyntax(content);
-            }
-            
-            const leftStr = line.leftContent || '';
-            const rightStr = line.rightContent || '';
-            const currentStr = side === 'left' ? leftStr : rightStr;
-            const otherStr = side === 'left' ? rightStr : leftStr;
-            
-            if (!currentStr) return '&nbsp;';
-            if (!otherStr) {
-                // 另一边为空，整行高亮
-                const highlightClass = side === 'left' ? 'diff-highlight-ours' : 'diff-highlight-theirs';
-                return '<span class="' + highlightClass + '">' + this.escapeHtml(currentStr) + '</span>';
-            }
-            
-            // 找出不同的部分并高亮
-            const diffs = this.findCharDiffs(currentStr, otherStr);
-            const highlightClass = side === 'left' ? 'diff-highlight-ours' : 'diff-highlight-theirs';
-            
-            let result = '';
-            let lastEnd = 0;
-            
-            diffs.forEach(diff => {
-                // 添加相同部分
-                if (diff.start > lastEnd) {
-                    result += this.escapeHtml(currentStr.substring(lastEnd, diff.start));
-                }
-                // 添加不同部分（高亮）
-                result += '<span class="' + highlightClass + '">' + 
-                          this.escapeHtml(currentStr.substring(diff.start, diff.end)) + '</span>';
-                lastEnd = diff.end;
-            });
-            
-            // 添加剩余部分
-            if (lastEnd < currentStr.length) {
-                result += this.escapeHtml(currentStr.substring(lastEnd));
-            }
-            
-            return result || '&nbsp;';
-        },
-
-        // 找出字符级别的差异
-        findCharDiffs(str1, str2) {
-            const diffs = [];
-            const len1 = str1.length;
-            const len2 = str2.length;
-            const minLen = Math.min(len1, len2);
-            
-            let i = 0;
-            while (i < minLen) {
-                if (str1[i] !== str2[i]) {
-                    // 找到差异开始位置
-                    const start = i;
-                    // 继续找差异结束位置
-                    while (i < minLen && str1[i] !== str2[i]) {
-                        i++;
-                    }
-                    diffs.push({ start, end: i });
-                } else {
-                    i++;
-                }
-            }
-            
-            // 如果 str1 更长，剩余部分都是差异
-            if (len1 > minLen) {
-                diffs.push({ start: minLen, end: len1 });
-            }
-            
-            return diffs;
-        },
-
-        // HTML 转义
-        escapeHtml(str) {
-            return str
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        },
-
-        // 简单语法高亮
+        // 语法高亮
         highlightSyntax(content) {
             if (!content) return '&nbsp;';
-            // 转义 HTML
-            let html = content
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            
-            // 使用占位符避免替换冲突
-            const placeholder = '\x00';
-            
-            // Java/JS 关键字 (不包含 class，单独处理)
-            const keywords = /\b(public|private|protected|interface|extends|implements|static|final|void|int|long|double|float|boolean|String|return|if|else|for|while|do|switch|case|break|continue|new|try|catch|finally|throw|throws|import|package|this|super|null|true|false|const|let|var|function|async|await)\b/g;
-            html = html.replace(keywords, placeholder + 'KW:$1' + placeholder);
-            
-            // 单独处理 class 关键字（只匹配独立的 class，不匹配 class=）
-            html = html.replace(/\bclass\b(?!=)/g, placeholder + 'KW:class' + placeholder);
-            
-            // 字符串
-            html = html.replace(/(".*?"|'.*?')/g, placeholder + 'STR:$1' + placeholder);
-            
-            // 注释
-            html = html.replace(/(\/\/.*$)/gm, placeholder + 'CMT:$1' + placeholder);
-            
-            // 注解
-            html = html.replace(/(@\w+)/g, placeholder + 'ANN:$1' + placeholder);
-            
-            // 数字
-            html = html.replace(/\b(\d+)\b/g, placeholder + 'NUM:$1' + placeholder);
-            
-            // 还原占位符为实际的 span 标签
-            html = html.replace(new RegExp(placeholder + 'KW:([^' + placeholder + ']+)' + placeholder, 'g'), '<span class="syntax-keyword">$1</span>');
-            html = html.replace(new RegExp(placeholder + 'STR:([^' + placeholder + ']+)' + placeholder, 'g'), '<span class="syntax-string">$1</span>');
-            html = html.replace(new RegExp(placeholder + 'CMT:([^' + placeholder + ']+)' + placeholder, 'g'), '<span class="syntax-comment">$1</span>');
-            html = html.replace(new RegExp(placeholder + 'ANN:([^' + placeholder + ']+)' + placeholder, 'g'), '<span class="syntax-annotation">$1</span>');
-            html = html.replace(new RegExp(placeholder + 'NUM:([^' + placeholder + ']+)' + placeholder, 'g'), '<span class="syntax-number">$1</span>');
-            
+            let html = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const ph = '\x00';
+            html = html.replace(/\b(public|private|protected|interface|extends|implements|static|final|void|int|long|double|float|boolean|String|return|if|else|for|while|do|switch|case|break|continue|new|try|catch|finally|throw|throws|import|package|this|super|null|true|false|const|let|var|function|async|await)\b/g, ph + 'KW:$1' + ph);
+            html = html.replace(/\bclass\b(?!=)/g, ph + 'KW:class' + ph);
+            html = html.replace(/(".*?"|'.*?')/g, ph + 'STR:$1' + ph);
+            html = html.replace(/(\/\/.*$)/gm, ph + 'CMT:$1' + ph);
+            html = html.replace(/(@\w+)/g, ph + 'ANN:$1' + ph);
+            html = html.replace(/\b(\d+)\b/g, ph + 'NUM:$1' + ph);
+            html = html.replace(new RegExp(ph + 'KW:([^' + ph + ']+)' + ph, 'g'), '<span class="syntax-keyword">$1</span>');
+            html = html.replace(new RegExp(ph + 'STR:([^' + ph + ']+)' + ph, 'g'), '<span class="syntax-string">$1</span>');
+            html = html.replace(new RegExp(ph + 'CMT:([^' + ph + ']+)' + ph, 'g'), '<span class="syntax-comment">$1</span>');
+            html = html.replace(new RegExp(ph + 'ANN:([^' + ph + ']+)' + ph, 'g'), '<span class="syntax-annotation">$1</span>');
+            html = html.replace(new RegExp(ph + 'NUM:([^' + ph + ']+)' + ph, 'g'), '<span class="syntax-number">$1</span>');
             return html || '&nbsp;';
         },
 
-        // 同步滚动 - 垂直和水平都同步
-        syncScroll(source, event) {
-            if (this.scrolling) return;
-            this.scrolling = true;
-            
-            let scrollTop, scrollLeft;
-            
-            if (source === 'center') {
-                // 中间面板是 textarea
-                const textarea = this.$refs.resultEditor;
-                scrollTop = textarea.scrollTop;
-                scrollLeft = textarea.scrollLeft;
-                // 更新高亮层位置
-                this.centerScrollTop = scrollTop;
-            } else {
-                const sourceEl = this.$refs[source + 'Panel'];
-                scrollTop = sourceEl.scrollTop;
-                scrollLeft = sourceEl.scrollLeft;
+        getResolvedContent() { 
+            // 统一换行符为 \n，确保跨平台一致性
+            let content = this.resultText;
+            if (content) {
+                content = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             }
-            
-            // 同步左右面板
-            ['leftPanel', 'rightPanel'].forEach(ref => {
-                if (this.$refs[ref]) {
-                    this.$refs[ref].scrollTop = scrollTop;
-                    this.$refs[ref].scrollLeft = scrollLeft;
-                }
-            });
-            
-            // 同步 textarea
-            if (source !== 'center' && this.$refs.resultEditor) {
-                this.$refs.resultEditor.scrollTop = scrollTop;
-                this.$refs.resultEditor.scrollLeft = scrollLeft;
-                this.centerScrollTop = scrollTop;
-            }
-            
-            // 同步行号列的垂直滚动
-            ['leftLineNums', 'centerLineNums', 'rightLineNums'].forEach(ref => {
-                if (this.$refs[ref]) {
-                    this.$refs[ref].scrollTop = scrollTop;
-                }
-            });
-            
-            setTimeout(() => { this.scrolling = false; }, 10);
+            return content;
         },
 
-        // 切换文件
+        // 文件切换
         async handleFileChange(filePath) {
-            if (this.globalLoading) return;  // 防止在加载中切换
-            
-            // 如果是同一个文件，不处理
-            if (filePath === this.previousFile) return;
-            
-            // 切换前先保存旧文件到前端本地缓存（不调用后端）
-            if (this.previousFile && this.mergeLines.length > 0) {
+            if (this.globalLoading || filePath === this.previousFile) return;
+            if (this.previousFile && this.oursContent) {
                 this.fileEditCache[this.previousFile] = {
                     resultText: this.resultText,
-                    mergeLines: JSON.parse(JSON.stringify(this.mergeLines)),  // 深拷贝
-                    unresolvedConflicts: this.unresolvedConflicts
+                    oursContent: this.oursContent,
+                    theirsContent: this.theirsContent,
+                    conflictBlockMap: JSON.parse(JSON.stringify(this.conflictBlockMap)),
+                    parsedConflicts: JSON.parse(JSON.stringify(this.parsedConflicts)),
+                    alignmentSections: JSON.parse(JSON.stringify(this.alignmentSections))
                 };
             }
-            
-            // 更新当前文件和上一个文件记录
             this.previousFile = filePath;
             this.currentFile = filePath;
-            
-            // 检查本地缓存
             if (this.fileEditCache[filePath]) {
-                // 有缓存，直接恢复
-                const cache = this.fileEditCache[filePath];
-                this.resultText = cache.resultText;
-                this.mergeLines = cache.mergeLines;
-                // 更新文件列表的冲突数量
+                const c = this.fileEditCache[filePath];
+                this.resultText = c.resultText;
+                this.oursContent = c.oursContent;
+                this.theirsContent = c.theirsContent;
+                this.conflictBlockMap = c.conflictBlockMap;
+                this.parsedConflicts = c.parsedConflicts || [];
+                this.alignmentSections = c.alignmentSections;
                 this.updateFileConflictCount();
             } else {
-                // 无缓存，从后端加载
                 this.loadFileDetail(filePath);
             }
         },
 
-        // 保存当前文件
+        // 保存
         async saveCurrentFile() {
-            if (!this.currentFile) return;
-            if (this.globalLoading) return;  // 防止重复点击
-            
-            if (this.unresolvedConflicts > 0) {
-                this.$message.warning('还有 ' + this.unresolvedConflicts + ' 个冲突未解决');
-                return;
-            }
-            
-            // 所见即所得：直接从 textarea 获取内容
-            const resolvedContent = this.getResolvedContent();
-            
+            if (!this.currentFile || this.globalLoading) return;
+            if (this.unresolvedConflicts > 0) { this.$message.warning(`还有 ${this.unresolvedConflicts} 个冲突未解决`); return; }
             this.globalLoading = true;
             this.globalLoadingText = '正在保存文件...';
             this.saveLoading = true;
             try {
                 const res = await axios.post(`/api/conflict/${this.sessionId}/resolve`, {
                     filePath: this.currentFile,
-                    resolvedContent: resolvedContent
+                    resolvedContent: this.getResolvedContent()
                 });
-                if (res.data.code === 200) {
-                    this.$message.success('保存成功');
-                    await this.loadConflictFiles();
-                } else {
-                    this.$message.error(res.data.message || '保存失败');
-                }
-            } catch (error) {
-                console.error('保存失败:', error);
-                this.$message.error('保存失败');
-            } finally {
-                this.saveLoading = false;
-                this.globalLoading = false;
-            }
+                if (res.data.code === 200) { this.$message.success('保存成功'); await this.loadConflictFiles(); }
+                else this.$message.error(res.data.message || '保存失败');
+            } catch (e) { this.$message.error('保存失败'); }
+            finally { this.saveLoading = false; this.globalLoading = false; }
         },
-
-        // 保存单个文件到后端
-        async saveFileToBackend(filePath, resolvedContent) {
+        async saveFileToBackend(filePath, content) {
             try {
-                const res = await axios.post(`/api/conflict/${this.sessionId}/resolve`, {
-                    filePath: filePath,
-                    resolvedContent: resolvedContent
-                });
-                if (res.data.code !== 200) {
-                    console.error('保存文件失败:', filePath, res.data.message);
-                    return false;
-                }
-                return true;
-            } catch (error) {
-                console.error('保存文件失败:', filePath, error);
-                return false;
-            }
+                const res = await axios.post(`/api/conflict/${this.sessionId}/resolve`, { filePath, resolvedContent: content });
+                return res.data.code === 200;
+            } catch (e) { return false; }
         },
-
-        // 保存所有文件（内部方法，不显示loading）
         async saveAllFilesInternal() {
-            // 1. 保存当前正在编辑的文件（所见即所得）
-            if (this.currentFile && this.mergeLines.length > 0) {
-                const resolvedContent = this.getResolvedContent();
-                const success = await this.saveFileToBackend(this.currentFile, resolvedContent);
-                if (!success) {
-                    return false;
+            if (this.currentFile && this.oursContent) {
+                if (!await this.saveFileToBackend(this.currentFile, this.getResolvedContent())) return false;
+            }
+            for (const [fp, cache] of Object.entries(this.fileEditCache)) {
+                if (fp !== this.currentFile) {
+                    const content = cache.resultText || '';
+                    if (!await this.saveFileToBackend(fp, content)) return false;
                 }
             }
-            
-            // 2. 保存缓存中的其他文件
-            for (const [filePath, cache] of Object.entries(this.fileEditCache)) {
-                if (filePath !== this.currentFile) {
-                    const success = await this.saveFileToBackend(filePath, cache.resultText);
-                    if (!success) {
-                        return false;
-                    }
-                }
-            }
-            
-            // 重新加载文件列表
             try {
                 const res = await axios.get(`/api/conflict/${this.sessionId}/files`);
-                if (res.data.code === 200) {
-                    this.conflictFiles = res.data.data;
-                }
-            } catch (error) {
-                console.error('加载文件列表失败:', error);
-            }
+                if (res.data.code === 200) this.conflictFiles = res.data.data;
+            } catch (e) {}
             return true;
         },
 
-        // 保存所有文件（外部调用，显示loading）
-        async saveAllFiles() {
-            if (this.globalLoading) return false;
-            
-            this.globalLoading = true;
-            this.globalLoadingText = '正在保存所有文件...';
-            try {
-                return await this.saveAllFilesInternal();
-            } finally {
-                this.globalLoading = false;
-            }
-        },
-
-        // 重置当前文件
+        // 重置
         async handleReset() {
-            if (!this.currentFile) return;
-            if (this.globalLoading) return;  // 防止重复点击
-            
+            if (!this.currentFile || this.globalLoading) return;
             try {
                 await this.$confirm('确定要重置当前文件吗？', '提示', { type: 'warning', closeOnClickModal: false });
-                
                 this.globalLoading = true;
                 this.globalLoadingText = '正在重置文件...';
-                
-                const res = await axios.post(`/api/conflict/${this.sessionId}/reset`, null, {
-                    params: { filePath: this.currentFile }
-                });
+                delete this.fileEditCache[this.currentFile];
+                const res = await axios.post(`/api/conflict/${this.sessionId}/reset`, null, { params: { filePath: this.currentFile } });
                 if (res.data.code === 200) {
                     this.$message.success('重置成功');
-                    // 重新加载文件列表（内部调用）
-                    try {
-                        const filesRes = await axios.get(`/api/conflict/${this.sessionId}/files`);
-                        if (filesRes.data.code === 200) {
-                            this.conflictFiles = filesRes.data.data;
-                        }
-                    } catch (e) {}
-                    // 重新加载文件详情（内部调用）
-                    this.globalLoadingText = '正在加载文件内容...';
-                    try {
-                        const detailRes = await axios.get(`/api/conflict/${this.sessionId}/file`, { params: { filePath: this.currentFile } });
-                        if (detailRes.data.code === 200) {
-                            this.currentDetail = detailRes.data.data;
-                            this.sourceBranch = this.currentDetail.sourceBranch || '源分支';
-                            this.targetBranch = this.currentDetail.targetBranch || '目标分支';
-                            this.parseMergeLines();
-                        }
-                    } catch (e) {}
-                } else {
-                    this.$message.error(res.data.message || '重置失败');
-                }
-            } catch (error) {
-                if (error !== 'cancel') {
-                    this.$message.error('重置失败');
-                }
-            } finally {
-                this.globalLoading = false;
-            }
+                    const filesRes = await axios.get(`/api/conflict/${this.sessionId}/files`);
+                    if (filesRes.data.code === 200) this.conflictFiles = filesRes.data.data;
+                    const detailRes = await axios.get(`/api/conflict/${this.sessionId}/file`, { params: { filePath: this.currentFile } });
+                    if (detailRes.data.code === 200) {
+                        this.currentDetail = detailRes.data.data;
+                        this.sourceBranch = this.currentDetail.sourceBranch || '源分支';
+                        this.targetBranch = this.currentDetail.targetBranch || '目标分支';
+                        this.parseFileContent();
+                    }
+                } else this.$message.error(res.data.message || '重置失败');
+            } catch (e) { if (e !== 'cancel') this.$message.error('重置失败'); }
+            finally { this.globalLoading = false; }
         },
 
-        // 打开提交对话框
+        // 提交
         handleCommit() {
             this.commitForm.commitMessage = `Merge branch '${this.sourceBranch}' into '${this.targetBranch}' (conflict resolved)`;
-            // 自动填充操作人到作者名称
-            const operator = localStorage.getItem('operator');
-            if (operator) {
-                this.commitForm.authorName = operator;
-            }
+            const op = localStorage.getItem('operator');
+            if (op) this.commitForm.authorName = op;
             this.commitDialogVisible = true;
         },
-
-        // 执行提交
         async doCommit() {
-            if (this.globalLoading) return;  // 防止重复点击
-            
+            if (this.globalLoading) return;
             this.globalLoading = true;
-            this.globalLoadingText = '正在提交并推送...';
             this.commitLoading = true;
             try {
-                // 先保存所有文件
                 this.globalLoadingText = '正在保存所有文件...';
-                const saveSuccess = await this.saveAllFilesInternal();
-                if (!saveSuccess) {
-                    this.$message.error('保存文件失败，无法提交');
-                    return;
-                }
-                
-                // 再调用提交接口
+                if (!await this.saveAllFilesInternal()) { this.$message.error('保存文件失败'); return; }
                 this.globalLoadingText = '正在提交并推送...';
                 const res = await axios.post(`/api/conflict/${this.sessionId}/commit`, this.commitForm);
                 if (res.data.code === 200) {
                     this.$message.success('提交成功！');
                     this.commitDialogVisible = false;
-                    // 通知父页面冲突已解决
                     this.notifyConflictResolved();
-                    setTimeout(() => { window.close(); }, 1500);
-                } else {
-                    this.$message.error(res.data.message || '提交失败');
-                }
-            } catch (error) {
-                this.$message.error(error.response?.data?.message || '提交失败');
-            } finally {
-                this.commitLoading = false;
-                this.globalLoading = false;
-            }
+                    setTimeout(() => window.close(), 1500);
+                } else this.$message.error(res.data.message || '提交失败');
+            } catch (e) { this.$message.error(e.response?.data?.message || '提交失败'); }
+            finally { this.commitLoading = false; this.globalLoading = false; }
         },
-
-        // 取消
         handleCancel() {
             this.$confirm('确定要取消吗？', '提示', { type: 'warning', closeOnClickModal: false }).then(async () => {
-                try {
-                    await axios.delete(`/api/conflict/${this.sessionId}`);
-                } catch (e) {}
+                try { await axios.delete(`/api/conflict/${this.sessionId}`); } catch (e) {}
                 window.close();
             }).catch(() => {});
         },
 
-        // 开始拖拽调整大小
+        // 拖拽调整
         startResize(event, type) {
             this.resizing = type;
             this.resizeStartX = event.clientX;
-            
-            if (type === 'sidebar') {
-                this.resizeStartWidth = this.sidebarWidth;
-            } else {
-                this.resizeStartFlex = {
-                    left: this.leftPanelFlex,
-                    center: this.centerPanelFlex,
-                    right: this.rightPanelFlex
-                };
-            }
-            
+            if (type === 'sidebar') this.resizeStartWidth = this.sidebarWidth;
+            else this.resizeStartFlex = { left: this.leftPanelFlex, center: this.centerPanelFlex, right: this.rightPanelFlex };
             document.body.classList.add('resizing');
             document.addEventListener('mousemove', this.doResize);
             document.addEventListener('mouseup', this.stopResize);
         },
-
-        // 拖拽中
         doResize(event) {
             if (!this.resizing) return;
-            
-            const deltaX = event.clientX - this.resizeStartX;
-            
+            const dx = event.clientX - this.resizeStartX;
             if (this.resizing === 'sidebar') {
-                // 调整侧边栏宽度
-                const newWidth = this.resizeStartWidth + deltaX;
-                this.sidebarWidth = Math.max(150, Math.min(500, newWidth));
+                this.sidebarWidth = Math.max(150, Math.min(500, this.resizeStartWidth + dx));
             } else {
-                // 调整三个面板的 flex 比例
-                const mergePanels = this.$refs.mergePanels;
-                if (!mergePanels) return;
-                
-                const totalWidth = mergePanels.clientWidth - 10; // 减去两个分隔条的宽度
-                const flexUnit = totalWidth / (this.resizeStartFlex.left + this.resizeStartFlex.center + this.resizeStartFlex.right);
-                const deltaFlex = deltaX / flexUnit;
-                
+                const mp = this.$refs.mergePanels;
+                if (!mp) return;
+                const total = mp.clientWidth - 10;
+                const unit = total / (this.resizeStartFlex.left + this.resizeStartFlex.center + this.resizeStartFlex.right);
+                const df = dx / unit;
                 if (this.resizing === 'left') {
-                    // 调整左侧和中间面板
-                    const newLeftFlex = this.resizeStartFlex.left + deltaFlex;
-                    const newCenterFlex = this.resizeStartFlex.center - deltaFlex;
-                    
-                    if (newLeftFlex >= 0.3 && newCenterFlex >= 0.3) {
-                        this.leftPanelFlex = newLeftFlex;
-                        this.centerPanelFlex = newCenterFlex;
-                    }
+                    const nl = this.resizeStartFlex.left + df, nc = this.resizeStartFlex.center - df;
+                    if (nl >= 0.3 && nc >= 0.3) { this.leftPanelFlex = nl; this.centerPanelFlex = nc; }
                 } else if (this.resizing === 'right') {
-                    // 调整中间和右侧面板
-                    const newCenterFlex = this.resizeStartFlex.center + deltaFlex;
-                    const newRightFlex = this.resizeStartFlex.right - deltaFlex;
-                    
-                    if (newCenterFlex >= 0.3 && newRightFlex >= 0.3) {
-                        this.centerPanelFlex = newCenterFlex;
-                        this.rightPanelFlex = newRightFlex;
-                    }
+                    const nc = this.resizeStartFlex.center + df, nr = this.resizeStartFlex.right - df;
+                    if (nc >= 0.3 && nr >= 0.3) { this.centerPanelFlex = nc; this.rightPanelFlex = nr; }
                 }
             }
         },
-
-        // 停止拖拽
         stopResize() {
             this.resizing = null;
             document.body.classList.remove('resizing');
