@@ -190,6 +190,139 @@
             background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(200, 200, 200, 0.1) 5px, rgba(200, 200, 200, 0.1) 10px);
         }
 
+        /* 中间面板 Textarea + 背景层样式 */
+        .center-panel-container {
+            flex: 1;
+            display: flex;
+            overflow: auto;
+            position: relative;
+        }
+        
+        /* 背景层：行号 + 冲突高亮 + 按钮 */
+        .center-background-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+            display: flex;
+        }
+        
+        .center-line-numbers {
+            width: 45px;
+            flex-shrink: 0;
+            background: #f8f8f8;
+            border-right: 1px solid #e8e8e8;
+            pointer-events: auto;
+        }
+        
+        .center-bg-content {
+            flex: 1;
+            position: relative;
+        }
+        
+        .center-bg-line {
+            height: 21px;
+            line-height: 21px;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+        }
+        
+        .center-bg-line.conflict-block {
+            background: rgba(103, 194, 58, 0.08);
+            border-left: 3px solid #67c23a;
+        }
+        
+        .center-bg-line.conflict-pending {
+            background: rgba(230, 162, 60, 0.08);
+            border-left: 3px solid #e6a23c;
+        }
+        
+        .center-line-num {
+            width: 45px;
+            height: 21px;
+            padding: 0 8px;
+            text-align: right;
+            color: #999;
+            user-select: none;
+            border-bottom: 1px solid #f0f0f0;
+            box-sizing: border-box;
+            line-height: 21px;
+        }
+        
+        .center-line-num.conflict-block {
+            background: rgba(103, 194, 58, 0.1);
+        }
+        
+        .center-line-num.conflict-pending {
+            background: rgba(230, 162, 60, 0.1);
+        }
+        
+        .center-line-num.placeholder {
+            background: #f0f0f0;
+            color: transparent;
+        }
+        
+        /* Textarea 编辑层 */
+        .result-textarea {
+            position: absolute;
+            top: 0;
+            left: 45px;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+            background: transparent;
+            color: #303133;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 0 10px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 13px;
+            line-height: 21px;
+            white-space: pre;
+            word-wrap: normal;
+            word-break: normal;
+            overflow: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc transparent;
+            box-sizing: border-box;
+            width: auto;
+            min-width: calc(100% - 45px);
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .result-textarea-inner {
+            min-width: 100%;
+            display: inline-block;
+        }
+        
+        .result-textarea::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        
+        .result-textarea::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+        
+        .result-textarea::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+        
+        .result-textarea:focus {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 确保 textarea 内容不会自动换行 */
+        .result-textarea::placeholder {
+            white-space: pre;
+        }
+
         /* 操作按钮 */
         .line-actions {
             width: 50px;
@@ -201,6 +334,7 @@
             right: 0;
             background: inherit;
             gap: 2px;
+            transition: opacity 0.3s ease;
         }
         .line-actions-floating {
             position: absolute;
@@ -214,6 +348,7 @@
             z-index: 10;
             padding: 0 4px;
             background: linear-gradient(to right, rgba(248, 250, 255, 0.95) 85%, transparent);
+            transition: opacity 0.3s ease;
         }
         .action-btn {
             width: 20px;
@@ -226,6 +361,9 @@
             justify-content: center;
             font-size: 12px;
             transition: all 0.2s;
+        }
+        .action-btn:active {
+            transform: scale(0.95);
         }
         .accept-btn { background: #67c23a; color: #fff; }
         .accept-btn:hover { background: #85ce61; }
@@ -374,6 +512,7 @@
         <div style="flex: 1;"></div>
         <el-button size="small" @click="acceptAllOurs" :disabled="!currentFile">全部采用左侧</el-button>
         <el-button size="small" @click="acceptAllTheirs" :disabled="!currentFile">全部采用右侧</el-button>
+        <el-button size="small" type="primary" @click="acceptAllBoth" :disabled="!currentFile">全部合并（左+右）</el-button>
         <el-button size="small" icon="el-icon-refresh" @click="handleReset" :disabled="!currentFile">重置</el-button>
     </div>
 
@@ -418,14 +557,14 @@
                                 <div v-for="(item, idx) in alignedOursData" :key="'lc-'+idx" 
                                      class="code-line" :class="getLineClass(item, 'ours')">
                                     <div class="line-content" v-html="item.isPlaceholder ? '&nbsp;' : highlightSyntax(item.content)"></div>
-                                    <div class="line-actions" v-if="item.showButton && getButtonType(item.blockId, 'ours') !== 'none'">
-                                        <template v-if="getButtonType(item.blockId, 'ours') === 'accept'">
-                                            <button class="action-btn reject-btn" @click="rejectBlock(item.blockId, 'ours')" title="舍弃">✕</button>
+                                    <div class="line-actions" v-if="item.showButton && getOursButtonType(item.blockId) !== 'none'">
+                                        <template v-if="getOursButtonType(item.blockId) === 'accept-or-close'">
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭">✕</button>
                                             <button class="action-btn accept-btn" @click="acceptBlock(item.blockId, 'ours')" title="采用">»</button>
                                         </template>
-                                        <template v-else-if="getButtonType(item.blockId, 'ours') === 'append'">
-                                            <button class="action-btn reject-btn" @click="rejectBlock(item.blockId, 'ours')" title="舍弃">✕</button>
-                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'ours')" title="追加">↘</button>
+                                        <template v-else-if="getOursButtonType(item.blockId) === 'append-or-close'">
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭">✕</button>
+                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'ours')" title="追加到下一行">↘</button>
                                         </template>
                                     </div>
                                 </div>
@@ -436,32 +575,39 @@
 
                 <div class="resizer" :class="{ active: resizing === 'left' }" @mousedown="startResize($event, 'left')"></div>
 
-                <!-- 中间面板 - 分段编辑，全局对齐 -->
+                <!-- 中间面板 - Textarea + 背景层 -->
                 <div class="merge-panel center" :style="{ flex: centerPanelFlex }">
-                    <div class="code-lines">
-                        <div class="line-numbers" ref="centerLineNums">
-                            <div v-for="(item, idx) in alignedResultData" :key="'cn-'+idx" 
-                                 class="line-num" :class="item.isPlaceholder ? 'placeholder' : ''">{{item.lineNum || ''}}</div>
-                        </div>
-                        <div class="result-segments-wrapper" ref="centerPanel" @scroll="syncScroll('center', $event)">
-                            <div class="result-segments-inner" :style="{ minWidth: maxLineWidth + 'px' }">
-                                <div v-for="(item, idx) in alignedResultData" :key="'cc-'+idx"
-                                     class="segment-line" :class="{ 'placeholder-line': item.isPlaceholder }">
-                                    <div v-if="item.isPlaceholder" class="line-content">&nbsp;</div>
-                                    <div v-else class="line-content"
-                                         contenteditable="true"
-                                         spellcheck="false"
-                                         @focus="onLineFocus(item.segIdx, item.lineIdx)"
-                                         @blur="onLineBlur(item.segIdx, item.lineIdx, $event)"
-                                         @compositionstart="isComposing = true"
-                                         @compositionend="onCompositionEnd(item.segIdx, item.lineIdx, $event)"
-                                         @input="onLineInput(item.segIdx, item.lineIdx, $event)"
-                                         @keydown="onLineKeydown(item.segIdx, item.lineIdx, $event)"
-                                         @paste="onLinePaste(item.segIdx, item.lineIdx, $event)"
-                                         v-html="getDisplayContent(item)"></div>
+                    <div class="center-panel-container">
+                        <!-- 背景层：行号 + 冲突高亮 + 操作按钮 -->
+                        <div class="center-background-layer" ref="centerBackground">
+                            <div class="center-line-numbers">
+                                <div v-for="(item, idx) in alignedResultData" :key="'cn-'+idx"
+                                     class="center-line-num" :class="getCenterLineNumClass(item)">
+                                    {{item.isPlaceholder ? '' : item.lineNum || ''}}
+                                </div>
+                            </div>
+                            <div class="center-bg-content">
+                                <div v-for="(item, idx) in alignedResultData" :key="'cb-'+idx"
+                                     class="center-bg-line" :class="getCenterBgLineClass(item)">
+                                    <!-- 中间面板不显示任何操作按钮 -->
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Textarea 编辑层 -->
+                        <textarea 
+                            ref="resultTextarea"
+                            class="result-textarea"
+                            v-model="resultText"
+                            spellcheck="false"
+                            wrap="off"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            @scroll="syncScrollFromTextarea"
+                            @input="onTextareaInput"
+                            @paste="handlePaste"
+                        ></textarea>
                     </div>
                 </div>
 
@@ -478,14 +624,14 @@
                             <div class="code-content-inner" :style="{ minWidth: maxLineWidth + 'px' }">
                                 <div v-for="(item, idx) in alignedTheirsData" :key="'rc-'+idx" 
                                      class="code-line" :class="getLineClass(item, 'theirs')" style="position: relative;">
-                                    <div class="line-actions-floating" v-if="item.showButton && getButtonType(item.blockId, 'theirs') !== 'none'">
-                                        <template v-if="getButtonType(item.blockId, 'theirs') === 'accept'">
+                                    <div class="line-actions-floating" v-if="item.showButton && getTheirsButtonType(item.blockId) !== 'none'">
+                                        <template v-if="getTheirsButtonType(item.blockId) === 'accept-or-close'">
                                             <button class="action-btn accept-btn" @click="acceptBlock(item.blockId, 'theirs')" title="采用">«</button>
-                                            <button class="action-btn reject-btn" @click="rejectBlock(item.blockId, 'theirs')" title="舍弃">✕</button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭">✕</button>
                                         </template>
-                                        <template v-else-if="getButtonType(item.blockId, 'theirs') === 'append'">
-                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'theirs')" title="追加">↙</button>
-                                            <button class="action-btn reject-btn" @click="rejectBlock(item.blockId, 'theirs')" title="舍弃">✕</button>
+                                        <template v-else-if="getTheirsButtonType(item.blockId) === 'append-or-close'">
+                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'theirs')" title="追加到下一行">↙</button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭">✕</button>
                                         </template>
                                     </div>
                                     <div class="line-content" v-html="item.isPlaceholder ? '&nbsp;' : highlightSyntax(item.content)"></div>
@@ -555,8 +701,8 @@ new Vue({
         // 原始内容
         oursContent: '',
         theirsContent: '',
-        // 分段数据: [{ type: 'normal'|'conflict', lines: [], blockId: null|number }]
-        resultSegments: [],
+        // 结果文本（直接绑定到 textarea）
+        resultText: '',
         // 冲突块映射
         conflictBlockMap: {},
         // 从 mergedContent 解析出的冲突块信息
@@ -575,49 +721,50 @@ new Vue({
         resizeStartWidth: 0,
         resizeStartFlex: { left: 1, center: 1, right: 1 },
         broadcastChannel: null,
-        // 中文输入法组合状态
-        isComposing: false,
-        // 当前正在编辑的单元格
-        editingCell: null
+        _measureCanvas: null,
+        _measureContext: null
     },
 
     computed: {
         oursLines() { return (this.oursContent || '').split('\n'); },
         theirsLines() { return (this.theirsContent || '').split('\n'); },
-        // 从分段获取结果行（所见即所得）
-        resultLines() {
-            const lines = [];
-            this.resultSegments.forEach(seg => seg.lines.forEach(line => lines.push(line)));
-            return lines;
-        },
-        resultText() { return this.resultLines.join('\n'); },
+        // 从 resultText 获取结果行
+        resultLines() { return (this.resultText || '').split('\n'); },
         maxLineWidth() {
             const allLines = [...this.oursLines, ...this.theirsLines, ...this.resultLines];
             let maxLen = 0;
-            allLines.forEach(line => maxLen = Math.max(maxLen, (line || '').length));
-            return Math.max(maxLen * 8 + 50, 300);
+            allLines.forEach(line => {
+                // 使用更精确的字符宽度计算
+                const width = this.calculateTextWidth(line || '');
+                maxLen = Math.max(maxLen, width);
+            });
+            // 添加额外的边距，确保内容不会被截断
+            return Math.max(maxLen + 100, 300);
         },
         
-        // 方案A核心：生成全局对齐后的左侧数据
+        // 生成全局对齐后的左侧数据
         alignedOursData() { return this.buildAlignedPanelData('ours'); },
-        // 方案A核心：生成全局对齐后的右侧数据
+        // 生成全局对齐后的右侧数据
         alignedTheirsData() { return this.buildAlignedPanelData('theirs'); },
-        // 方案A核心：生成全局对齐后的中间数据
+        // 生成全局对齐后的中间数据
         alignedResultData() { return this.buildAlignedPanelData('result'); },
         
         totalFiles() { return this.conflictFiles.length; },
         resolvedCount() { return this.conflictFiles.filter(f => f.fullyResolved).length; },
         allResolved() { return this.totalFiles > 0 && this.resolvedCount === this.totalFiles; },
         unresolvedConflicts() {
-            // 统计有可操作按钮的冲突块数量
+            // 统计未完全解决的冲突块数量
             let count = 0;
             
             Object.keys(this.conflictBlockMap).forEach(blockId => {
-                const oursButtonType = this.getButtonType(parseInt(blockId), 'ours');
-                const theirsButtonType = this.getButtonType(parseInt(blockId), 'theirs');
+                const block = this.conflictBlockMap[blockId];
+                if (!block) return;
                 
-                // 只要任一侧有可操作按钮（非 none），就算未解决
-                if (oursButtonType !== 'none' || theirsButtonType !== 'none') {
+                // 只有两侧都已解决（closed/accepted/appended），才算已解决
+                const oursResolved = block.oursStatus === 'closed' || block.oursStatus === 'accepted' || block.oursStatus === 'appended';
+                const theirsResolved = block.theirsStatus === 'closed' || block.theirsStatus === 'accepted' || block.theirsStatus === 'appended';
+                
+                if (!oursResolved || !theirsResolved) {
                     count++;
                 }
             });
@@ -636,8 +783,32 @@ new Vue({
     beforeDestroy() {
         this.fileEditCache = {};
         if (this.broadcastChannel) this.broadcastChannel.close();
+        // 清理 Canvas 资源
+        if (this._measureCanvas) {
+            this._measureCanvas = null;
+            this._measureContext = null;
+        }
     },
     methods: {
+        // 计算文本宽度（使用 Canvas 精确测量）
+        calculateTextWidth(text) {
+            if (!text) return 0;
+            
+            // 初始化 Canvas 测量工具
+            if (!this._measureCanvas) {
+                this._measureCanvas = document.createElement('canvas');
+                this._measureContext = this._measureCanvas.getContext('2d');
+                this._measureContext.font = '13px "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace';
+            }
+            
+            // 处理 Tab 字符（转换为 4 个空格）
+            const processedText = text.replace(/\t/g, '    ');
+            
+            // 使用 Canvas 精确测量
+            const metrics = this._measureContext.measureText(processedText);
+            return Math.ceil(metrics.width);
+        },
+        
         initBroadcastChannel() {
             if (typeof BroadcastChannel !== 'undefined') {
                 this.broadcastChannel = new BroadcastChannel('git_conflict_resolve_channel');
@@ -701,16 +872,12 @@ new Vue({
                 // 真正已解决：无冲突块，中间面板显示解决后的内容
                 this.conflictBlockMap = {};
                 this.parsedConflicts = [];
-                this.resultSegments = [{ 
-                    type: 'normal', 
-                    lines: currentContent.split('\n'), 
-                    blockId: null 
-                }];
+                this.resultText = currentContent;
             } else if (hasConflictMarkers) {
-                // currentContent 中有冲突标记：从中解析
+                // currentContent 中有冲突标记：从中解析并构建初始 resultText
                 this.parsedConflicts = [];
-                this.buildResultSegmentsFromMerged(currentContent);
-                this.buildConflictBlockMapFromResult();
+                this.buildResultTextFromMerged(currentContent);
+                this.buildConflictBlockMapFromParsed();
             } else {
                 // currentContent 无冲突标记，但后端说未解决
                 // 使用后端的 conflictBlocks 作为冲突信息
@@ -721,11 +888,7 @@ new Vue({
                     // 没有冲突信息，当作已解决处理
                     this.conflictBlockMap = {};
                     this.parsedConflicts = [];
-                    this.resultSegments = [{ 
-                        type: 'normal', 
-                        lines: currentContent.split('\n'), 
-                        blockId: null 
-                    }];
+                    this.resultText = currentContent;
                 }
             }
             
@@ -767,54 +930,28 @@ new Vue({
             
             this.conflictBlockMap = map;
             
-            // 构建 resultSegments：以 oursContent 为基础，在冲突位置插入冲突块
-            this.buildResultSegmentsWithConflicts();
+            // 构建 resultText：以 oursContent 为基础
+            this.resultText = currentContent || this.oursContent;
         },
 
-        // 基于 oursContent 和 conflictBlockMap 构建 resultSegments
-        buildResultSegmentsWithConflicts() {
-            const segments = [];
-            const oursLines = this.oursContent.split('\n');
-            
-            // 获取有效的冲突块并按位置排序
-            const blocks = Object.entries(this.conflictBlockMap)
-                .map(([id, block]) => ({ id: parseInt(id), ...block }))
-                .filter(b => b.oursRange)
-                .sort((a, b) => a.oursRange.start - b.oursRange.start);
-            
-            let idx = 0;
-            blocks.forEach(block => {
-                // 冲突块之前的普通内容
-                if (idx < block.oursRange.start) {
-                    segments.push({ 
-                        type: 'normal', 
-                        lines: oursLines.slice(idx, block.oursRange.start), 
-                        blockId: null 
-                    });
+        findContentRange(lines, content, startFrom) {
+            if (!content) return null;
+            const contentLines = content.split('\n');
+            if (!contentLines.length) return null;
+            for (let i = Math.max(0, startFrom); i <= lines.length - contentLines.length; i++) {
+                if (lines[i] === contentLines[0]) {
+                    let match = true;
+                    for (let j = 1; j < contentLines.length; j++) {
+                        if (lines[i + j] !== contentLines[j]) { match = false; break; }
+                    }
+                    if (match) return { start: i, end: i + contentLines.length - 1 };
                 }
-                // 冲突块（初始使用 ours 内容）
-                segments.push({
-                    type: 'conflict',
-                    lines: block.oursContent ? block.oursContent.split('\n') : [],
-                    blockId: block.id
-                });
-                idx = block.oursRange.end + 1;
-            });
-            
-            // 最后的普通内容
-            if (idx < oursLines.length) {
-                segments.push({ 
-                    type: 'normal', 
-                    lines: oursLines.slice(idx), 
-                    blockId: null 
-                });
             }
-            
-            this.resultSegments = segments;
+            return null;
         },
-
-        // 基于 resultSegments 和 parsedConflicts 构建冲突块映射
-        buildConflictBlockMapFromResult() {
+        
+        // 基于 parsedConflicts 构建冲突块映射
+        buildConflictBlockMapFromParsed() {
             const map = {};
             const oursLines = this.oursContent.split('\n');
             const theirsLines = this.theirsContent.split('\n');
@@ -839,51 +976,59 @@ new Vue({
                     oursRange,
                     theirsRange,
                     oursStatus: 'pending',
-                    theirsStatus: 'pending'
+                    theirsStatus: 'pending',
+                    // 记录冲突块在 resultText 中的位置（用于更新）
+                    resultRange: null
                 };
             });
             
             this.conflictBlockMap = map;
+            
+            // 计算每个冲突块在 resultText 中的位置
+            this.updateConflictBlockResultRanges();
         },
-
-        findContentRange(lines, content, startFrom) {
-            if (!content) return null;
-            const contentLines = content.split('\n');
-            if (!contentLines.length) return null;
-            for (let i = Math.max(0, startFrom); i <= lines.length - contentLines.length; i++) {
-                if (lines[i] === contentLines[0]) {
-                    let match = true;
-                    for (let j = 1; j < contentLines.length; j++) {
-                        if (lines[i + j] !== contentLines[j]) { match = false; break; }
-                    }
-                    if (match) return { start: i, end: i + contentLines.length - 1 };
+        
+        // 更新冲突块在 resultText 中的位置
+        updateConflictBlockResultRanges() {
+            const resultLines = this.resultLines;
+            
+            Object.keys(this.conflictBlockMap).forEach(blockId => {
+                const block = this.conflictBlockMap[blockId];
+                
+                // 根据当前状态确定应该在 resultText 中查找的内容
+                let searchContent = '';
+                if (block.oursStatus === 'accepted' || (block.oursStatus === 'pending' && block.theirsStatus === 'pending')) {
+                    searchContent = block.oursContent;
+                } else if (block.theirsStatus === 'accepted') {
+                    searchContent = block.theirsContent;
+                } else if (block.oursStatus === 'appended' || block.theirsStatus === 'appended') {
+                    // 追加模式下，内容可能已经合并，暂不处理
+                    searchContent = block.oursContent;
                 }
-            }
-            return null;
+                
+                if (searchContent) {
+                    const range = this.findContentRange(resultLines, searchContent, 0);
+                    if (range) {
+                        this.$set(this.conflictBlockMap[blockId], 'resultRange', range);
+                    }
+                }
+            });
         },
 
-        // 从 mergedContent 构建结果分段（包含 Git 自动合并的内容）
+        // 从 mergedContent 构建 resultText（包含 Git 自动合并的内容）
         // 同时提取冲突块的 ours 和 theirs 内容到 parsedConflicts
-        buildResultSegmentsFromMerged(mergedContent) {
-            const segments = [];
+        buildResultTextFromMerged(mergedContent) {
             const lines = mergedContent.split('\n');
+            const resultLines = [];
             this.parsedConflicts = [];
             
             let lineIdx = 0;
-            let blockIdx = 0;
-            let normalLines = [];
             
             while (lineIdx < lines.length) {
                 const line = lines[lineIdx];
                 
                 // 检测冲突开始标记 <<<<<<<
                 if (line.startsWith('<<<<<<<')) {
-                    // 先保存之前收集的普通行
-                    if (normalLines.length > 0) {
-                        segments.push({ type: 'normal', lines: normalLines, blockId: null });
-                        normalLines = [];
-                    }
-                    
                     // 收集 ours 部分（<<<<<<< 和 ======= 之间）
                     lineIdx++;
                     const oursLines = [];
@@ -923,33 +1068,24 @@ new Vue({
                         theirsContent: theirsLines.join('\n')
                     });
                     
-                    // 添加冲突段落（初始使用 ours 内容）
-                    segments.push({
-                        type: 'conflict',
-                        lines: oursLines,
-                        blockId: blockIdx
-                    });
-                    blockIdx++;
+                    // 添加到 resultText（初始使用 ours 内容）
+                    oursLines.forEach(l => resultLines.push(l));
                 } else {
-                    // 普通行，收集起来
-                    normalLines.push(line);
+                    // 普通行
+                    resultLines.push(line);
                     lineIdx++;
                 }
             }
             
-            // 保存最后收集的普通行
-            if (normalLines.length > 0) {
-                segments.push({ type: 'normal', lines: normalLines, blockId: null });
-            }
-            
-            this.resultSegments = segments;
+            this.resultText = resultLines.join('\n');
         },
 
-        // 方案A核心：构建全局对齐区间（优化版：考虑 result 的实际行数）
+        // 构建全局对齐区间
         buildAlignmentSections() {
             const sections = [];
             const oursLines = this.oursLines;
             const theirsLines = this.theirsLines;
+            const resultLines = this.resultLines;
             
             // 获取排序后的冲突块
             const blocks = Object.entries(this.conflictBlockMap)
@@ -960,24 +1096,20 @@ new Vue({
                     return aStart - bStart;
                 });
             
-            // 预计算每个冲突块之前的 result normal 行数
-            const resultNormalBeforeBlock = this.computeResultNormalBeforeBlocks(blocks);
+            let oursIdx = 0, theirsIdx = 0, resultIdx = 0;
             
-            let oursIdx = 0, theirsIdx = 0, resultNormalConsumed = 0;
-            
-            blocks.forEach((block, blockIdx) => {
+            blocks.forEach((block) => {
                 const oursStart = block.oursRange?.start ?? -1;
                 const oursEnd = block.oursRange?.end ?? -1;
                 const theirsStart = block.theirsRange?.start ?? -1;
                 const theirsEnd = block.theirsRange?.end ?? -1;
+                const resultStart = block.resultRange?.start ?? -1;
+                const resultEnd = block.resultRange?.end ?? -1;
                 
                 // 计算冲突块之前的普通区间
                 const oursNormalCount = oursStart >= 0 ? oursStart - oursIdx : 0;
                 const theirsNormalCount = theirsStart >= 0 ? theirsStart - theirsIdx : 0;
-                
-                // 获取 result 在此冲突块之前的实际 normal 行数
-                const resultNormalTotal = resultNormalBeforeBlock[block.id] || 0;
-                const resultNormalCount = resultNormalTotal - resultNormalConsumed;
+                const resultNormalCount = resultStart >= 0 ? resultStart - resultIdx : 0;
                 
                 // 使用三者的最大值作为对齐高度
                 const maxNormal = Math.max(oursNormalCount, theirsNormalCount, resultNormalCount);
@@ -989,7 +1121,8 @@ new Vue({
                         oursCount: oursNormalCount,
                         theirsStart: theirsIdx,
                         theirsCount: theirsNormalCount,
-                        resultCount: resultNormalCount, // 使用 result 的实际行数
+                        resultStart: resultIdx,
+                        resultCount: resultNormalCount,
                         maxCount: maxNormal,
                         blockId: null
                     });
@@ -998,7 +1131,7 @@ new Vue({
                 // 冲突块区间
                 const oursConflictCount = oursEnd >= 0 ? oursEnd - oursStart + 1 : 0;
                 const theirsConflictCount = theirsEnd >= 0 ? theirsEnd - theirsStart + 1 : 0;
-                const resultConflictCount = this.getResultBlockLineCount(block.id);
+                const resultConflictCount = resultEnd >= 0 ? resultEnd - resultStart + 1 : 0;
                 const maxConflict = Math.max(oursConflictCount, theirsConflictCount, resultConflictCount);
                 
                 sections.push({
@@ -1007,6 +1140,7 @@ new Vue({
                     oursCount: oursConflictCount,
                     theirsStart: theirsStart >= 0 ? theirsStart : theirsIdx,
                     theirsCount: theirsConflictCount,
+                    resultStart: resultStart >= 0 ? resultStart : resultIdx,
                     resultCount: resultConflictCount,
                     maxCount: maxConflict,
                     blockId: block.id
@@ -1014,14 +1148,13 @@ new Vue({
                 
                 oursIdx = oursEnd >= 0 ? oursEnd + 1 : oursIdx;
                 theirsIdx = theirsEnd >= 0 ? theirsEnd + 1 : theirsIdx;
-                resultNormalConsumed = resultNormalTotal;
+                resultIdx = resultEnd >= 0 ? resultEnd + 1 : resultIdx;
             });
             
             // 最后的普通区间
             const oursRemain = oursLines.length - oursIdx;
             const theirsRemain = theirsLines.length - theirsIdx;
-            // 计算 result 剩余的 normal 行数
-            const resultRemain = this.computeResultNormalRemaining(resultNormalConsumed);
+            const resultRemain = resultLines.length - resultIdx;
             const maxRemain = Math.max(oursRemain, theirsRemain, resultRemain);
             
             if (maxRemain > 0) {
@@ -1031,7 +1164,8 @@ new Vue({
                     oursCount: oursRemain,
                     theirsStart: theirsIdx,
                     theirsCount: theirsRemain,
-                    resultCount: resultRemain, // 使用 result 的实际剩余行数
+                    resultStart: resultIdx,
+                    resultCount: resultRemain,
                     maxCount: maxRemain,
                     blockId: null
                 });
@@ -1039,49 +1173,12 @@ new Vue({
             
             this.alignmentSections = sections;
         },
-        
-        // 计算每个冲突块之前的 result normal 行数（累计）
-        computeResultNormalBeforeBlocks(blocks) {
-            const result = {};
-            let normalCount = 0;
-            
-            for (const seg of this.resultSegments) {
-                if (seg.blockId !== null) {
-                    // 这是一个冲突块段落，记录之前累计的 normal 行数
-                    result[seg.blockId] = normalCount;
-                } else {
-                    // 这是一个 normal 段落，累加行数
-                    normalCount += seg.lines.length;
-                }
-            }
-            
-            return result;
-        },
-        
-        // 计算 result 剩余的 normal 行数
-        computeResultNormalRemaining(consumedNormalCount) {
-            let totalNormal = 0;
-            for (const seg of this.resultSegments) {
-                if (seg.blockId === null) {
-                    totalNormal += seg.lines.length;
-                }
-            }
-            return totalNormal - consumedNormalCount;
-        },
 
-        getResultBlockLineCount(blockId) {
-            const seg = this.resultSegments.find(s => s.blockId === blockId);
-            return seg ? seg.lines.length : 0;
-        },
-
-        // 方案A核心：构建对齐后的面板数据
+        // 构建对齐后的面板数据
         buildAlignedPanelData(panel) {
             const result = [];
             const lines = panel === 'ours' ? this.oursLines : 
                           panel === 'theirs' ? this.theirsLines : this.resultLines;
-            
-            let segIdx = 0; // 用于 result 面板追踪段落索引
-            let lineInSegIdx = 0; // 段落内行索引
             
             this.alignmentSections.forEach(section => {
                 let count, start;
@@ -1093,7 +1190,7 @@ new Vue({
                     start = section.theirsStart;
                 } else {
                     count = section.resultCount;
-                    start = 0; // result 使用累计索引
+                    start = section.resultStart;
                 }
                 
                 const padding = section.maxCount - count;
@@ -1101,32 +1198,16 @@ new Vue({
                 
                 // 添加实际内容行
                 for (let i = 0; i < count; i++) {
-                    const lineNum = panel === 'result' ? null : (start >= 0 ? start + i + 1 : null);
-                    let content;
+                    const lineNum = start >= 0 ? start + i + 1 : null;
+                    const content = start >= 0 && lines[start + i] !== undefined ? lines[start + i] : '';
                     
-                    if (panel === 'result') {
-                        // 从 resultSegments 获取内容
-                        const segInfo = this.getResultLineInfo(result.length - this.countPlaceholders(result));
-                        content = segInfo ? segInfo.content : '';
-                        result.push({
-                            isPlaceholder: false,
-                            lineNum: segInfo ? segInfo.realLineNum : null,
-                            content: content,
-                            blockId: isConflict ? section.blockId : null,
-                            showButton: isConflict && i === 0,
-                            segIdx: segInfo ? segInfo.segIdx : 0,
-                            lineIdx: segInfo ? segInfo.lineIdx : 0
-                        });
-                    } else {
-                        content = start >= 0 ? lines[start + i] : '';
-                        result.push({
-                            isPlaceholder: false,
-                            lineNum: lineNum,
-                            content: content,
-                            blockId: isConflict ? section.blockId : null,
-                            showButton: isConflict && i === 0
-                        });
-                    }
+                    result.push({
+                        isPlaceholder: false,
+                        lineNum: lineNum,
+                        content: content,
+                        blockId: isConflict ? section.blockId : null,
+                        showButton: isConflict && i === 0
+                    });
                 }
                 
                 // 添加占位行
@@ -1136,40 +1217,12 @@ new Vue({
                         lineNum: null,
                         content: '',
                         blockId: isConflict ? section.blockId : null,
-                        showButton: false,
-                        segIdx: -1,
-                        lineIdx: -1
+                        showButton: false
                     });
                 }
             });
             
             return result;
-        },
-
-        // 获取 result 面板指定实际行的信息
-        getResultLineInfo(realLineIndex) {
-            let currentLine = 0;
-            let realLineNum = 1;
-            for (let segIdx = 0; segIdx < this.resultSegments.length; segIdx++) {
-                const seg = this.resultSegments[segIdx];
-                for (let lineIdx = 0; lineIdx < seg.lines.length; lineIdx++) {
-                    if (currentLine === realLineIndex) {
-                        return {
-                            segIdx,
-                            lineIdx,
-                            content: seg.lines[lineIdx],
-                            realLineNum: realLineNum
-                        };
-                    }
-                    currentLine++;
-                    realLineNum++;
-                }
-            }
-            return null;
-        },
-
-        countPlaceholders(arr) {
-            return arr.filter(item => item.isPlaceholder).length;
         },
 
         // 样式类
@@ -1187,387 +1240,377 @@ new Vue({
             if (item.isPlaceholder) return 'placeholder';
             return this.getLineClass(item, side);
         },
-        getButtonType(blockId, side) {
+        
+        // 中间面板样式类
+        getCenterLineNumClass(item) {
+            if (item.isPlaceholder) return 'placeholder';
+            if (item.blockId === null) return '';
+            const block = this.conflictBlockMap[item.blockId];
+            if (!block) return '';
+            // 如果两侧都是 pending，显示为待解决
+            if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                return 'conflict-pending';
+            }
+            // 否则显示为已解决
+            return 'conflict-block';
+        },
+        
+        getCenterBgLineClass(item) {
+            if (item.isPlaceholder) return '';
+            if (item.blockId === null) return '';
+            const block = this.conflictBlockMap[item.blockId];
+            if (!block) return '';
+            // 如果两侧都是 pending，显示为待解决
+            if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                return 'conflict-pending';
+            }
+            // 否则显示为已解决
+            return 'conflict-block';
+        },
+        
+        // 获取左侧（ours）按钮类型
+        getOursButtonType(blockId) {
             const block = this.conflictBlockMap[blockId];
             if (!block) return 'none';
-            const status = side === 'ours' ? block.oursStatus : block.theirsStatus;
-            const otherStatus = side === 'ours' ? block.theirsStatus : block.oursStatus;
-            if (status !== 'pending') return 'none';
-            if (otherStatus === 'accepted') return 'append';
-            return 'accept';
-        },
-
-        // 采用冲突块
-        acceptBlock(blockId, choice) {
-            this.syncEditingContent(); // 先同步编辑内容
-            const block = this.conflictBlockMap[blockId];
-            if (!block) return;
-            const content = choice === 'ours' ? block.oursContent : block.theirsContent;
-            const newLines = content ? content.split('\n') : [];
             
-            const segIdx = this.resultSegments.findIndex(s => s.blockId === blockId);
-            if (segIdx >= 0) {
-                this.$set(this.resultSegments, segIdx, { ...this.resultSegments[segIdx], lines: newLines });
+            // 只要本侧不是 pending，就不显示按钮
+            if (block.oursStatus !== 'pending') {
+                return 'none';
             }
             
+            // 根据对侧状态决定显示什么按钮
+            if (block.theirsStatus === 'pending' || block.theirsStatus === 'closed') {
+                // 对侧是 pending 或 closed，显示采用/关闭按钮
+                return 'accept-or-close';
+            }
+            
+            if (block.theirsStatus === 'accepted') {
+                // 对侧已采用，显示追加/关闭按钮
+                return 'append-or-close';
+            }
+            
+            return 'none';
+        },
+        
+        // 获取右侧（theirs）按钮类型
+        getTheirsButtonType(blockId) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return 'none';
+            
+            // 只要本侧不是 pending，就不显示按钮
+            if (block.theirsStatus !== 'pending') {
+                return 'none';
+            }
+            
+            // 根据对侧状态决定显示什么按钮
+            if (block.oursStatus === 'pending' || block.oursStatus === 'closed') {
+                // 对侧是 pending 或 closed，显示采用/关闭按钮
+                return 'accept-or-close';
+            }
+            
+            if (block.oursStatus === 'accepted') {
+                // 对侧已采用，显示追加/关闭按钮
+                return 'append-or-close';
+            }
+            
+            return 'none';
+        },
+        
+        // 判断冲突是否已解决
+        isConflictResolved(blockId) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return false;
+            
+            const oursResolved = block.oursStatus === 'closed' || block.oursStatus === 'accepted' || block.oursStatus === 'appended';
+            const theirsResolved = block.theirsStatus === 'closed' || block.theirsStatus === 'accepted' || block.theirsStatus === 'appended';
+            
+            return oursResolved && theirsResolved;
+        },
+
+        // 采用冲突块（点击 » 或 «）
+        acceptBlock(blockId, choice) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block) return;
+            
+            const content = choice === 'ours' ? block.oursContent : block.theirsContent;
+            
+            // 替换 resultText 中的冲突块内容
+            this.replaceConflictBlockInResult(blockId, content);
+            
+            // 更新状态：本侧变为 accepted
             const updated = { ...block };
-            if (choice === 'ours') updated.oursStatus = 'accepted';
-            else updated.theirsStatus = 'accepted';
+            if (choice === 'ours') {
+                updated.oursStatus = 'accepted';
+            } else {
+                updated.theirsStatus = 'accepted';
+            }
             this.$set(this.conflictBlockMap, blockId, updated);
             
-            this.editingCell = null; // 清除编辑状态
+            // 重新计算对齐
+            this.updateConflictBlockResultRanges();
             this.buildAlignmentSections();
             this.updateFileConflictCount();
         },
 
-        // 追加内容
+        // 追加内容（点击 ↙ 或 ↘）
         appendBlock(blockId, side) {
-            this.syncEditingContent(); // 先同步编辑内容
             const block = this.conflictBlockMap[blockId];
             if (!block) return;
+            
             const appendContent = side === 'ours' ? block.oursContent : block.theirsContent;
             if (!appendContent) return;
             
-            const segIdx = this.resultSegments.findIndex(s => s.blockId === blockId);
-            if (segIdx >= 0) {
-                const seg = this.resultSegments[segIdx];
-                const newLines = [...seg.lines, ...appendContent.split('\n')];
-                this.$set(this.resultSegments, segIdx, { ...seg, lines: newLines });
-            }
+            // 在 resultText 中追加内容
+            this.appendToConflictBlockInResult(blockId, appendContent);
             
+            // 更新状态：本侧变为 appended
             const updated = { ...block };
-            if (side === 'ours') updated.oursStatus = 'appended';
-            else updated.theirsStatus = 'appended';
+            if (side === 'ours') {
+                updated.oursStatus = 'appended';
+            } else {
+                updated.theirsStatus = 'appended';
+            }
             this.$set(this.conflictBlockMap, blockId, updated);
             
-            this.editingCell = null; // 清除编辑状态
+            // 重新计算对齐
+            this.updateConflictBlockResultRanges();
             this.buildAlignmentSections();
             this.updateFileConflictCount();
         },
-
-        // 舍弃冲突块
-        rejectBlock(blockId, side) {
-            this.syncEditingContent(); // 先同步编辑内容
+        
+        // 关闭冲突块（点击 ✕）
+        closeBlock(blockId, side) {
             const block = this.conflictBlockMap[blockId];
             if (!block) return;
             
+            // 更新状态：本侧变为 closed
             const updated = { ...block };
-            if (side === 'ours') updated.oursStatus = 'rejected';
-            else updated.theirsStatus = 'rejected';
-            
-            // 自动采用另一侧
-            if (side === 'ours' && block.theirsStatus === 'pending') {
-                const content = block.theirsContent || '';
-                const segIdx = this.resultSegments.findIndex(s => s.blockId === blockId);
-                if (segIdx >= 0) {
-                    this.$set(this.resultSegments, segIdx, { 
-                        ...this.resultSegments[segIdx], 
-                        lines: content ? content.split('\n') : [] 
-                    });
-                }
-                updated.theirsStatus = 'accepted';
-            } else if (side === 'theirs' && block.oursStatus === 'pending') {
-                updated.oursStatus = 'accepted';
+            if (side === 'ours') {
+                updated.oursStatus = 'closed';
+            } else {
+                updated.theirsStatus = 'closed';
             }
-            
             this.$set(this.conflictBlockMap, blockId, updated);
-            this.editingCell = null; // 清除编辑状态
+            
+            // 不修改中间面板内容，只更新按钮显示
             this.buildAlignmentSections();
             this.updateFileConflictCount();
         },
 
-        // 编辑事件 - 聚焦时切换到纯文本模式
-        onLineFocus(segIdx, lineIdx) {
-            this.editingCell = { segIdx, lineIdx };
-        },
         
-        // 失焦时同步数据并恢复语法高亮
-        onLineBlur(segIdx, lineIdx, event) {
-            const text = event.target.innerText;
-            if (this.resultSegments[segIdx]?.lines[lineIdx] !== undefined) {
-                this.$set(this.resultSegments[segIdx].lines, lineIdx, text);
-            }
-            this.editingCell = null;
-        },
-        
-        // 判断是否正在编辑指定单元格
-        isEditingCell(segIdx, lineIdx) {
-            return this.editingCell && this.editingCell.segIdx === segIdx && this.editingCell.lineIdx === lineIdx;
-        },
-        
-        // 获取显示内容：编辑时纯文本，非编辑时语法高亮
-        getDisplayContent(item) {
-            if (this.isEditingCell(item.segIdx, item.lineIdx)) {
-                return this.escapeHtml(item.content);
-            }
-            return this.highlightSyntax(item.content);
-        },
-        
-        // HTML 转义（编辑时使用）
-        escapeHtml(text) {
-            if (!text) return '&nbsp;';
-            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') || '&nbsp;';
-        },
-        
-        // 同步所有正在编辑的内容
-        syncEditingContent() {
-            if (this.editingCell) {
-                const { segIdx, lineIdx } = this.editingCell;
-                const wrapper = this.$refs.centerPanel;
-                if (wrapper) {
-                    const editables = wrapper.querySelectorAll('.line-content[contenteditable="true"]');
-                    let idx = 0;
-                    for (const item of this.alignedResultData) {
-                        if (!item.isPlaceholder) {
-                            if (item.segIdx === segIdx && item.lineIdx === lineIdx && editables[idx]) {
-                                const text = editables[idx].innerText;
-                                if (this.resultSegments[segIdx]?.lines[lineIdx] !== undefined) {
-                                    this.$set(this.resultSegments[segIdx].lines, lineIdx, text);
-                                }
-                                break;
-                            }
-                            idx++;
-                        }
-                    }
-                }
-            }
-        },
-        
-        // 输入事件 - 不更新 Vue 数据，让浏览器自然处理
-        onLineInput(segIdx, lineIdx, event) {
-            // 编辑时不更新 Vue 数据，避免触发重新渲染导致光标丢失
-            // 数据同步在 onLineBlur 中进行
-        },
-        
-        // 中文输入法组合结束
-        onCompositionEnd(segIdx, lineIdx, event) {
-            this.isComposing = false;
-            // 组合结束后也不更新数据，等 blur 时同步
-        },
-        
-        // 获取光标在元素中的文本偏移量（用于粘贴等操作）
-        getCursorOffset(el) {
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return 0;
+        // 替换 resultText 中的冲突块内容
+        replaceConflictBlockInResult(blockId, newContent) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block || !block.resultRange) return;
             
-            const range = selection.getRangeAt(0);
-            const preCaretRange = range.cloneRange();
-            preCaretRange.selectNodeContents(el);
-            preCaretRange.setEnd(range.startContainer, range.startOffset);
-            return preCaretRange.toString().length;
+            const resultLines = this.resultLines;
+            const { start, end } = block.resultRange;
+            
+            // 替换指定范围的行
+            const newLines = newContent ? newContent.split('\n') : [];
+            resultLines.splice(start, end - start + 1, ...newLines);
+            
+            // 更新 resultText
+            this.resultText = resultLines.join('\n');
         },
         
-        // 恢复光标到指定文本偏移位置
-        restoreCursor(el, offset) {
-            const selection = window.getSelection();
-            const range = document.createRange();
+        // 在 resultText 中追加内容到冲突块
+        appendToConflictBlockInResult(blockId, appendContent) {
+            const block = this.conflictBlockMap[blockId];
+            if (!block || !block.resultRange) return;
             
-            let currentOffset = 0;
-            const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
-            let node;
+            const resultLines = this.resultLines;
+            const { end } = block.resultRange;
             
-            while (node = walker.nextNode()) {
-                const nodeLength = node.textContent.length;
-                if (currentOffset + nodeLength >= offset) {
-                    try {
-                        range.setStart(node, offset - currentOffset);
-                        range.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    } catch (e) {
-                        // 如果设置失败，放到末尾
-                        range.selectNodeContents(el);
-                        range.collapse(false);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                    return;
-                }
-                currentOffset += nodeLength;
-            }
+            // 在冲突块末尾追加内容
+            const appendLines = appendContent ? appendContent.split('\n') : [];
+            resultLines.splice(end + 1, 0, ...appendLines);
             
-            // 如果没找到合适位置，放到末尾
-            range.selectNodeContents(el);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
+            // 更新 resultText
+            this.resultText = resultLines.join('\n');
         },
-        
-        onLineKeydown(segIdx, lineIdx, event) {
-            if (segIdx < 0 || lineIdx < 0) return;
-            const seg = this.resultSegments[segIdx];
-            if (!seg) return;
-            
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                // 先同步当前行的编辑内容
-                const currentText = event.target.innerText;
-                const cursorPos = this.getCursorOffset(event.target);
-                const beforeCursor = currentText.substring(0, cursorPos);
-                const afterCursor = currentText.substring(cursorPos);
-                
-                const newLines = [...seg.lines];
-                newLines[lineIdx] = beforeCursor;
-                newLines.splice(lineIdx + 1, 0, afterCursor);
-                
-                this.editingCell = null; // 清除编辑状态
-                this.$set(this.resultSegments, segIdx, { ...seg, lines: newLines });
+
+        // Textarea 输入事件
+        onTextareaInput() {
+            // resultText 已通过 v-model 自动更新
+            // 需要重新计算冲突块位置
+            this.$nextTick(() => {
+                this.updateConflictBlockResultRanges();
                 this.buildAlignmentSections();
-                this.$nextTick(() => this.focusLine(segIdx, lineIdx + 1));
-            } else if (event.key === 'Backspace' && lineIdx > 0) {
-                const sel = window.getSelection();
-                const cursorPos = this.getCursorOffset(event.target);
-                if (cursorPos === 0) {
-                    event.preventDefault();
-                    // 先同步当前行的编辑内容
-                    const currText = event.target.innerText;
-                    const prevText = seg.lines[lineIdx - 1] || '';
-                    
-                    const newLines = [...seg.lines];
-                    newLines[lineIdx - 1] = prevText + currText;
-                    newLines.splice(lineIdx, 1);
-                    
-                    this.editingCell = null; // 清除编辑状态
-                    this.$set(this.resultSegments, segIdx, { ...seg, lines: newLines });
-                    this.buildAlignmentSections();
-                    this.$nextTick(() => this.focusLineAt(segIdx, lineIdx - 1, prevText.length));
-                }
-            }
+            });
         },
-        onLinePaste(segIdx, lineIdx, event) {
-            if (segIdx < 0 || lineIdx < 0) return;
+        
+        // Textarea 粘贴事件处理（确保所见即所得）
+        handlePaste(event) {
+            // 阻止默认粘贴行为，防止浏览器自动添加空格或格式化
             event.preventDefault();
             
-            const el = event.target;
-            const text = (event.clipboardData || window.clipboardData).getData('text/plain');
+            // 获取纯文本内容（不包含格式）
+            const clipboardData = event.clipboardData || window.clipboardData;
+            if (!clipboardData) return;
+            
+            let text = clipboardData.getData('text/plain');
             if (!text) return;
             
-            const seg = this.resultSegments[segIdx];
-            if (!seg) return;
+            // 统一换行符为 \n
+            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             
-            // 先获取当前 DOM 中的实际内容（可能已被用户编辑但未同步）
-            const currentLineText = el.innerText;
+            // 获取当前光标位置
+            const textarea = event.target;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
             
-            // 使用正确的方法获取光标文本偏移量
-            const cursorPos = this.getCursorOffset(el);
-            const before = currentLineText.substring(0, cursorPos);
-            const after = currentLineText.substring(cursorPos);
+            // 手动插入文本到正确位置
+            const before = this.resultText.substring(0, start);
+            const after = this.resultText.substring(end);
+            this.resultText = before + text + after;
             
-            const pasteLines = text.split('\n');
-            const newLines = [...seg.lines];
-            
-            let finalLineIdx = lineIdx;
-            let finalCursorPos = 0;
-            
-            if (pasteLines.length === 1) {
-                // 单行粘贴
-                newLines[lineIdx] = before + pasteLines[0] + after;
-                finalCursorPos = before.length + pasteLines[0].length;
-            } else {
-                // 多行粘贴
-                newLines[lineIdx] = before + pasteLines[0];
-                for (let i = 1; i < pasteLines.length - 1; i++) {
-                    newLines.splice(lineIdx + i, 0, pasteLines[i]);
-                }
-                newLines.splice(lineIdx + pasteLines.length - 1, 0, pasteLines[pasteLines.length - 1] + after);
-                
-                finalLineIdx = lineIdx + pasteLines.length - 1;
-                finalCursorPos = pasteLines[pasteLines.length - 1].length;
-            }
-            
-            // 清除编辑状态，更新数据
-            this.editingCell = null;
-            this.$set(this.resultSegments, segIdx, { ...seg, lines: newLines });
-            this.buildAlignmentSections();
-            
-            // 恢复光标到正确位置
+            // 恢复光标位置到粘贴内容之后
             this.$nextTick(() => {
-                this.focusLineAt(segIdx, finalLineIdx, finalCursorPos);
+                const newPosition = start + text.length;
+                textarea.selectionStart = newPosition;
+                textarea.selectionEnd = newPosition;
+                textarea.focus();
+                
+                // 触发内容更新
+                this.updateConflictBlockResultRanges();
+                this.buildAlignmentSections();
             });
         },
-        focusLine(segIdx, lineIdx) {
-            const wrapper = this.$refs.centerPanel;
-            if (!wrapper) return;
-            const editables = wrapper.querySelectorAll('.line-content[contenteditable="true"]');
-            let targetIdx = 0;
-            for (let i = 0; i < this.alignedResultData.length; i++) {
-                const item = this.alignedResultData[i];
-                if (!item.isPlaceholder) {
-                    if (item.segIdx === segIdx && item.lineIdx === lineIdx) {
-                        if (editables[targetIdx]) {
-                            editables[targetIdx].focus();
-                            // 光标放到开头
-                            const range = document.createRange();
-                            range.selectNodeContents(editables[targetIdx]);
-                            range.collapse(true);
-                            const sel = window.getSelection();
-                            sel.removeAllRanges();
-                            sel.addRange(range);
-                        }
-                        return;
-                    }
-                    targetIdx++;
-                }
+        
+        // Textarea 滚动同步（优化版）
+        syncScrollFromTextarea() {
+            if (this.scrolling) return;
+            this.scrolling = true;
+            
+            const textarea = this.$refs.resultTextarea;
+            if (!textarea) {
+                this.scrolling = false;
+                return;
             }
-        },
-        focusLineAt(segIdx, lineIdx, offset) {
-            const wrapper = this.$refs.centerPanel;
-            if (!wrapper) return;
-            const editables = wrapper.querySelectorAll('.line-content[contenteditable="true"]');
-            let targetIdx = 0;
-            for (let i = 0; i < this.alignedResultData.length; i++) {
-                const item = this.alignedResultData[i];
-                if (!item.isPlaceholder) {
-                    if (item.segIdx === segIdx && item.lineIdx === lineIdx) {
-                        if (editables[targetIdx]) {
-                            editables[targetIdx].focus();
-                            this.restoreCursor(editables[targetIdx], offset);
-                        }
-                        return;
-                    }
-                    targetIdx++;
+            
+            const { scrollTop, scrollLeft } = textarea;
+            
+            // 使用 requestAnimationFrame 优化性能
+            requestAnimationFrame(() => {
+                // 同步背景层滚动
+                const background = this.$refs.centerBackground;
+                if (background) {
+                    background.scrollTop = scrollTop;
                 }
-            }
+                
+                // 同步左右面板滚动
+                ['leftPanel', 'rightPanel'].forEach(ref => {
+                    if (this.$refs[ref]) {
+                        this.$refs[ref].scrollTop = scrollTop;
+                        this.$refs[ref].scrollLeft = scrollLeft;
+                    }
+                });
+                
+                // 同步行号列滚动
+                ['leftLineNums', 'rightLineNums'].forEach(ref => {
+                    if (this.$refs[ref]) {
+                        this.$refs[ref].scrollTop = scrollTop;
+                    }
+                });
+                
+                this.scrolling = false;
+            });
         },
 
-        // 全部采用
+        // 全部采用左侧
         acceptAllOurs() {
-            this.syncEditingContent(); // 先同步编辑内容
             Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
                 if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
-                    const segIdx = this.resultSegments.findIndex(s => s.blockId === parseInt(blockId));
-                    if (segIdx >= 0) {
-                        this.$set(this.resultSegments, segIdx, {
-                            ...this.resultSegments[segIdx],
-                            lines: block.oursContent ? block.oursContent.split('\n') : []
-                        });
-                    }
-                    this.$set(this.conflictBlockMap, blockId, { ...block, oursStatus: 'accepted', theirsStatus: 'rejected' });
+                    // 采用左侧
+                    this.replaceConflictBlockInResult(parseInt(blockId), block.oursContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        oursStatus: 'accepted'
+                        // theirsStatus 保持 pending
+                    });
                 }
             });
-            this.editingCell = null;
+            
+            // 关闭所有右侧
+            Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
+                if (block.theirsStatus === 'pending') {
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        theirsStatus: 'closed'
+                    });
+                }
+            });
+            
+            this.updateConflictBlockResultRanges();
             this.buildAlignmentSections();
             this.updateFileConflictCount();
-            this.$message.success('已全部采用左侧内容');
         },
+        
         acceptAllTheirs() {
-            this.syncEditingContent(); // 先同步编辑内容
             Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
                 if (block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
-                    const segIdx = this.resultSegments.findIndex(s => s.blockId === parseInt(blockId));
-                    if (segIdx >= 0) {
-                        this.$set(this.resultSegments, segIdx, {
-                            ...this.resultSegments[segIdx],
-                            lines: block.theirsContent ? block.theirsContent.split('\n') : []
-                        });
-                    }
-                    this.$set(this.conflictBlockMap, blockId, { ...block, oursStatus: 'rejected', theirsStatus: 'accepted' });
+                    // 采用右侧
+                    this.replaceConflictBlockInResult(parseInt(blockId), block.theirsContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        theirsStatus: 'accepted'
+                        // oursStatus 保持 pending
+                    });
                 }
             });
-            this.editingCell = null;
+            
+            // 关闭所有左侧
+            Object.entries(this.conflictBlockMap).forEach(([blockId, block]) => {
+                if (block.oursStatus === 'pending') {
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        oursStatus: 'closed'
+                    });
+                }
+            });
+            
+            this.updateConflictBlockResultRanges();
             this.buildAlignmentSections();
             this.updateFileConflictCount();
-            this.$message.success('已全部采用右侧内容');
+        },
+        
+        // 全部合并（先采用左侧，再追加右侧）
+        acceptAllBoth() {
+            const blockIds = Object.keys(this.conflictBlockMap).map(id => parseInt(id)).sort((a, b) => a - b);
+            
+            // 第一步：采用所有左侧
+            blockIds.forEach(blockId => {
+                const block = this.conflictBlockMap[blockId];
+                if (block && block.oursStatus === 'pending' && block.theirsStatus === 'pending') {
+                    this.replaceConflictBlockInResult(blockId, block.oursContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        oursStatus: 'accepted'
+                    });
+                }
+            });
+            
+            // 重新计算位置
+            this.updateConflictBlockResultRanges();
+            
+            // 第二步：追加所有右侧
+            blockIds.forEach(blockId => {
+                const block = this.conflictBlockMap[blockId];
+                if (block && block.oursStatus === 'accepted' && block.theirsStatus === 'pending') {
+                    this.appendToConflictBlockInResult(blockId, block.theirsContent);
+                    this.$set(this.conflictBlockMap, blockId, { 
+                        ...block, 
+                        theirsStatus: 'appended'
+                    });
+                }
+            });
+            
+            // 第三步：关闭所有（不需要，因为 appended 状态已经不显示按钮）
+            
+            this.updateConflictBlockResultRanges();
+            this.buildAlignmentSections();
+            this.updateFileConflictCount();
         },
 
         // 冲突导航
@@ -1591,20 +1634,41 @@ new Vue({
             });
         },
 
-        // 滚动同步
+        // 滚动同步（左右面板触发，优化版）
         syncScroll(source, event) {
             if (this.scrolling) return;
             this.scrolling = true;
-            const el = this.$refs[source + 'Panel'] || this.$refs.centerPanel;
+            const el = this.$refs[source + 'Panel'];
             if (!el) { this.scrolling = false; return; }
             const { scrollTop, scrollLeft } = el;
-            ['leftPanel', 'rightPanel', 'centerPanel'].forEach(ref => {
-                if (this.$refs[ref]) { this.$refs[ref].scrollTop = scrollTop; this.$refs[ref].scrollLeft = scrollLeft; }
+            
+            // 使用 requestAnimationFrame 优化性能
+            requestAnimationFrame(() => {
+                // 同步另一侧面板
+                const otherPanel = source === 'left' ? 'rightPanel' : 'leftPanel';
+                if (this.$refs[otherPanel]) {
+                    this.$refs[otherPanel].scrollTop = scrollTop;
+                    this.$refs[otherPanel].scrollLeft = scrollLeft;
+                }
+                
+                // 同步 textarea
+                if (this.$refs.resultTextarea) {
+                    this.$refs.resultTextarea.scrollTop = scrollTop;
+                    this.$refs.resultTextarea.scrollLeft = scrollLeft;
+                }
+                
+                // 同步背景层
+                if (this.$refs.centerBackground) {
+                    this.$refs.centerBackground.scrollTop = scrollTop;
+                }
+                
+                // 同步行号列
+                ['leftLineNums', 'rightLineNums'].forEach(ref => {
+                    if (this.$refs[ref]) this.$refs[ref].scrollTop = scrollTop;
+                });
+                
+                this.scrolling = false;
             });
-            ['leftLineNums', 'centerLineNums', 'rightLineNums'].forEach(ref => {
-                if (this.$refs[ref]) this.$refs[ref].scrollTop = scrollTop;
-            });
-            setTimeout(() => this.scrolling = false, 10);
         },
 
         updateFileConflictCount() {
@@ -1654,15 +1718,21 @@ new Vue({
             return html || '&nbsp;';
         },
 
-        getResolvedContent() { return this.resultText; },
+        getResolvedContent() { 
+            // 统一换行符为 \n，确保跨平台一致性
+            let content = this.resultText;
+            if (content) {
+                content = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            }
+            return content;
+        },
 
         // 文件切换
         async handleFileChange(filePath) {
             if (this.globalLoading || filePath === this.previousFile) return;
-            this.syncEditingContent(); // 先同步编辑内容
             if (this.previousFile && this.oursContent) {
                 this.fileEditCache[this.previousFile] = {
-                    resultSegments: JSON.parse(JSON.stringify(this.resultSegments)),
+                    resultText: this.resultText,
                     oursContent: this.oursContent,
                     theirsContent: this.theirsContent,
                     conflictBlockMap: JSON.parse(JSON.stringify(this.conflictBlockMap)),
@@ -1670,12 +1740,11 @@ new Vue({
                     alignmentSections: JSON.parse(JSON.stringify(this.alignmentSections))
                 };
             }
-            this.editingCell = null; // 清除编辑状态
             this.previousFile = filePath;
             this.currentFile = filePath;
             if (this.fileEditCache[filePath]) {
                 const c = this.fileEditCache[filePath];
-                this.resultSegments = c.resultSegments;
+                this.resultText = c.resultText;
                 this.oursContent = c.oursContent;
                 this.theirsContent = c.theirsContent;
                 this.conflictBlockMap = c.conflictBlockMap;
@@ -1690,7 +1759,6 @@ new Vue({
         // 保存
         async saveCurrentFile() {
             if (!this.currentFile || this.globalLoading) return;
-            this.syncEditingContent(); // 先同步编辑内容
             if (this.unresolvedConflicts > 0) { this.$message.warning(`还有 ${this.unresolvedConflicts} 个冲突未解决`); return; }
             this.globalLoading = true;
             this.globalLoadingText = '正在保存文件...';
@@ -1717,7 +1785,7 @@ new Vue({
             }
             for (const [fp, cache] of Object.entries(this.fileEditCache)) {
                 if (fp !== this.currentFile) {
-                    const content = cache.resultSegments.map(s => s.lines.join('\n')).join('\n');
+                    const content = cache.resultText || '';
                     if (!await this.saveFileToBackend(fp, content)) return false;
                 }
             }
