@@ -99,6 +99,13 @@ public class ConflictSession {
     private Map<String, String> resolvedContents = new ConcurrentHashMap<>();
 
     /**
+     * 原始冲突内容缓存 (filePath -> originalMergedContent)
+     * 用于重置功能，保存初始的包含冲突标记的内容
+     */
+    @Builder.Default
+    private Map<String, String> originalConflictContents = new ConcurrentHashMap<>();
+
+    /**
      * 中间分支ID（可选，用于更新合并状态）
      */
     private Long mixBranchId;
