@@ -11,8 +11,9 @@
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <!-- Element UI CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- Element UI CSS with Fallback -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css" 
+          onerror="this.onerror=null;this.href='/lib/element-ui/index.css';">
     <style>
         * {
             margin: 0;
@@ -330,10 +331,18 @@
     </div>
 </div>
 
-<!-- Vue和Element UI -->
-<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
-<script src="https://unpkg.com/element-ui/lib/index.js"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<!-- Vue.js with Fallback -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
+<script>window.Vue || document.write('<script src="/lib/vue/vue.min.js"><\/script>')</script>
+
+<!-- Element UI with Fallback -->
+<script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
+<script>window.ELEMENT || document.write('<script src="/lib/element-ui/index.js"><\/script>')</script>
+
+<!-- Axios with Fallback -->
+<script src="https://cdn.jsdelivr.net/npm/axios@1.6.2/dist/axios.min.js"></script>
+<script>window.axios || document.write('<script src="/lib/axios/axios.min.js"><\/script>')</script>
+
 <script src="/js/common.js"></script>
 
 <script>
