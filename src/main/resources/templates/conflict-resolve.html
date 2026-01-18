@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>代码冲突解决</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <!-- Element UI CSS with Fallback -->
-    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css" 
-          id="element-ui-css" 
-          onerror="this.onerror=null;this.href='/lib/element-ui/index.css';">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -479,9 +476,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 0; /* 隐藏按钮内的文本内容 */
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            /* 增强字体回退链，确保 Unicode 符号可以显示 */
+            font-family: 'Segoe UI Symbol', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', Arial, sans-serif;
         }
+        
+        /* 使用 CSS 伪元素 + Unicode 转义显示图标 */
+        .action-btn::before {
+            content: '';
+            font-size: 14px;
+            line-height: 1;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
         .action-btn:hover {
             transform: scale(1.2);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -489,12 +499,33 @@
         .action-btn:active {
             transform: scale(0.95);
         }
+        
+        /* 采用按钮 - 使用双箭头 » 和 « */
         .accept-btn { background: #67c23a; color: #fff; }
         .accept-btn:hover { background: #85ce61; }
+        .accept-btn.accept-right::before { content: '\00BB'; } /* » 右双箭头 */
+        .accept-btn.accept-left::before { content: '\00AB'; } /* « 左双箭头 */
+        
+        /* 关闭按钮 - 使用 × */
         .reject-btn { background: #909399; color: #fff; }
         .reject-btn:hover { background: #a6a9ad; }
+        .reject-btn::before { content: '\00D7'; } /* × 乘号 */
+        
+        /* 追加按钮 - 使用箭头 ↘ 和 ↙ */
         .append-btn { background: #409eff; color: #fff; }
         .append-btn:hover { background: #66b1ff; }
+        .append-btn.append-right::before { content: '\2198'; } /* ↘ 右下箭头 */
+        .append-btn.append-left::before { content: '\2199'; } /* ↙ 左下箭头 */
+        
+        /* 降级方案：如果浏览器不支持这些 Unicode 字符，使用纯文本 */
+        @supports not (content: '\00BB') {
+            .action-btn { font-size: 10px; }
+            .accept-btn.accept-right::before { content: '>'; }
+            .accept-btn.accept-left::before { content: '<'; }
+            .reject-btn::before { content: 'X'; }
+            .append-btn.append-right::before { content: '\\'; }
+            .append-btn.append-left::before { content: '/'; }
+        }
 
         /* 中间面板分段编辑样式 */
         .result-segments-wrapper {
@@ -690,12 +721,12 @@
                                 <div class="action-area" :class="getActionAreaClass(item)">
                                     <div class="line-actions" v-if="item.showButton && getOursButtonType(item.blockId) !== 'none'">
                                         <template v-if="getOursButtonType(item.blockId) === 'accept-or-close'">
-                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭此冲突块">✕</button>
-                                            <button class="action-btn accept-btn" @click="acceptBlock(item.blockId, 'ours')" title="采用目标分支代码">»</button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭此冲突块" aria-label="关闭此冲突块"></button>
+                                            <button class="action-btn accept-btn accept-right" @click="acceptBlock(item.blockId, 'ours')" title="采用目标分支代码" aria-label="采用目标分支代码"></button>
                                         </template>
                                         <template v-else-if="getOursButtonType(item.blockId) === 'append-or-close'">
-                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭此冲突块">✕</button>
-                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'ours')" title="追加到下一行">↘</button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'ours')" title="关闭此冲突块" aria-label="关闭此冲突块"></button>
+                                            <button class="action-btn append-btn append-right" @click="appendBlock(item.blockId, 'ours')" title="追加到下一行" aria-label="追加到下一行"></button>
                                         </template>
                                     </div>
                                 </div>
@@ -759,12 +790,12 @@
                                 <div class="action-area" :class="getActionAreaClass(item)">
                                     <div class="line-actions" v-if="item.showButton && getTheirsButtonType(item.blockId) !== 'none'">
                                         <template v-if="getTheirsButtonType(item.blockId) === 'accept-or-close'">
-                                            <button class="action-btn accept-btn" @click="acceptBlock(item.blockId, 'theirs')" title="采用源分支代码">«</button>
-                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭此冲突块">✕</button>
+                                            <button class="action-btn accept-btn accept-left" @click="acceptBlock(item.blockId, 'theirs')" title="采用源分支代码" aria-label="采用源分支代码"></button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭此冲突块" aria-label="关闭此冲突块"></button>
                                         </template>
                                         <template v-else-if="getTheirsButtonType(item.blockId) === 'append-or-close'">
-                                            <button class="action-btn append-btn" @click="appendBlock(item.blockId, 'theirs')" title="追加到下一行">↙</button>
-                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭此冲突块">✕</button>
+                                            <button class="action-btn append-btn append-left" @click="appendBlock(item.blockId, 'theirs')" title="追加到下一行" aria-label="追加到下一行"></button>
+                                            <button class="action-btn reject-btn" @click="closeBlock(item.blockId, 'theirs')" title="关闭此冲突块" aria-label="关闭此冲突块"></button>
                                         </template>
                                     </div>
                                 </div>
@@ -818,18 +849,9 @@
     </div>
 </div>
 
-<!-- Vue.js with Fallback -->
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
-<script>window.Vue || document.write('<script src="/lib/vue/vue.min.js"><\/script>')</script>
-
-<!-- Element UI with Fallback -->
-<script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
-<script>window.ELEMENT || document.write('<script src="/lib/element-ui/index.js"><\/script>')</script>
-
-<!-- Axios with Fallback -->
-<script src="https://cdn.jsdelivr.net/npm/axios@1.6.2/dist/axios.min.js"></script>
-<script>window.axios || document.write('<script src="/lib/axios/axios.min.js"><\/script>')</script>
-
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="/js/common.js"></script>
 
 <script>
