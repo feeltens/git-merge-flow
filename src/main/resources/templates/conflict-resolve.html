@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>代码冲突解决</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- Element UI CSS with Fallback -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css" 
+          id="element-ui-css" 
+          onerror="this.onerror=null;this.href='/lib/element-ui/index.css';">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -815,9 +818,18 @@
     </div>
 </div>
 
+<!-- Vue.js with Fallback -->
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
-<script src="https://unpkg.com/element-ui/lib/index.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>window.Vue || document.write('<script src="/lib/vue/vue.min.js"><\/script>')</script>
+
+<!-- Element UI with Fallback -->
+<script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
+<script>window.ELEMENT || document.write('<script src="/lib/element-ui/index.js"><\/script>')</script>
+
+<!-- Axios with Fallback -->
+<script src="https://cdn.jsdelivr.net/npm/axios@1.6.2/dist/axios.min.js"></script>
+<script>window.axios || document.write('<script src="/lib/axios/axios.min.js"><\/script>')</script>
+
 <script src="/js/common.js"></script>
 
 <script>
