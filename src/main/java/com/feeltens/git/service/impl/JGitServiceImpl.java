@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +55,8 @@ public class JGitServiceImpl implements JGitService {
     private ConflictParser conflictParser;
 
     @Override
-    public String cloneRepository(String repoUrl, String projectName, String sessionId, GitCredentials credentials) {
+    public String cloneRepository(String repoUrl, String projectName, String sessionId,
+                                  GitCredentials credentials, String sourceBranch, String targetBranch) {
         String localPath = getLocalRepoPath(projectName, sessionId);
         File localDir = new File(localPath);
 
@@ -63,7 +65,7 @@ public class JGitServiceImpl implements JGitService {
             FileUtil.del(localDir);
         }
 
-        log.info("开始克隆仓库: {} -> {}", repoUrl, localPath);
+        log.info("开始克隆仓库: {} -> {}, 分支: [{}, {}]", repoUrl, localPath, sourceBranch, targetBranch);
 
         try {
             CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
@@ -73,7 +75,11 @@ public class JGitServiceImpl implements JGitService {
                     .setURI(repoUrl)
                     .setDirectory(localDir)
                     .setCredentialsProvider(credentialsProvider)
-                    .setCloneAllBranches(true)
+                    .setCloneAllBranches(false)
+                    .setBranchesToClone(Arrays.asList(
+                            "refs/heads/" + sourceBranch,
+                            "refs/heads/" + targetBranch
+                    ))
                     .setTimeout(jgitConfig.getCloneTimeoutSeconds())
                     .call()
                     .close();
