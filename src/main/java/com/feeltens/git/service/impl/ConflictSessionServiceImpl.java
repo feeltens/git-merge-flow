@@ -114,7 +114,14 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
         try {
             // 5. 克隆仓库
             GitCredentials credentials = getGitCredentials();
-            String localRepoPath = jGitService.cloneRepository(project.getRepositoryUrl(), projectName, sessionId, credentials);
+            String localRepoPath = jGitService.cloneRepository(
+                    project.getRepositoryUrl(),
+                    projectName,
+                    sessionId,
+                    credentials,
+                    req.getSourceBranch(),
+                    req.getTargetBranch()
+            );
             session.setLocalRepoPath(localRepoPath);
 
             // 6. 执行合并
@@ -129,25 +136,25 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
             // 7. 获取冲突文件列表并缓存原始冲突内容
             List<String> conflictFiles = jGitService.getConflictFiles(localRepoPath);
             Map<String, String> originalContents = new ConcurrentHashMap<>();
-            
+
             // 缓存每个冲突文件的原始内容（包含冲突标记）
             for (String filePath : conflictFiles) {
                 try {
                     ConflictFileContent content = jGitService.getConflictFileContent(localRepoPath, filePath);
                     String mergedContent = content.getMergedContent();
-                    
+
                     // 检查文件大小
                     long fileSize = mergedContent.length() * 2L; // Java char 占 2 字节
                     if (fileSize > jgitConfig.getMaxConflictFileSize()) {
-                        log.warn("冲突文件过大，跳过缓存: filePath={}, size={}MB", 
+                        log.warn("冲突文件过大，跳过缓存: filePath={}, size={}MB",
                                 filePath, fileSize / (1024 * 1024));
                         throw new BizException(String.format(
                                 "文件 %s 过大（%.2fMB），超过限制（%.2fMB），不支持在线解决冲突",
-                                filePath, 
+                                filePath,
                                 fileSize / (1024.0 * 1024),
                                 jgitConfig.getMaxConflictFileSize() / (1024.0 * 1024)));
                     }
-                    
+
                     originalContents.put(filePath, mergedContent);
                     log.debug("缓存原始冲突内容: filePath={}, size={}KB", filePath, fileSize / 1024);
                 } catch (BizException e) {
@@ -158,7 +165,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                     throw new BizException("读取冲突文件失败: " + filePath + ", " + e.getMessage());
                 }
             }
-            
+
             session.setConflictFiles(conflictFiles);
             session.setOriginalConflictContents(originalContents);
             session.setStatus(SessionStatus.READY);
@@ -322,7 +329,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
         // 6. 清理资源和缓存
         String projectName = session.getProjectName();
         long freedMemory = calculateSessionMemorySize(session);
-        
+
         // 清理内存缓存
         if (session.getOriginalConflictContents() != null) {
             session.getOriginalConflictContents().clear();
@@ -330,7 +337,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
         if (session.getResolvedContents() != null) {
             session.getResolvedContents().clear();
         }
-        
+
         jGitService.cleanup(projectName, sessionId);
         Map<String, ConflictSession> projectSessions = sessionCache.get(projectName);
         if (projectSessions != null) {
@@ -340,7 +347,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
             }
         }
 
-        log.info("冲突解决提交成功: sessionId={}, targetBranch={}, 释放内存约={}KB", 
+        log.info("冲突解决提交成功: sessionId={}, targetBranch={}, 释放内存约={}KB",
                 sessionId, session.getTargetBranch(), freedMemory / 1024);
 
         return CommitResultVO.builder()
@@ -357,9 +364,9 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
             if (session != null) {
                 // 计算释放的内存
                 long freedMemory = calculateSessionMemorySize(session);
-                
+
                 session.setStatus(SessionStatus.CANCELLED);
-                
+
                 // 清理缓存内容
                 if (session.getOriginalConflictContents() != null) {
                     session.getOriginalConflictContents().clear();
@@ -367,14 +374,14 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                 if (session.getResolvedContents() != null) {
                     session.getResolvedContents().clear();
                 }
-                
+
                 jGitService.cleanup(session.getProjectName(), sessionId);
                 projectEntry.getValue().remove(sessionId);
-                
+
                 if (projectEntry.getValue().isEmpty()) {
                     sessionCache.remove(projectEntry.getKey());
                 }
-                
+
                 log.info("会话已取消: sessionId={}, 释放内存约={}KB", sessionId, freedMemory / 1024);
                 return;
             }
@@ -414,7 +421,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
         // 写入原始冲突内容到工作区
         jGitService.writeResolvedContent(session.getLocalRepoPath(), filePath, originalContent);
 
-        log.info("文件已重置到原始冲突状态: sessionId={}, filePath={}, operator={}", 
+        log.info("文件已重置到原始冲突状态: sessionId={}, filePath={}, operator={}",
                 sessionId, filePath, session.getOperator());
     }
 
@@ -437,7 +444,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                     // 计算释放的内存大小
                     long sessionMemory = calculateSessionMemorySize(session);
                     freedMemory += sessionMemory;
-                    
+
                     expiredSessions.add(sessionEntry.getKey());
                 }
             }
@@ -461,12 +468,12 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
 
         // 同时清理文件系统中的过期仓库
         jGitService.cleanupExpired(jgitConfig.getSessionExpireHours());
-        
+
         if (cleanedCount > 0) {
-            log.info("定期清理完成: 清理会话数={}, 释放内存约={}MB, 当前活跃会话数={}", 
+            log.info("定期清理完成: 清理会话数={}, 释放内存约={}MB, 当前活跃会话数={}",
                     cleanedCount, freedMemory / (1024 * 1024), getTotalSessionCount());
         }
-        
+
         // 记录当前缓存使用情况
         logCacheStatistics();
     }
@@ -479,8 +486,8 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
             long freedMemory = projectSessions.values().stream()
                     .mapToLong(this::calculateSessionMemorySize)
                     .sum();
-            
-            log.info("清理项目会话: projectName={}, sessionCount={}, 释放内存约={}MB", 
+
+            log.info("清理项目会话: projectName={}, sessionCount={}, 释放内存约={}MB",
                     projectName, projectSessions.size(), freedMemory / (1024 * 1024));
         }
         // 清理该项目的所有临时仓库目录
@@ -585,7 +592,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
      */
     private long calculateSessionMemorySize(ConflictSession session) {
         long size = 0;
-        
+
         // 计算原始冲突内容缓存大小
         if (session.getOriginalConflictContents() != null) {
             for (String content : session.getOriginalConflictContents().values()) {
@@ -594,7 +601,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                 }
             }
         }
-        
+
         // 计算已解决内容缓存大小
         if (session.getResolvedContents() != null) {
             for (String content : session.getResolvedContents().values()) {
@@ -603,7 +610,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                 }
             }
         }
-        
+
         return size;
     }
 
@@ -633,14 +640,14 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
         int totalSessions = getTotalSessionCount();
         long totalSize = getTotalCacheSize();
         int projectCount = sessionCache.size();
-        
+
         if (totalSessions > 0) {
             log.info("缓存统计: 项目数={}, 会话数={}, 总内存占用={}MB, 平均每会话={}KB",
-                    projectCount, totalSessions, 
+                    projectCount, totalSessions,
                     totalSize / (1024 * 1024),
                     totalSize / totalSessions / 1024);
         }
-        
+
         // 如果缓存过大，发出警告
         long maxCacheSize = 500L * 1024 * 1024; // 500MB
         if (totalSize > maxCacheSize) {
