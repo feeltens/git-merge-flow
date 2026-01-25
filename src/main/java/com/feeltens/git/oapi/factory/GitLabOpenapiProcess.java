@@ -959,16 +959,58 @@ public class GitLabOpenapiProcess implements GitOpenApiProcess {
 
         try {
             JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
+            List<Object> commits = jsonObject.getJSONArray(GetCompareResp.Fields.commits);
+
+            // 解析diffs字段
+            List<GetCompareResp.DiffFile> diffFiles = parseDiffsFromGitLab(jsonObject);
+
             return GetCompareResp.builder()
-                    .commits(jsonObject.getJSONArray(GetCompareResp.Fields.commits))
+                    .commits(commits)
+                    .diffs(diffFiles)
                     .build();
         } catch (Exception e) {
             // diffs.diff 可能有特殊字符，导致json反序列化失败，所以用 commits":[{ 来判断
             List<Object> commitList = responseBody.contains("commits\":[{") ? Lists.newArrayList("one") : Collections.emptyList();
             return GetCompareResp.builder()
                     .commits(commitList)
+                    .diffs(Collections.emptyList())
                     .build();
         }
+    }
+
+    /**
+     * 解析GitLab的diffs字段
+     * GitLab格式: old_path, new_path, diff, new_file, deleted_file, renamed_file等
+     */
+    private List<GetCompareResp.DiffFile> parseDiffsFromGitLab(JSONObject jsonObject) {
+        List<GetCompareResp.DiffFile> diffFiles = Lists.newArrayList();
+
+        try {
+            JSONArray diffsArray = jsonObject.getJSONArray("diffs");
+            if (diffsArray == null || diffsArray.isEmpty()) {
+                return diffFiles;
+            }
+
+            for (int i = 0; i < diffsArray.size(); i++) {
+                JSONObject diffObj = diffsArray.getJSONObject(i);
+
+                GetCompareResp.DiffFile diffFile = GetCompareResp.DiffFile.builder()
+                        .oldPath(diffObj.getString("old_path"))
+                        .newPath(diffObj.getString("new_path"))
+                        .diff(null) // diff字段可能有特殊字符，暂不解析
+                        .newFile(diffObj.getBoolean("new_file"))
+                        .deletedFile(diffObj.getBoolean("deleted_file"))
+                        .renamedFile(diffObj.getBoolean("renamed_file"))
+                        .binary(false) // GitLab API可能没有直接的binary字段
+                        .build();
+
+                diffFiles.add(diffFile);
+            }
+        } catch (Exception e) {
+            log.warn("解析GitLab diffs失败: {}", e.getMessage());
+        }
+
+        return diffFiles;
     }
 
     /**

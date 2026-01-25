@@ -42,4 +42,10 @@ public class JGitConfig {
      */
     private Long maxConflictFileSize = 10L * 1024 * 1024;
 
+    /**
+     * 是否启用稀疏检出优化（API预检+浅克隆+按需检出）
+     * 默认启用，可通过配置关闭
+     */
+    private boolean enableSparseCheckout = true;
+
 }
