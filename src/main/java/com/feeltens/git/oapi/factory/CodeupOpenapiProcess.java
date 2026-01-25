@@ -6,6 +6,7 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.Method;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.feeltens.git.enums.GitServiceEnum;
 import com.feeltens.git.enums.MergeTotalStatusEnum;
@@ -887,16 +888,58 @@ public class CodeupOpenapiProcess implements GitOpenApiProcess {
 
         try {
             JSONObject jsonObject = JSON.parseObject(responseBody, JSONObject.class);
+            List<Object> commits = jsonObject.getJSONArray(GetCompareResp.Fields.commits);
+
+            // 解析diffs字段
+            List<GetCompareResp.DiffFile> diffFiles = parseDiffsFromCodeup(jsonObject);
+
             return GetCompareResp.builder()
-                    .commits(jsonObject.getJSONArray(GetCompareResp.Fields.commits))
+                    .commits(commits)
+                    .diffs(diffFiles)
                     .build();
         } catch (Exception e) {
             // diffs.diff 可能有特殊字符，导致json反序列化失败，所以用 commits":[{ 来判断
             List<Object> commitList = responseBody.contains("commits\":[{") ? Lists.newArrayList("one") : Collections.emptyList();
             return GetCompareResp.builder()
                     .commits(commitList)
+                    .diffs(Collections.emptyList())
                     .build();
         }
+    }
+
+    /**
+     * 解析Codeup的diffs字段
+     * Codeup格式: oldPath, newPath, diff, binary, newFile, deletedFile, renamedFile等
+     */
+    private List<GetCompareResp.DiffFile> parseDiffsFromCodeup(JSONObject jsonObject) {
+        List<GetCompareResp.DiffFile> diffFiles = Lists.newArrayList();
+
+        try {
+            JSONArray diffsArray = jsonObject.getJSONArray("diffs");
+            if (diffsArray == null || diffsArray.isEmpty()) {
+                return diffFiles;
+            }
+
+            for (int i = 0; i < diffsArray.size(); i++) {
+                JSONObject diffObj = diffsArray.getJSONObject(i);
+
+                GetCompareResp.DiffFile diffFile = GetCompareResp.DiffFile.builder()
+                        .oldPath(diffObj.getString("oldPath"))
+                        .newPath(diffObj.getString("newPath"))
+                        .diff(null) // diff字段可能有特殊字符，暂不解析
+                        .newFile(diffObj.getBoolean("newFile"))
+                        .deletedFile(diffObj.getBoolean("deletedFile"))
+                        .renamedFile(diffObj.getBoolean("renamedFile"))
+                        .binary(diffObj.getBoolean("binary"))
+                        .build();
+
+                diffFiles.add(diffFile);
+            }
+        } catch (Exception e) {
+            log.warn("解析Codeup diffs失败: ", e);
+        }
+
+        return diffFiles;
     }
 
     /**

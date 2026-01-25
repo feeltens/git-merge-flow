@@ -14,15 +14,34 @@ import java.util.List;
 public interface JGitService {
 
     /**
-     * 克隆仓库到临时目录
+     * 克隆仓库到临时目录（浅克隆指定分支）
      *
-     * @param repoUrl     仓库URL
-     * @param projectName 项目名称
-     * @param sessionId   会话ID
-     * @param credentials Git凭证
+     * @param repoUrl      仓库URL
+     * @param projectName  项目名称
+     * @param sessionId    会话ID
+     * @param credentials  Git凭证
+     * @param sourceBranch 源分支名称
+     * @param targetBranch 目标分支名称
      * @return 本地仓库路径
      */
-    String cloneRepository(String repoUrl, String projectName, String sessionId, GitCredentials credentials);
+    String cloneRepository(String repoUrl, String projectName, String sessionId,
+                           GitCredentials credentials, String sourceBranch, String targetBranch);
+
+    /**
+     * 浅克隆+稀疏检出指定文件（优化方案）
+     *
+     * @param repoUrl      仓库URL
+     * @param projectName  项目名称
+     * @param sessionId    会话ID
+     * @param credentials  Git凭证
+     * @param sourceBranch 源分支名称
+     * @param targetBranch 目标分支名称
+     * @param sparseFiles  需要检出的文件路径列表（从API获取）
+     * @return 本地仓库路径
+     */
+    String cloneRepositoryWithSparseCheckout(String repoUrl, String projectName, String sessionId,
+                                             GitCredentials credentials, String sourceBranch,
+                                             String targetBranch, List<String> sparseFiles);
 
     /**
      * 执行合并操作（不自动提交）
