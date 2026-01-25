@@ -118,7 +118,7 @@ public class SqlPerformanceInterceptor implements Interceptor {
         StringBuilder formatSql = new StringBuilder();
         formatSql.append(" Execute SQL: ").append(SqlUtil.sqlFormat(originalSql, false));
         if (log.isDebugEnabled()) {
-            log.debug(formatSql.toString());
+            // log.debug(formatSql.toString());
         }
         // 计算执行 SQL 耗时
         long start = SystemClock.now();
@@ -132,7 +132,7 @@ public class SqlPerformanceInterceptor implements Interceptor {
         msStr.append(" Time：").append(timing);
         msStr.append(" ms - ID：").append(ms.getId());
         if (log.isDebugEnabled()) {
-            log.debug(msStr.toString());
+            // log.debug(msStr.toString());
         }
         return result;
     }
