@@ -15,6 +15,9 @@ import com.feeltens.git.entity.GitProjectDO;
 import com.feeltens.git.enums.GitServiceEnum;
 import com.feeltens.git.enums.SessionStatus;
 import com.feeltens.git.mapper.GitProjectMapper;
+import com.feeltens.git.oapi.dto.req.GetCompareReq;
+import com.feeltens.git.oapi.dto.resp.GetCompareResp;
+import com.feeltens.git.oapi.factory.GitOpenApiFactory;
 import com.feeltens.git.service.ConflictParser;
 import com.feeltens.git.service.ConflictSessionService;
 import com.feeltens.git.service.JGitService;
@@ -33,8 +36,10 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,6 +71,8 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
     private JGitService jGitService;
     @Resource
     private ConflictParser conflictParser;
+    @Resource
+    private GitOpenApiFactory gitOpenApiFactory;
 
     @Override
     public ConflictSessionVO initSession(InitConflictReqVO req) {
@@ -112,19 +119,52 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                 .build();
 
         try {
-            // 5. 克隆仓库
+            // 5. 【优化】API预检：调用Compare API获取变更文件列表
+            List<String> changedFiles = new ArrayList<>();
+            boolean useOptimization = jgitConfig.isEnableSparseCheckout(); // 从配置读取是否启用优化
+
+            if (useOptimization) {
+                try {
+                    changedFiles = getChangedFilesFromAPI(project, req.getSourceBranch(), req.getTargetBranch());
+                    log.info("API预检获取到变更文件数: {}", changedFiles.size());
+                } catch (Exception e) {
+                    log.warn("API预检失败，将使用完整克隆: {}", e.getMessage());
+                    useOptimization = false;
+                }
+            }
+
+            // 6. 克隆仓库（根据是否有变更文件列表选择克隆方式）
             GitCredentials credentials = getGitCredentials();
-            String localRepoPath = jGitService.cloneRepository(
-                    project.getRepositoryUrl(),
-                    projectName,
-                    sessionId,
-                    credentials,
-                    req.getSourceBranch(),
-                    req.getTargetBranch()
-            );
+            String localRepoPath;
+
+            if (useOptimization && !changedFiles.isEmpty()) {
+                // 使用稀疏检出优化
+                localRepoPath = jGitService.cloneRepositoryWithSparseCheckout(
+                        project.getRepositoryUrl(),
+                        projectName,
+                        sessionId,
+                        credentials,
+                        req.getSourceBranch(),
+                        req.getTargetBranch(),
+                        changedFiles
+                );
+                log.info("使用稀疏检出克隆，文件数: {}", changedFiles.size());
+            } else {
+                // 使用完整克隆
+                localRepoPath = jGitService.cloneRepository(
+                        project.getRepositoryUrl(),
+                        projectName,
+                        sessionId,
+                        credentials,
+                        req.getSourceBranch(),
+                        req.getTargetBranch()
+                );
+                log.info("使用完整克隆");
+            }
+
             session.setLocalRepoPath(localRepoPath);
 
-            // 6. 执行合并
+            // 7. 执行合并
             MergeResult mergeResult = jGitService.merge(localRepoPath, req.getSourceBranch(), req.getTargetBranch());
 
             if (!mergeResult.getHasConflicts()) {
@@ -133,7 +173,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                 throw new BizException("分支合并无冲突，无需手动解决");
             }
 
-            // 7. 获取冲突文件列表并缓存原始冲突内容
+            // 8. 获取冲突文件列表并缓存原始冲突内容
             List<String> conflictFiles = jGitService.getConflictFiles(localRepoPath);
             Map<String, String> originalContents = new ConcurrentHashMap<>();
 
@@ -170,12 +210,12 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
             session.setOriginalConflictContents(originalContents);
             session.setStatus(SessionStatus.READY);
 
-            // 8. 保存会话
+            // 9. 保存会话
             sessionCache.computeIfAbsent(projectName, k -> new ConcurrentHashMap<>())
                     .put(sessionId, session);
 
-            log.info("冲突解决会话初始化成功: projectName={}, sessionId={}, conflictFiles={}",
-                    projectName, sessionId, conflictFiles.size());
+            log.info("冲突解决会话初始化成功: projectName={}, sessionId={}, conflictFiles={}, 优化模式={}",
+                    projectName, sessionId, conflictFiles.size(), useOptimization);
 
             return ConflictSessionVO.builder()
                     .sessionId(sessionId)
@@ -506,6 +546,47 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
     }
 
     // ==================== 私有方法 ====================
+
+    /**
+     * 通过API获取变更文件列表（用于稀疏检出优化）
+     */
+    private List<String> getChangedFilesFromAPI(GitProjectDO project, String sourceBranch, String targetBranch) {
+        GetCompareReq compareReq = new GetCompareReq();
+
+        // 设置基础配置
+        if (StrUtil.equals(gitMergeFlowConfig.getGitService(), GitServiceEnum.CODEUP.getCode())) {
+            compareReq.setBaseUrl(codeupConfig.getBaseUrl());
+            compareReq.setAccessToken(codeupConfig.getAccessToken());
+            compareReq.setOrganizationId(project.getOrganizationId());
+        } else if (StrUtil.equals(gitMergeFlowConfig.getGitService(), GitServiceEnum.GITLAB.getCode())) {
+            compareReq.setBaseUrl(gitLabConfig.getBaseUrl());
+            compareReq.setAccessToken(gitLabConfig.getAccessToken());
+        } else {
+            throw new BizException("未配置的 Git 服务平台");
+        }
+
+        compareReq.setRepositoryId(project.getRepositoryId());
+        compareReq.setFrom(targetBranch);  // 目标分支作为基准
+        compareReq.setTo(sourceBranch);    // 源分支作为比较对象
+
+        // 调用API
+        GetCompareResp compareResp = gitOpenApiFactory.getCompare(compareReq);
+
+        // 提取变更文件路径
+        Set<String> files = new HashSet<>();
+        if (compareResp.getDiffs() != null && !compareResp.getDiffs().isEmpty()) {
+            for (GetCompareResp.DiffFile diff : compareResp.getDiffs()) {
+                if (diff.getOldPath() != null && !diff.getOldPath().isEmpty()) {
+                    files.add(diff.getOldPath());
+                }
+                if (diff.getNewPath() != null && !diff.getNewPath().isEmpty()) {
+                    files.add(diff.getNewPath());
+                }
+            }
+        }
+
+        return new ArrayList<>(files);
+    }
 
     private void validateInitRequest(InitConflictReqVO req) {
         if (req == null) {
