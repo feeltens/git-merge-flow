@@ -8,6 +8,7 @@ import com.feeltens.git.vo.resp.CommitResultVO;
 import com.feeltens.git.vo.resp.ConflictDetailVO;
 import com.feeltens.git.vo.resp.ConflictFileVO;
 import com.feeltens.git.vo.resp.ConflictSessionVO;
+import com.feeltens.git.vo.resp.InitProgressVO;
 
 import java.util.List;
 
@@ -94,5 +95,13 @@ public interface ConflictSessionService {
      * @param projectName 项目名称
      */
     void clearSessionsByProjectName(String projectName);
+
+    /**
+     * 获取初始化进度
+     *
+     * @param sessionId 会话ID
+     * @return 进度信息
+     */
+    InitProgressVO getInitProgress(String sessionId);
 
 }

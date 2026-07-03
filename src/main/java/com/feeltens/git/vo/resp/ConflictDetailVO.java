@@ -50,6 +50,16 @@ public class ConflictDetailVO {
     private List<ConflictBlock> conflictBlocks;
 
     /**
+     * 非冲突区域内容片段
+     */
+    private List<String> nonConflictSegments;
+
+    /**
+     * 冲突块总数
+     */
+    private Integer totalConflicts;
+
+    /**
      * 文件类型（用于语法高亮）
      */
     private String fileType;
