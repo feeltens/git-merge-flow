@@ -133,6 +133,13 @@
             <version>5.13.5.202508271544-r</version>
         </dependency>
 
+        <!-- java-diff-utils - Myers算法实现，用于Diff计算 -->
+        <dependency>
+            <groupId>io.github.java-diff-utils</groupId>
+            <artifactId>java-diff-utils</artifactId>
+            <version>4.12</version>
+        </dependency>
+
         <!-- Sa-Token 权限认证 -->
         <dependency>
             <groupId>cn.dev33</groupId>
