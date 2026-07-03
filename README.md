@@ -52,17 +52,18 @@
 
 ## ✨ 功能特性
 
-| 功能 | 描述 |
-|:---|:---|
+| 功能 | 描述                                        |
+|:---|:------------------------------------------|
 | 🔀 **中间分支管理** | 自动管理 `dev_mix`、`test_mix`、`pre_mix` 等环境分支 |
-| 🔄 **一键重新合并** | 核心功能！基于主分支重建中间分支，依次合并所有分支 |
-| 🌿 **分支操作** | 新建分支、拉取远程分支、批量清理无效分支 |
-| 🏢 **多工程支持** | 同时管理多个 Git 仓库 |
-| 👥 **权限管理** | 用户 + 工程级别的细粒度权限控制 |
-| 🔌 **多平台适配** | 支持 GitLab (v18.3+) 和阿里云 CodeUp |
-| 🖥️ **可视化界面** | 基于 Vue.js + Element UI 的友好 Web 界面 |
-| 🛠️ **冲突处理** | Web 在线解决 或 自动生成脚本手动处理 |
-| 📝 **操作日志** | 完整记录所有分支操作历史 |
+| 🔄 **一键重新合并** | 核心功能！基于主分支重建中间分支，依次合并所有分支                 |
+| 🌿 **分支操作** | 新建分支、拉取远程分支、批量清理无效分支                      |
+| 🏢 **多工程支持** | 同时管理多个 Git 仓库                             |
+| 👥 **权限管理** | 用户 + 工程级别的细粒度权限控制                         |
+| 🔌 **多平台适配** | 支持 GitLab (v18.3+) 和阿里云 CodeUp            |
+| 🖥️ **可视化界面** | 基于 Vue.js + Element UI 的友好 Web 界面         |
+| 🛠️ **冲突处理** | Web 在线解决 或 自动生成脚本手动处理                     |
+| 📝 **操作日志** | 完整记录所有分支操作历史                              |
+| 🎨 **三路Diff查看** | 支持Base/Ours/Theirs三路Diff可视化查看             |
 
 ---
 
@@ -193,7 +194,9 @@ java -jar target/git-merge-flow-1.0-SNAPSHOT.jar
 | 🗄️ 数据库 | MySQL 8.0 |
 | 🔗 ORM | MyBatis |
 | 🔐 认证授权 | Sa-Token |
-| 🔧 Git 操作 | JGit |
+| 🔧 Git 操作 | JGit 5.13.5 |
+| 📊 Diff计算 | java-diff-utils 4.12 (Myers算法) |
+| 🎨 代码编辑器 | Monaco Editor |
 | 🔌 Git API | GitLab API / CodeUp OpenAPI |
 
 ---
@@ -209,9 +212,17 @@ git-merge-flow/
 │   ├── entity/              # 📦 实体类
 │   ├── oapi/                # 🔌 Git API 适配器
 │   ├── config/              # ⚙️ 配置类
-│   └── util/                # 🔧 工具类
+│   ├── util/                # 🔧 工具类
+│   ├── dto/                 # 📦 数据传输对象
+│   │   ├── conflict/        # 冲突相关DTO
+│   │   └── diff/            # Diff相关DTO
+│   ├── reader/              # 📖 Git索引读取器
+│   ├── parser/              # 🔍 Diff3格式解析器
+│   ├── detector/            # 🔎 冲突类型检测器
+│   └── diff/                # 📊 Diff计算器
 ├── src/main/resources/
 │   ├── templates/           # 🎨 页面模板
+│   │   └── diff-viewer.html # 三路Diff查看器
 │   ├── static/              # 📁 静态资源
 │   └── application.yml      # ⚙️ 配置文件
 └── doc/
