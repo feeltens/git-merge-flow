@@ -1392,8 +1392,14 @@
                         const sessionId = response.data.data.sessionId;
                         // 记录当前冲突解决会话ID，用于接收完成通知
                         this.currentConflictSessionId = sessionId;
-                        // 跳转到冲突解决页面
-                        window.open('/conflict/resolve?sessionId=' + sessionId, '_blank');
+                        // 跳转到冲突解决页面（使用a标签方式，兼容性更好）
+                        const link = document.createElement('a');
+                        link.href = '/conflict/resolve?sessionId=' + sessionId;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
                         this.$message.success('已打开冲突解决页面');
                     } else {
                         this.$message.error(response.data.message || '初始化冲突解决失败');
