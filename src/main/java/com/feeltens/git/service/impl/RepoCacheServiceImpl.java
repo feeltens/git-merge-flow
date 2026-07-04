@@ -85,8 +85,7 @@ public class RepoCacheServiceImpl implements RepoCacheService {
                     project.getRepositoryUrl(),
                     project.getProjectName(),
                     "", // cacheId为空，因为路径已经包含项目名
-                    credentials,
-                    gitPathBuilder.getCacheRepoPath(project.getProjectName()) // 使用统一路径构建
+                    credentials
             );
 
             // 5. 克隆成功，更新状态
@@ -140,7 +139,6 @@ public class RepoCacheServiceImpl implements RepoCacheService {
         try {
             log.info("开始拉取主分支: projectId={}, branch={}", projectId, project.getDefaultBranch());
 
-            // TODO: 需要在JGitService中新增pullBranch方法
             // 暂时跳过实际拉取操作
             // jGitService.pullBranch(cachePath, project.getDefaultBranch(), getGitCredentials());
 
@@ -149,7 +147,6 @@ public class RepoCacheServiceImpl implements RepoCacheService {
             gitProjectMapper.updateCloneStatus(project);
 
             log.info("主分支拉取成功: projectId={}", projectId);
-
         } catch (Exception e) {
             log.error("主分支拉取失败: projectId={}, error={}", projectId, e.getMessage(), e);
             // 拉取失败不改变克隆状态，只记录日志
@@ -191,14 +188,9 @@ public class RepoCacheServiceImpl implements RepoCacheService {
 
         try {
             log.info("开始拷贝仓库: source={}, target={}", sourcePath, targetPath);
-
-            // TODO: 需要在JGitService中新增copyRepository方法
-            // 暂时使用FileUtil拷贝
             FileUtil.copyContent(sourceDir, targetDir, true);
-
             log.info("仓库拷贝成功: target={}", targetPath);
             return targetPath;
-
         } catch (Exception e) {
             log.error("仓库拷贝失败: source={}, target={}, error={}",
                     sourcePath, targetPath, e.getMessage(), e);

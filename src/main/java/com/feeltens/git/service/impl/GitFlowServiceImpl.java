@@ -109,6 +109,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -150,6 +151,9 @@ public class GitFlowServiceImpl implements GitFlowService {
     private SysUserProjectPermMapper sysUserProjectPermMapper;
     @Resource
     private RepoCacheService repoCacheService;
+
+    @Resource(name = "asyncTaskExecutor")
+    private Executor asyncTaskExecutor;
 
     @Override
     public CloudResponse<List<ListOrganizationsRespVO>> listOrganizations() {
@@ -1380,7 +1384,7 @@ public class GitFlowServiceImpl implements GitFlowService {
 
         GitMixBranchDTO gitMixBranchDTO = buildGitMixBranchDTO(mixBranchName, envEnum, gitProjectDb.getDefaultBranch(), newMixBranchNameList, operator);
         gitMixBranchDTO.setProjectId(gitProjectDb.getProjectId());
-        GitMixBranchDO gitMixBranchDO = GitMixBranchConverter.toDO(gitMixBranchDTO);
+        GitMixBranchDO gitMixBranchDO = GitMixBranchConverter.toMixBranchDO(gitMixBranchDTO);
 
         // 基于主分支，创建新的中间分支
         CreateBranchResp createBranchResp = createNewBranch(gitProjectDb.getRepositoryId(), gitProjectDb.getOrganizationId(), gitProjectDb.getDefaultBranch(), mixBranchName);
@@ -1718,7 +1722,7 @@ public class GitFlowServiceImpl implements GitFlowService {
      * 异步克隆项目
      */
     private void asyncCloneProject(Long projectId) {
-        new Thread(() -> {
+        asyncTaskExecutor.execute(() -> {
             try {
                 log.info("异步触发项目克隆: projectId={}", projectId);
                 repoCacheService.cloneFullRepo(projectId);
@@ -1726,7 +1730,7 @@ public class GitFlowServiceImpl implements GitFlowService {
             } catch (Exception e) {
                 log.error("项目克隆失败: projectId={}, error={}", projectId, e.getMessage(), e);
             }
-        }).start();
+        });
     }
 
 }

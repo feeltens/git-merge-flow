@@ -31,9 +31,7 @@ public class GitPathBuilder {
      * @return 缓存仓库路径
      */
     public String getCacheRepoPath(String projectName) {
-        String path = repoCacheConfig.getCachePath() + File.separator + projectName;
-        // log.debug("getCacheRepoPath: projectName={}, path={}", projectName, path);
-        return path;
+        return repoCacheConfig.getCachePath() + File.separator + projectName;
     }
 
     /**
@@ -45,9 +43,7 @@ public class GitPathBuilder {
      * @return 会话仓库路径
      */
     public String getSessionRepoPath(String projectName, String sessionId) {
-        String path = jgitConfig.getTempRepoPath() + File.separator + projectName + File.separator + sessionId;
-        // log.debug("getSessionRepoPath: projectName={}, sessionId={}, path={}", projectName, sessionId, path);
-        return path;
+        return jgitConfig.getTempRepoPath() + File.separator + projectName + File.separator + sessionId;
     }
 
     /**
@@ -58,30 +54,7 @@ public class GitPathBuilder {
      * @return 项目路径
      */
     public String getProjectPath(String projectName) {
-        String path = jgitConfig.getTempRepoPath() + File.separator + projectName;
-        // log.debug("getProjectPath: projectName={}, path={}", projectName, path);
-        return path;
-    }
-
-    /**
-     * 获取自定义路径
-     * 格式：{rootPath}/{projectName}/{subPath}
-     *
-     * @param rootPath    根路径
-     * @param projectName 项目名称
-     * @param subPath     子路径（可为空）
-     * @return 自定义路径
-     */
-    public String getCustomPath(String rootPath, String projectName, String subPath) {
-        String path;
-        if (subPath == null || subPath.isEmpty()) {
-            path = rootPath + File.separator + projectName;
-        } else {
-            path = rootPath + File.separator + projectName + File.separator + subPath;
-        }
-        // log.debug("getCustomPath: rootPath={}, projectName={}, subPath={}, path={}",
-        //         rootPath, projectName, subPath, path);
-        return path;
+        return jgitConfig.getTempRepoPath() + File.separator + projectName;
     }
 
 }

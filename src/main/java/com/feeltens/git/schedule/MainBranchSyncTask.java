@@ -62,7 +62,7 @@ public class MainBranchSyncTask {
                 }
             }
 
-            log.info("主分支同步任务完成: 成功={}, 失败={}", successCount, failCount);
+            log.info("主分支同步任务完成: 成功={}{}", successCount, failCount <= 0 ? "" : ", 失败=" + failCount);
         } catch (Exception e) {
             log.error("主分支同步任务执行异常: {}", e.getMessage(), e);
         }

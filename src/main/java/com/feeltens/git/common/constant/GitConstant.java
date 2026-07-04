@@ -29,7 +29,7 @@ public class GitConstant {
 
     /**
      * 排除的git中间分支名列表
-     * todo 暂时先写死
+     * 暂时先写死
      */
     public static final List<String> EXCLUDE_MIX_BRANCH_NAME_LIST = Lists.newArrayList("dev_mix", "test_mix", "pre_mix");
 

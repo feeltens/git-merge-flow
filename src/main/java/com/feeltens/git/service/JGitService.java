@@ -14,36 +14,6 @@ import java.util.List;
 public interface JGitService {
 
     /**
-     * 克隆仓库到临时目录（浅克隆指定分支）
-     *
-     * @param repoUrl      仓库URL
-     * @param projectName  项目名称
-     * @param sessionId    会话ID
-     * @param credentials  Git凭证
-     * @param sourceBranch 源分支名称
-     * @param targetBranch 目标分支名称
-     * @return 本地仓库路径
-     */
-    String cloneRepository(String repoUrl, String projectName, String sessionId,
-                           GitCredentials credentials, String sourceBranch, String targetBranch);
-
-    /**
-     * 浅克隆+稀疏检出指定文件（优化方案）
-     *
-     * @param repoUrl      仓库URL
-     * @param projectName  项目名称
-     * @param sessionId    会话ID
-     * @param credentials  Git凭证
-     * @param sourceBranch 源分支名称
-     * @param targetBranch 目标分支名称
-     * @param sparseFiles  需要检出的文件路径列表（从API获取）
-     * @return 本地仓库路径
-     */
-    String cloneRepositoryWithSparseCheckout(String repoUrl, String projectName, String sessionId,
-                                             GitCredentials credentials, String sourceBranch,
-                                             String targetBranch, List<String> sparseFiles);
-
-    /**
      * 执行合并操作（不自动提交）
      *
      * @param localRepoPath 本地仓库路径
@@ -121,15 +91,6 @@ public interface JGitService {
     void cleanupExpired(int expireHours);
 
     /**
-     * 检查本地仓库是否存在
-     *
-     * @param projectName 项目名称
-     * @param sessionId   会话ID
-     * @return 是否存在
-     */
-    boolean exists(String projectName, String sessionId);
-
-    /**
      * 完整克隆远程仓库（用于缓存）
      * 克隆所有分支和完整历史，不使用浅克隆
      *
@@ -137,28 +98,10 @@ public interface JGitService {
      * @param projectName 项目名称
      * @param cacheId     缓存标识
      * @param credentials Git凭证
-     * @param rootPath    自定义根路径（如果为null，则使用默认的tempRepoPath）
      * @return 本地仓库路径
      */
     String cloneFullRepository(String repoUrl, String projectName, String cacheId,
-                               GitCredentials credentials, String rootPath);
-
-    /**
-     * 拉取指定分支
-     *
-     * @param localRepoPath 本地仓库路径
-     * @param branchName    分支名称
-     * @param credentials   Git凭证
-     */
-    void pullBranch(String localRepoPath, String branchName, GitCredentials credentials);
-
-    /**
-     * 拷贝仓库目录
-     *
-     * @param sourcePath 源路径
-     * @param targetPath 目标路径
-     */
-    void copyRepository(String sourcePath, String targetPath);
+                               GitCredentials credentials);
 
     /**
      * Fetch 所有远程分支

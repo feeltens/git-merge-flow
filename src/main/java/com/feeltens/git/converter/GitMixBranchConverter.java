@@ -34,7 +34,7 @@ public class GitMixBranchConverter {
         ).collect(Collectors.toList());
     }
 
-    public static GitMixBranchDO toDO(GitMixBranchDTO req) {
+    public static GitMixBranchDO toMixBranchDO(GitMixBranchDTO req) {
         if (null == req) {
             return null;
         }

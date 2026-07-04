@@ -53,23 +53,4 @@ public class JGitConfig {
      */
     private Long maxConflictFileSize = 10L * 1024 * 1024;
 
-    /**
-     * 是否启用稀疏检出优化（API预检+浅克隆+按需检出）
-     * 默认启用，可通过配置关闭
-     */
-    private boolean enableSparseCheckout = true;
-
-    /**
-     * 是否启用浅克隆优化
-     * 浅克隆只下载最新提交，大幅减少下载量和克隆时间
-     * 默认启用，可通过配置关闭
-     */
-    private boolean enableShallowClone = true;
-
-    /**
-     * 浅克隆深度
-     * 默认为1，表示只下载最新提交
-     */
-    private Integer shallowCloneDepth = 1;
-
 }
