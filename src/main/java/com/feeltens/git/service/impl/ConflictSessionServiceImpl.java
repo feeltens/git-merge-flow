@@ -22,6 +22,7 @@ import com.feeltens.git.oapi.factory.GitOpenApiFactory;
 import com.feeltens.git.service.ConflictParser;
 import com.feeltens.git.service.ConflictSessionService;
 import com.feeltens.git.service.JGitService;
+import com.feeltens.git.service.RepoCacheService;
 import com.feeltens.git.sse.SseProgressManager;
 import com.feeltens.git.vo.req.CommitConflictReqVO;
 import com.feeltens.git.vo.req.InitConflictReqVO;
@@ -66,6 +67,9 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
      */
     private final Map<String, InitProgressVO> progressCache = new ConcurrentHashMap<>();
 
+    @Resource(name = "asyncTaskExecutor")
+    private Executor asyncTaskExecutor;
+
     @Resource
     private JGitConfig jgitConfig;
     @Resource
@@ -84,8 +88,8 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
     private GitOpenApiFactory gitOpenApiFactory;
     @Resource
     private SseProgressManager sseProgressManager;
-    @Resource(name = "asyncTaskExecutor")
-    private Executor asyncTaskExecutor;
+    @Resource
+    private RepoCacheService repoCacheService;
 
     @Override
     public ConflictSessionVO initSession(InitConflictReqVO req) {
@@ -140,21 +144,18 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                 .build();
         progressCache.put(sessionId, progress);
 
+        // 保存初始化请求信息（用于异步初始化）
+        initRequestCache.put(sessionId, req);
+
         // 6. 保存会话（初始状态）
         sessionCache.computeIfAbsent(projectName, k -> new ConcurrentHashMap<>())
                 .put(sessionId, session);
 
-        // 7. 推送初始进度
+        // 7. 推送初始进度（如果SSE连接已存在）
         sseProgressManager.sendProgress(sessionId, progress);
 
-        // 8. 异步执行初始化
-        asyncTaskExecutor.execute(() -> {
-            try {
-                asyncInitializeSession(session, project, req, progress);
-            } catch (Exception e) {
-                handleInitFailure(session, progress, e);
-            }
-        });
+        // 8. 不在这里触发异步初始化，而是在SSE连接建立后触发
+        // 这样可以确保SSE连接存在时才开始推送进度
 
         // 9. 立即返回
         log.info("异步初始化会话已启动: sessionId={}, projectName={}", sessionId, projectName);
@@ -217,7 +218,6 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
         return result;
     }
 
-
     @Override
     public ConflictDetailVO getConflictDetail(String sessionId, String filePath) {
         ConflictSession session = getSession(sessionId);
@@ -226,9 +226,9 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
         ConflictFileContent content = session.getOriginalConflictContents().get(filePath);
         if (content == null) {
             log.info("延迟加载冲突文件内容: sessionId={}, filePath={}", sessionId, filePath);
-            
+
             content = jGitService.getConflictFileContent(session.getLocalRepoPath(), filePath);
-            
+
             // 文件大小检查
             String mergedContent = content.getMergedContent();
             long fileSize = mergedContent.length() * 2L;
@@ -238,7 +238,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
                         filePath, fileSize / (1024.0 * 1024),
                         jgitConfig.getMaxConflictFileSize() / (1024.0 * 1024)));
             }
-            
+
             // 缓存完整的ConflictFileContent对象
             session.getOriginalConflictContents().put(filePath, content);
             log.debug("缓存冲突文件内容: filePath={}, size={}KB", filePath, fileSize / 1024);
@@ -424,7 +424,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
     }
 
     @Override
-    @Scheduled(fixedRate = 3600000) // 每小时执行一次
+    @Scheduled(cron = "${merge-flow.schedule.cleanup-expired-sessions}") // 每小时执行一次
     public void cleanupExpiredSessions() {
         Date now = new Date();
         List<String> emptyProjects = new ArrayList<>();
@@ -495,7 +495,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
     /**
      * 定期记录缓存统计信息（每30分钟）
      */
-    @Scheduled(fixedRate = 1800000)
+    @Scheduled(cron = "${merge-flow.schedule.report-cache-statistics}")
     public void reportCacheStatistics() {
         int totalSessions = getTotalSessionCount();
         if (totalSessions > 0) {
@@ -707,63 +707,44 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
     }
 
     /**
+     * 存储初始化请求信息（用于异步初始化）
+     */
+    private final Map<String, InitConflictReqVO> initRequestCache = new ConcurrentHashMap<>();
+
+    /**
      * 异步初始化会话
      */
     private void asyncInitializeSession(ConflictSession session, GitProjectDO project,
-                                       InitConflictReqVO req, InitProgressVO progress) {
+                                        InitConflictReqVO req, InitProgressVO progress) {
         String sessionId = session.getSessionId();
         String projectName = session.getProjectName();
+        Long projectId = project.getProjectId();
 
         try {
-            // 步骤1: API预检 (10%)
-            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 10, "获取变更文件列表");
-            List<String> changedFiles = new ArrayList<>();
-            boolean useOptimization = jgitConfig.isEnableSparseCheckout();
+            // 步骤1: 确保缓存就绪 (10% -> 30%)
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 10, "检查缓存状态");
+            repoCacheService.ensureCacheReady(projectId);
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 30, "缓存就绪");
 
-            if (useOptimization) {
-                try {
-                    changedFiles = getChangedFilesFromAPI(project, req.getSourceBranch(), req.getTargetBranch());
-                    log.info("API预检获取到变更文件数: {}", changedFiles.size());
-                    updateProgress(sessionId, progress, InitProgressStatus.CLONING, 20, "获取到变更文件数: " + changedFiles.size());
-                } catch (Exception e) {
-                    log.warn("API预检失败，将使用完整克隆: {}", e.getMessage());
-                    useOptimization = false;
-                }
-            }
-
-            // 步骤2: 克隆仓库 (30% -> 60%)
-            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 30, "克隆仓库中");
-            GitCredentials credentials = getGitCredentials();
-            String localRepoPath;
-
-            if (useOptimization && !changedFiles.isEmpty()) {
-                localRepoPath = jGitService.cloneRepositoryWithSparseCheckout(
-                        project.getRepositoryUrl(),
-                        projectName,
-                        sessionId,
-                        credentials,
-                        req.getSourceBranch(),
-                        req.getTargetBranch(),
-                        changedFiles
-                );
-                log.info("使用稀疏检出克隆，文件数: {}", changedFiles.size());
-                updateProgress(sessionId, progress, InitProgressStatus.CLONING, 60, "稀疏检出完成");
-            } else {
-                localRepoPath = jGitService.cloneRepository(
-                        project.getRepositoryUrl(),
-                        projectName,
-                        sessionId,
-                        credentials,
-                        req.getSourceBranch(),
-                        req.getTargetBranch()
-                );
-                log.info("使用完整克隆");
-                updateProgress(sessionId, progress, InitProgressStatus.CLONING, 60, "完整克隆完成");
-            }
-
+            // 步骤2: 从缓存拷贝到会话目录 (30% -> 60%)
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 40, "拷贝仓库中");
+            String localRepoPath = repoCacheService.copyToSessionDir(projectId, sessionId);
             session.setLocalRepoPath(localRepoPath);
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 60, "仓库拷贝完成");
 
-            // 步骤3: 执行合并 (60% -> 70%)
+            // 步骤2.5: Fetch 所有远程分支 (60% -> 65%)
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 60, "同步远程分支");
+            GitCredentials credentials = getGitCredentials();
+            jGitService.fetch(localRepoPath, credentials);
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 65, "远程分支同步完成");
+
+            // 步骤2.6: 重置本地分支到远程分支 (65% -> 70%)
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 65, "更新本地分支");
+            jGitService.resetToRemote(localRepoPath, req.getSourceBranch());
+            jGitService.resetToRemote(localRepoPath, req.getTargetBranch());
+            updateProgress(sessionId, progress, InitProgressStatus.CLONING, 70, "本地分支更新完成");
+
+            // 步骤3: 执行合并 (70% -> 80%)
             updateProgress(sessionId, progress, InitProgressStatus.MERGING, 70, "合并分支中");
             MergeResult mergeResult = jGitService.merge(localRepoPath, req.getSourceBranch(), req.getTargetBranch());
 
@@ -779,10 +760,10 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
             updateProgress(sessionId, progress, InitProgressStatus.LOADING_CONFLICTS, 80, "加载冲突文件列表");
             List<String> conflictFiles = jGitService.getConflictFiles(localRepoPath);
             session.setConflictFiles(conflictFiles);
-            
+
             // 延迟加载：只缓存文件列表，不缓存内容
             session.setOriginalConflictContents(new ConcurrentHashMap<>());
-            
+
             progress.setTotalFiles(conflictFiles.size());
             updateProgress(sessionId, progress, InitProgressStatus.LOADING_CONFLICTS, 90, "加载完成");
 
@@ -790,12 +771,60 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
             updateProgress(sessionId, progress, InitProgressStatus.READY, 100, "初始化完成");
             session.setStatus(SessionStatus.READY);
 
-            log.info("异步初始化成功: sessionId={}, conflictFiles={}, 优化模式={}",
-                    sessionId, conflictFiles.size(), useOptimization);
+            log.info("异步初始化成功: sessionId={}, conflictFiles={}",
+                    sessionId, conflictFiles.size());
 
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    @Override
+    public void triggerAsyncInit(String sessionId) {
+        ConflictSession session = getSession(sessionId);
+        if (session == null) {
+            log.warn("会话不存在，无法触发异步初始化: sessionId={}", sessionId);
+            return;
+        }
+
+        // 检查会话状态，避免重复初始化
+        if (session.getStatus() != SessionStatus.INITIALIZING) {
+            log.warn("会话状态不是INITIALIZING，无需触发异步初始化: sessionId={}, status={}",
+                    sessionId, session.getStatus());
+            return;
+        }
+
+        // 获取存储的初始化请求
+        InitConflictReqVO req = initRequestCache.get(sessionId);
+        if (req == null) {
+            log.error("初始化请求信息不存在: sessionId={}", sessionId);
+            return;
+        }
+
+        // 获取项目信息
+        GitProjectDO project = gitProjectMapper.selectByProjectId(req.getProjectId());
+        if (project == null) {
+            log.error("项目不存在: projectId={}", req.getProjectId());
+            return;
+        }
+
+        // 获取进度信息
+        InitProgressVO progress = progressCache.get(sessionId);
+        if (progress == null) {
+            log.error("进度信息不存在: sessionId={}", sessionId);
+            return;
+        }
+
+        // 触发异步初始化
+        asyncTaskExecutor.execute(() -> {
+            try {
+                asyncInitializeSession(session, project, req, progress);
+            } catch (Exception e) {
+                handleInitFailure(session, progress, e);
+            }
+        });
+
+        log.info("已触发异步初始化: sessionId={}", sessionId);
     }
 
     /**
@@ -811,9 +840,10 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
 
         // 清理资源
         jGitService.cleanup(projectName, sessionId);
-        
+
         // 清理缓存
         progressCache.remove(sessionId);
+        initRequestCache.remove(sessionId); // 清理初始化请求缓存
         Map<String, ConflictSession> projectSessions = sessionCache.get(projectName);
         if (projectSessions != null) {
             projectSessions.remove(sessionId);
@@ -829,7 +859,7 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
      * 更新进度信息
      */
     private void updateProgress(String sessionId, InitProgressVO progress,
-                               InitProgressStatus status, int progressValue, String step) {
+                                InitProgressStatus status, int progressValue, String step) {
         progress.setStatus(status);
         progress.setProgress(progressValue);
         progress.setCurrentStep(step);

@@ -56,4 +56,9 @@ public interface GitProjectMapper {
                                            @Param("limitSize") Integer limitSize,
                                            @Param("pageSize") Integer pageSize);
 
+    /**
+     * 更新克隆状态
+     */
+    int updateCloneStatus(@Param("project") GitProjectDO project);
+
 }

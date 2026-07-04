@@ -69,6 +69,27 @@ public class GitProjectDO implements Serializable {
     private String defaultBranch;
 
     /**
+     * 克隆状态: NOT_CLONED-未克隆, CLONING-克隆中, CLONED-已克隆, CLONE_FAILED-克隆失败
+     * @see com.feeltens.git.enums.CloneStatus code
+     */
+    private String cloneStatus;
+
+    /**
+     * 克隆时间
+     */
+    private Date cloneTime;
+
+    /**
+     * 克隆失败错误信息
+     */
+    private String cloneErrorMsg;
+
+    /**
+     * 最后拉取主分支时间
+     */
+    private Date lastPullTime;
+
+    /**
      * webUrl
      */
     private String webUrl;

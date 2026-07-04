@@ -104,4 +104,11 @@ public interface ConflictSessionService {
      */
     InitProgressVO getInitProgress(String sessionId);
 
+    /**
+     * 触发异步初始化（在SSE连接建立后调用）
+     *
+     * @param sessionId 会话ID
+     */
+    void triggerAsyncInit(String sessionId);
+
 }

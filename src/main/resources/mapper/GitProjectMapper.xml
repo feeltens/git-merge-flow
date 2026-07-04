@@ -10,6 +10,10 @@
         <result column="project_username" jdbcType="VARCHAR" property="projectUsername"/>
         <result column="project_email" jdbcType="VARCHAR" property="projectEmail"/>
         <result column="default_branch" jdbcType="VARCHAR" property="defaultBranch"/>
+        <result column="clone_status" jdbcType="VARCHAR" property="cloneStatus"/>
+        <result column="clone_time" jdbcType="TIMESTAMP" property="cloneTime"/>
+        <result column="clone_error_msg" jdbcType="VARCHAR" property="cloneErrorMsg"/>
+        <result column="last_pull_time" jdbcType="TIMESTAMP" property="lastPullTime"/>
         <result column="web_url" jdbcType="VARCHAR" property="webUrl"/>
         <result column="create_by" jdbcType="VARCHAR" property="createBy"/>
         <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
@@ -27,6 +31,10 @@
         project_username,
         project_email,
         default_branch,
+        clone_status,
+        clone_time,
+        clone_error_msg,
+        last_pull_time,
         web_url,
         create_by,
         create_time,
@@ -37,11 +45,11 @@
 
     <insert id="insert" keyColumn="project_id" keyProperty="projectId" useGeneratedKeys="true">
         insert into git_project (project_name, repository_url, organization_id, repository_id, project_username,
-                                 project_email, default_branch, web_url, create_by, create_time, update_by, update_time,
-                                 deleted)
+                                 project_email, default_branch, clone_status, clone_time, clone_error_msg, last_pull_time,
+                                 web_url, create_by, create_time, update_by, update_time, deleted)
         values (#{projectName}, #{repositoryUrl}, #{organizationId}, #{repositoryId}, #{projectUsername},
-                #{projectEmail}, #{defaultBranch}, #{webUrl}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime},
-                #{deleted})
+                #{projectEmail}, #{defaultBranch}, #{cloneStatus}, #{cloneTime}, #{cloneErrorMsg}, #{lastPullTime},
+                #{webUrl}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime}, #{deleted})
     </insert>
 
     <select id="selectByProjectId" resultMap="BaseResultMap">
@@ -117,7 +125,8 @@
 
     <select id="selectByUserId" resultMap="BaseResultMap">
         SELECT p.project_id, p.project_name, p.repository_url, p.organization_id, p.repository_id,
-               p.project_username, p.project_email, p.default_branch, p.web_url,
+               p.project_username, p.project_email, p.default_branch, p.clone_status, p.clone_time,
+               p.clone_error_msg, p.last_pull_time, p.web_url,
                p.create_by, p.create_time, p.update_by, p.update_time, p.deleted
         FROM git_project p
         INNER JOIN sys_user_project_perm perm ON p.project_id = perm.project_id
@@ -137,7 +146,8 @@
 
     <select id="pageProjectByUserId" resultMap="BaseResultMap">
         SELECT p.project_id, p.project_name, p.repository_url, p.organization_id, p.repository_id,
-               p.project_username, p.project_email, p.default_branch, p.web_url,
+               p.project_username, p.project_email, p.default_branch, p.clone_status, p.clone_time,
+               p.clone_error_msg, p.last_pull_time, p.web_url,
                p.create_by, p.create_time, p.update_by, p.update_time, p.deleted
         FROM git_project p
         INNER JOIN sys_user_project_perm perm ON p.project_id = perm.project_id
@@ -150,5 +160,15 @@
             LIMIT #{limitSize}, #{pageSize}
         </if>
     </select>
+
+    <update id="updateCloneStatus">
+        UPDATE git_project
+        SET clone_status = #{project.cloneStatus},
+            clone_time = #{project.cloneTime},
+            clone_error_msg = #{project.cloneErrorMsg},
+            last_pull_time = #{project.lastPullTime},
+            update_time = NOW()
+        WHERE project_id = #{project.projectId}
+    </update>
 
 </mapper>

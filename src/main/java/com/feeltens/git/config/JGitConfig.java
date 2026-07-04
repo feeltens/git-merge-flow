@@ -1,9 +1,12 @@
 package com.feeltens.git.config;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.Resource;
 
 /**
  * JGit 冲突解决配置类
@@ -14,12 +17,20 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @RefreshScope
 @Data
+@Slf4j
 public class JGitConfig {
 
+    @Resource
+    private GitMergeFlowWorkDirConfig workDirConfig;
+
     /**
-     * 临时仓库根目录
+     * 获取临时仓库根目录
+     * 动态计算：${workDir}/conflict-cache
      */
-    private String tempRepoPath = "/tmp/git-merge-flow";
+    public String getTempRepoPath() {
+        String workDir = workDirConfig.getWorkDir();
+        return workDir + "/conflict-cache";
+    }
 
     /**
      * 会话过期时间（小时）
