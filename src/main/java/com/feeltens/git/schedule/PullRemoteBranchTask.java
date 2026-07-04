@@ -21,7 +21,7 @@ public class PullRemoteBranchTask {
     private final GitFlowService gitFlowService;
 
     @Async
-    @Scheduled(cron = "0 */15 * * * *") // 每隔15min执行一次
+    @Scheduled(cron = "${merge-flow.schedule.pull-remote-branch}") // 每隔15min执行一次
     public void pullRemoteBranch() {
         List<PageGitProjectRespVO> projectList = gitFlowService.listGitProject();
         if (CollUtil.isEmpty(projectList)) {

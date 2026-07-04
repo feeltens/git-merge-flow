@@ -60,6 +60,7 @@ import com.feeltens.git.oapi.dto.resp.MergeChangeRequestResp;
 import com.feeltens.git.oapi.factory.GitOpenApiFactory;
 import com.feeltens.git.service.ConflictSessionService;
 import com.feeltens.git.service.GitFlowService;
+import com.feeltens.git.service.RepoCacheService;
 import com.feeltens.git.vo.base.CloudResponse;
 import com.feeltens.git.vo.base.PageRequest;
 import com.feeltens.git.vo.base.PageResponse;
@@ -147,6 +148,8 @@ public class GitFlowServiceImpl implements GitFlowService {
     private ConflictSessionService conflictSessionService;
     @Resource
     private SysUserProjectPermMapper sysUserProjectPermMapper;
+    @Resource
+    private RepoCacheService repoCacheService;
 
     @Override
     public CloudResponse<List<ListOrganizationsRespVO>> listOrganizations() {
@@ -348,12 +351,17 @@ public class GitFlowServiceImpl implements GitFlowService {
             }
 
             GitProjectDO gitProjectDO = buildGitProject(repository, req.getOrganizationId(), req.getProjectName(), req.getOperator());
+            // 设置初始克隆状态为未克隆
+            gitProjectDO.setCloneStatus("NOT_CLONED");
             // 提前落库，后续会用到 gitProjectId
             int insertRow = gitProjectMapper.insert(gitProjectDO);
             if (insertRow <= 0) {
                 throw new RuntimeException("落库失败:gitProject");
             }
             projectId = gitProjectDO.getProjectId();
+
+            // 异步触发完整克隆
+            asyncCloneProject(projectId);
 
             // 拉取所有远程分支，并且upsert到db
             fetchOriginalBranchList(gitProjectDO, repositoryId);
@@ -1704,6 +1712,21 @@ public class GitFlowServiceImpl implements GitFlowService {
         gitProjectDO.setUpdateTime(new Date());
         gitProjectDO.setDeleted(0L);
         return gitProjectDO;
+    }
+
+    /**
+     * 异步克隆项目
+     */
+    private void asyncCloneProject(Long projectId) {
+        new Thread(() -> {
+            try {
+                log.info("异步触发项目克隆: projectId={}", projectId);
+                repoCacheService.cloneFullRepo(projectId);
+                log.info("项目克隆完成: projectId={}", projectId);
+            } catch (Exception e) {
+                log.error("项目克隆失败: projectId={}, error={}", projectId, e.getMessage(), e);
+            }
+        }).start();
     }
 
 }

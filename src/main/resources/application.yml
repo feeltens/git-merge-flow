@@ -41,6 +41,39 @@ merge-flow:
   gitService: gitlab
   # gitService: codeup
 
+  # 工作目录配置
+  work-dir: /tmp/git-merge-flow/workspace
+
+  # 定时任务配置
+  schedule:
+    # 拉取远程分支信息（现有）
+    pull-remote-branch: "0 */15 * * * *"
+    # 同步主分支代码（新增）
+    sync-main-branch: "0 */30 * * * *"
+    # 清理过期会话（现有）
+    cleanup-expired-sessions: "0 0 * * * *"
+    # 缓存统计报告（现有）
+    report-cache-statistics: "0 */30 * * * *"
+    # 克隆未克隆的项目（新增）
+    clone-pending-projects: "0 */5 * * * *"
+
+  # 仓库缓存配置
+  repo-cache:
+    # 是否启用仓库缓存
+    enabled: true
+    # 缓存根目录（动态计算：${workDir}/repo-cache）
+    # cache-path: ${merge-flow.work-dir}/repo-cache
+    # 最大缓存大小（GB）
+    max-cache-size-gb: 100
+    # 克隆超时时间（秒）
+    clone-timeout-seconds: 600
+    # 拉取超时时间（秒）
+    pull-timeout-seconds: 300
+    # 最大重试次数
+    max-retry-count: 3
+    # 重试间隔（秒）
+    retry-interval-seconds: 60
+
 # GitLab API 配置
 gitlab:
   api:
@@ -63,8 +96,8 @@ codeup:
 # JGit 冲突解决配置
 jgit:
   conflict:
-    # 临时仓库根目录
-    temp-repo-path: /tmp/git-merge-flow
+    # 临时仓库根目录（动态计算：${workDir}/conflict-cache）
+    # temp-repo-path: ${merge-flow.work-dir}/conflict-cache
     # 会话过期时间（小时）
     session-expire-hours: 24
     # 克隆超时时间（秒）

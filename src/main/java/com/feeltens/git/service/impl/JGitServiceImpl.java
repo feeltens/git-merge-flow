@@ -10,11 +10,13 @@ import com.feeltens.git.dto.conflict.MergeResult;
 import com.feeltens.git.dto.conflict.ParsedConflict;
 import com.feeltens.git.service.ConflictParser;
 import com.feeltens.git.service.JGitService;
+import com.feeltens.git.util.GitPathBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeCommand;
+import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
@@ -63,6 +65,8 @@ public class JGitServiceImpl implements JGitService {
     private JGitConfig jgitConfig;
     @Resource
     private ConflictParser conflictParser;
+    @Resource
+    private GitPathBuilder gitPathBuilder;
 
     @Override
     public String cloneRepository(String repoUrl, String projectName, String sessionId,
@@ -70,10 +74,15 @@ public class JGitServiceImpl implements JGitService {
         String localPath = getLocalRepoPath(projectName, sessionId);
         File localDir = new File(localPath);
 
+        // 确保父级目录存在
+        FileUtil.mkdir(localDir.getParentFile());
+
         // 如果目录已存在，先清理
         if (localDir.exists()) {
             FileUtil.del(localDir);
         }
+
+        FileUtil.mkdir(localDir);
 
         log.info("开始克隆仓库: {} -> {}, 分支: [{}, {}]", repoUrl, localPath, sourceBranch, targetBranch);
 
@@ -125,6 +134,9 @@ public class JGitServiceImpl implements JGitService {
 
         String localPath = getLocalRepoPath(projectName, sessionId);
         File localDir = new File(localPath);
+
+        // 确保父级目录存在
+        FileUtil.mkdir(localDir.getParentFile());
 
         // 如果目录已存在，先清理
         if (localDir.exists()) {
@@ -908,6 +920,41 @@ public class JGitServiceImpl implements JGitService {
     }
 
     @Override
+    public void fetch(String localRepoPath, GitCredentials credentials) {
+        try (Git git = Git.open(new File(localRepoPath))) {
+            CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+                    credentials.getUsername(), credentials.getPassword());
+
+            git.fetch()
+                    .setCredentialsProvider(credentialsProvider)
+                    .setRemote("origin")
+                    .call();
+
+            log.info("Fetch 所有远程分支成功: {}", localRepoPath);
+        } catch (IOException | GitAPIException e) {
+            log.error("Fetch 失败: {}", e.getMessage(), e);
+            throw new BizException("Fetch 失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void resetToRemote(String localRepoPath, String branchName) {
+        try (Git git = Git.open(new File(localRepoPath))) {
+            // 重置本地分支到远程分支
+            String remoteBranch = "origin/" + branchName;
+            git.reset()
+                    .setMode(ResetCommand.ResetType.HARD)
+                    .setRef(remoteBranch)
+                    .call();
+
+            log.info("重置本地分支到远程分支成功: branch={}, remote={}", branchName, remoteBranch);
+        } catch (IOException | GitAPIException e) {
+            log.error("重置分支失败: branch={}, error={}", branchName, e.getMessage(), e);
+            throw new BizException("重置分支失败: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void cleanupByProjectName(String projectName) {
         String projectPath = getProjectPath(projectName);
         File projectDir = new File(projectPath);
@@ -971,14 +1018,152 @@ public class JGitServiceImpl implements JGitService {
         return localDir.exists() && localDir.isDirectory();
     }
 
+    @Override
+    public String cloneFullRepository(String repoUrl, String projectName, String cacheId,
+                                      GitCredentials credentials, String rootPath) {
+        // 如果未提供自定义根路径，使用默认的tempRepoPath
+        String actualRootPath = (rootPath != null && !rootPath.isEmpty())
+                ? rootPath
+                : jgitConfig.getTempRepoPath();
+
+        // 构建本地路径：如果cacheId为空，则路径为 rootPath/projectName，否则为 rootPath/projectName/cacheId
+        String localPath;
+        if (cacheId == null || cacheId.isEmpty()) {
+            localPath = actualRootPath + File.separator + projectName;
+        } else {
+            localPath = actualRootPath + File.separator + projectName + File.separator + cacheId;
+        }
+        File localDir = new File(localPath);
+
+        // 确保父级目录存在
+        FileUtil.mkdir(localDir.getParentFile());
+
+        // 如果目录已存在，先清理
+        if (localDir.exists()) {
+            FileUtil.del(localDir);
+        }
+
+        log.info("开始完整克隆仓库（用于缓存）: {} -> {}, rootPath={}", repoUrl, localPath, actualRootPath);
+
+        try {
+            CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+                    credentials.getUsername(), credentials.getPassword());
+
+            CloneCommand cloneCommand = Git.cloneRepository()
+                    .setURI(repoUrl)
+                    .setDirectory(localDir)
+                    .setCredentialsProvider(credentialsProvider)
+                    .setCloneAllBranches(true)  // 克隆所有分支
+                    .setTimeout(jgitConfig.getCloneTimeoutSeconds());
+
+            // 不使用浅克隆，下载完整历史
+            cloneCommand.call().close();
+
+            log.info("完整仓库克隆成功: {}", localPath);
+            return localPath;
+
+        } catch (GitAPIException e) {
+            log.error("完整克隆仓库失败: {}", e.getMessage(), e);
+            // 清理失败的目录
+            if (localDir.exists()) {
+                FileUtil.del(localDir);
+            }
+            throw new BizException("完整克隆仓库失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void pullBranch(String localRepoPath, String branchName, GitCredentials credentials) {
+        File localDir = new File(localRepoPath);
+        if (!localDir.exists()) {
+            throw new BizException("本地仓库不存在: " + localRepoPath);
+        }
+
+        log.info("开始拉取分支: localRepoPath={}, branch={}", localRepoPath, branchName);
+
+        try (Git git = Git.open(localDir)) {
+            CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+                    credentials.getUsername(), credentials.getPassword());
+
+            git.pull()
+                    .setRemote("origin")
+                    .setRemoteBranchName(branchName)
+                    .setCredentialsProvider(credentialsProvider)
+                    .setTimeout(jgitConfig.getCloneTimeoutSeconds())
+                    .call();
+
+            log.info("分支拉取成功: branch={}", branchName);
+
+        } catch (GitAPIException | IOException e) {
+            log.error("拉取分支失败: branch={}, error={}", branchName, e.getMessage(), e);
+            throw new BizException("拉取分支失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void copyRepository(String sourcePath, String targetPath) {
+        File sourceDir = new File(sourcePath);
+        File targetDir = new File(targetPath);
+
+        if (!sourceDir.exists()) {
+            throw new BizException("源目录不存在: " + sourcePath);
+        }
+
+        // 清理目标目录
+        if (targetDir.exists()) {
+            FileUtil.del(targetDir);
+        }
+
+        log.info("开始拷贝仓库: source={}, target={}", sourcePath, targetPath);
+
+        try {
+            // 创建目标目录
+            targetDir.mkdirs();
+
+            // 递归拷贝所有文件和目录
+            copyDirectory(sourceDir, targetDir);
+
+            log.info("仓库拷贝成功: target={}", targetPath);
+
+        } catch (Exception e) {
+            log.error("仓库拷贝失败: source={}, target={}, error={}",
+                    sourcePath, targetPath, e.getMessage(), e);
+            // 清理失败的目录
+            FileUtil.del(targetDir);
+            throw new BizException("仓库拷贝失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 递归拷贝目录
+     */
+    private void copyDirectory(File source, File target) throws IOException {
+        if (source.isDirectory()) {
+            if (!target.exists()) {
+                target.mkdir();
+            }
+
+            String[] files = source.list();
+            if (files != null) {
+                for (String file : files) {
+                    File srcFile = new File(source, file);
+                    File destFile = new File(target, file);
+                    copyDirectory(srcFile, destFile);
+                }
+            }
+        } else {
+            Files.copy(source.toPath(), target.toPath());
+        }
+    }
+
     // ==================== 私有方法 ====================
 
     private String getLocalRepoPath(String projectName, String sessionId) {
-        return jgitConfig.getTempRepoPath() + File.separator + projectName + File.separator + sessionId;
+        return gitPathBuilder.getSessionRepoPath(projectName, sessionId);
     }
 
     private String getProjectPath(String projectName) {
-        return jgitConfig.getTempRepoPath() + File.separator + projectName;
+        return gitPathBuilder.getProjectPath(projectName);
     }
 
     /**

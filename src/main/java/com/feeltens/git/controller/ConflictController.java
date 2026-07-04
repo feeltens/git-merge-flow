@@ -170,6 +170,9 @@ public class ConflictController {
             }
         }
 
+        // SSE连接建立后，触发异步初始化
+        conflictSessionService.triggerAsyncInit(sessionId);
+
         return emitter;
     }
 

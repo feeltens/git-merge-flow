@@ -129,4 +129,51 @@ public interface JGitService {
      */
     boolean exists(String projectName, String sessionId);
 
+    /**
+     * 完整克隆远程仓库（用于缓存）
+     * 克隆所有分支和完整历史，不使用浅克隆
+     *
+     * @param repoUrl     仓库URL
+     * @param projectName 项目名称
+     * @param cacheId     缓存标识
+     * @param credentials Git凭证
+     * @param rootPath    自定义根路径（如果为null，则使用默认的tempRepoPath）
+     * @return 本地仓库路径
+     */
+    String cloneFullRepository(String repoUrl, String projectName, String cacheId,
+                               GitCredentials credentials, String rootPath);
+
+    /**
+     * 拉取指定分支
+     *
+     * @param localRepoPath 本地仓库路径
+     * @param branchName    分支名称
+     * @param credentials   Git凭证
+     */
+    void pullBranch(String localRepoPath, String branchName, GitCredentials credentials);
+
+    /**
+     * 拷贝仓库目录
+     *
+     * @param sourcePath 源路径
+     * @param targetPath 目标路径
+     */
+    void copyRepository(String sourcePath, String targetPath);
+
+    /**
+     * Fetch 所有远程分支
+     *
+     * @param localRepoPath 本地仓库路径
+     * @param credentials   Git凭证
+     */
+    void fetch(String localRepoPath, GitCredentials credentials);
+
+    /**
+     * 重置本地分支到远程分支
+     *
+     * @param localRepoPath 本地仓库路径
+     * @param branchName    分支名称
+     */
+    void resetToRemote(String localRepoPath, String branchName);
+
 }
