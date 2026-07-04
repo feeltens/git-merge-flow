@@ -16,8 +16,6 @@ import com.feeltens.git.enums.GitServiceEnum;
 import com.feeltens.git.enums.InitProgressStatus;
 import com.feeltens.git.enums.SessionStatus;
 import com.feeltens.git.mapper.GitProjectMapper;
-import com.feeltens.git.oapi.dto.req.GetCompareReq;
-import com.feeltens.git.oapi.dto.resp.GetCompareResp;
 import com.feeltens.git.oapi.factory.GitOpenApiFactory;
 import com.feeltens.git.service.ConflictParser;
 import com.feeltens.git.service.ConflictSessionService;
@@ -40,10 +38,8 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -504,47 +500,6 @@ public class ConflictSessionServiceImpl implements ConflictSessionService {
     }
 
     // ==================== 私有方法 ====================
-
-    /**
-     * 通过API获取变更文件列表（用于稀疏检出优化）
-     */
-    private List<String> getChangedFilesFromAPI(GitProjectDO project, String sourceBranch, String targetBranch) {
-        GetCompareReq compareReq = new GetCompareReq();
-
-        // 设置基础配置
-        if (StrUtil.equals(gitMergeFlowConfig.getGitService(), GitServiceEnum.CODEUP.getCode())) {
-            compareReq.setBaseUrl(codeupConfig.getBaseUrl());
-            compareReq.setAccessToken(codeupConfig.getAccessToken());
-            compareReq.setOrganizationId(project.getOrganizationId());
-        } else if (StrUtil.equals(gitMergeFlowConfig.getGitService(), GitServiceEnum.GITLAB.getCode())) {
-            compareReq.setBaseUrl(gitLabConfig.getBaseUrl());
-            compareReq.setAccessToken(gitLabConfig.getAccessToken());
-        } else {
-            throw new BizException("未配置的 Git 服务平台");
-        }
-
-        compareReq.setRepositoryId(project.getRepositoryId());
-        compareReq.setFrom(targetBranch);  // 目标分支作为基准
-        compareReq.setTo(sourceBranch);    // 源分支作为比较对象
-
-        // 调用API
-        GetCompareResp compareResp = gitOpenApiFactory.getCompare(compareReq);
-
-        // 提取变更文件路径
-        Set<String> files = new HashSet<>();
-        if (compareResp.getDiffs() != null && !compareResp.getDiffs().isEmpty()) {
-            for (GetCompareResp.DiffFile diff : compareResp.getDiffs()) {
-                if (diff.getOldPath() != null && !diff.getOldPath().isEmpty()) {
-                    files.add(diff.getOldPath());
-                }
-                if (diff.getNewPath() != null && !diff.getNewPath().isEmpty()) {
-                    files.add(diff.getNewPath());
-                }
-            }
-        }
-
-        return new ArrayList<>(files);
-    }
 
     private void validateInitRequest(InitConflictReqVO req) {
         if (req == null) {

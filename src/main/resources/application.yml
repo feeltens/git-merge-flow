@@ -41,7 +41,7 @@ merge-flow:
   gitService: gitlab
   # gitService: codeup
 
-  # 工作目录配置
+  # 工作目录配置 默认: /tmp/git-merge-flow/workspace
   work-dir: /tmp/git-merge-flow/workspace
 
   # 定时任务配置
@@ -106,10 +106,6 @@ jgit:
     max-sessions-per-project: 10
     # 单个冲突文件最大大小（字节），默认 10MB
     max-conflict-file-size: 10485760
-    # 是否启用稀疏检出优化（API预检+浅克隆+按需检出）
-    # 启用后，对于大型仓库可显著提升克隆速度（6-30倍）
-    # 默认启用，如遇问题可设置为false降级到完整克隆
-    enable-sparse-checkout: true
 
 # Sa-Token 配置
 sa-token:
