@@ -1020,19 +1020,9 @@ public class JGitServiceImpl implements JGitService {
 
     @Override
     public String cloneFullRepository(String repoUrl, String projectName, String cacheId,
-                                      GitCredentials credentials, String rootPath) {
-        // 如果未提供自定义根路径，使用默认的tempRepoPath
-        String actualRootPath = (rootPath != null && !rootPath.isEmpty())
-                ? rootPath
-                : jgitConfig.getTempRepoPath();
-
-        // 构建本地路径：如果cacheId为空，则路径为 rootPath/projectName，否则为 rootPath/projectName/cacheId
-        String localPath;
-        if (cacheId == null || cacheId.isEmpty()) {
-            localPath = actualRootPath + File.separator + projectName;
-        } else {
-            localPath = actualRootPath + File.separator + projectName + File.separator + cacheId;
-        }
+                                      GitCredentials credentials) {
+        // 缓存仓库路径 {cachePath}/{projectName}
+        String localPath = gitPathBuilder.getCacheRepoPath(projectName);
         File localDir = new File(localPath);
 
         // 确保父级目录存在
@@ -1043,7 +1033,7 @@ public class JGitServiceImpl implements JGitService {
             FileUtil.del(localDir);
         }
 
-        log.info("开始完整克隆仓库（用于缓存）: {} -> {}, rootPath={}", repoUrl, localPath, actualRootPath);
+        log.info("开始完整克隆仓库（用于缓存）: {} -> {}", repoUrl, localPath);
 
         try {
             CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
@@ -1061,7 +1051,6 @@ public class JGitServiceImpl implements JGitService {
 
             log.info("完整仓库克隆成功: {}", localPath);
             return localPath;
-
         } catch (GitAPIException e) {
             log.error("完整克隆仓库失败: {}", e.getMessage(), e);
             // 清理失败的目录
@@ -1093,7 +1082,6 @@ public class JGitServiceImpl implements JGitService {
                     .call();
 
             log.info("分支拉取成功: branch={}", branchName);
-
         } catch (GitAPIException | IOException e) {
             log.error("拉取分支失败: branch={}, error={}", branchName, e.getMessage(), e);
             throw new BizException("拉取分支失败: " + e.getMessage());
@@ -1124,7 +1112,6 @@ public class JGitServiceImpl implements JGitService {
             copyDirectory(sourceDir, targetDir);
 
             log.info("仓库拷贝成功: target={}", targetPath);
-
         } catch (Exception e) {
             log.error("仓库拷贝失败: source={}, target={}, error={}",
                     sourcePath, targetPath, e.getMessage(), e);

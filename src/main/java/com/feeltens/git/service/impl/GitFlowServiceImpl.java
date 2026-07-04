@@ -1380,7 +1380,7 @@ public class GitFlowServiceImpl implements GitFlowService {
 
         GitMixBranchDTO gitMixBranchDTO = buildGitMixBranchDTO(mixBranchName, envEnum, gitProjectDb.getDefaultBranch(), newMixBranchNameList, operator);
         gitMixBranchDTO.setProjectId(gitProjectDb.getProjectId());
-        GitMixBranchDO gitMixBranchDO = GitMixBranchConverter.toDO(gitMixBranchDTO);
+        GitMixBranchDO gitMixBranchDO = GitMixBranchConverter.toMixBranchDO(gitMixBranchDTO);
 
         // 基于主分支，创建新的中间分支
         CreateBranchResp createBranchResp = createNewBranch(gitProjectDb.getRepositoryId(), gitProjectDb.getOrganizationId(), gitProjectDb.getDefaultBranch(), mixBranchName);

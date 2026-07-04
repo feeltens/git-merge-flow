@@ -137,11 +137,10 @@ public interface JGitService {
      * @param projectName 项目名称
      * @param cacheId     缓存标识
      * @param credentials Git凭证
-     * @param rootPath    自定义根路径（如果为null，则使用默认的tempRepoPath）
      * @return 本地仓库路径
      */
     String cloneFullRepository(String repoUrl, String projectName, String cacheId,
-                               GitCredentials credentials, String rootPath);
+                               GitCredentials credentials);
 
     /**
      * 拉取指定分支
