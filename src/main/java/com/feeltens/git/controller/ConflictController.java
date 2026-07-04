@@ -1,6 +1,7 @@
 package com.feeltens.git.controller;
 
 import com.feeltens.git.service.ConflictSessionService;
+import com.feeltens.git.sse.SseProgressManager;
 import com.feeltens.git.vo.base.CloudResponse;
 import com.feeltens.git.vo.req.CommitConflictReqVO;
 import com.feeltens.git.vo.req.InitConflictReqVO;
@@ -9,6 +10,7 @@ import com.feeltens.git.vo.resp.CommitResultVO;
 import com.feeltens.git.vo.resp.ConflictDetailVO;
 import com.feeltens.git.vo.resp.ConflictFileVO;
 import com.feeltens.git.vo.resp.ConflictSessionVO;
+import com.feeltens.git.vo.resp.InitProgressVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -34,6 +37,8 @@ public class ConflictController {
 
     @Resource
     private ConflictSessionService conflictSessionService;
+    @Resource
+    private SseProgressManager sseProgressManager;
 
     /**
      * 初始化冲突解决会话
@@ -131,6 +136,41 @@ public class ConflictController {
                                          @RequestParam String filePath) {
         conflictSessionService.resetFile(sessionId, filePath);
         return CloudResponse.success();
+    }
+
+    /**
+     * 获取初始化进度（SSE流式推送）
+     *
+     * @param sessionId 会话ID
+     * @return SSE发射器
+     */
+    @GetMapping("/{sessionId}/progress-stream")
+    public SseEmitter getProgressStream(@PathVariable String sessionId) {
+        log.info("建立SSE连接: sessionId={}", sessionId);
+
+        // 检查会话是否存在
+        com.feeltens.git.dto.conflict.ConflictSession session = conflictSessionService.getSession(sessionId);
+        if (session == null) {
+            throw new com.feeltens.git.common.exception.BizException("会话不存在: " + sessionId);
+        }
+
+        // 创建SSE连接
+        SseEmitter emitter = sseProgressManager.createEmitter(sessionId);
+
+        // 立即发送当前进度
+        InitProgressVO currentProgress = conflictSessionService.getInitProgress(sessionId);
+        if (currentProgress != null) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("progress")
+                        .data(currentProgress)
+                        .id(String.valueOf(System.currentTimeMillis())));
+            } catch (Exception e) {
+                log.error("发送初始进度失败 e:", e);
+            }
+        }
+
+        return emitter;
     }
 
 }

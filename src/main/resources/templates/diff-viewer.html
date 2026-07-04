@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三路Diff查看器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .diff-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .diff-header {
+            background-color: #252526;
+            padding: 10px 20px;
+            border-bottom: 1px solid #3c3c3c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .diff-header h1 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .diff-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .diff-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #3c3c3c;
+            min-width: 0;
+        }
+
+        .diff-panel:last-child {
+            border-right: none;
+        }
+
+        .diff-panel-header {
+            background-color: #2d2d2d;
+            padding: 8px 15px;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid #3c3c3c;
+            color: #cccccc;
+        }
+
+        .editor-container {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #base-editor, #ours-editor, #theirs-editor {
+            height: 100%;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="diff-container">
+        <div class="diff-header">
+            <h1>三路Diff查看器</h1>
+            <span th:text="${filePath}">文件路径</span>
+        </div>
+        <div class="diff-content">
+            <div class="diff-panel">
+                <div class="diff-panel-header">Base (共同祖先)</div>
+                <div class="editor-container">
+                    <div id="base-editor"></div>
+                </div>
+            </div>
+            <div class="diff-panel">
+                <div class="diff-panel-header">Ours (目标分支)</div>
+                <div class="editor-container">
+                    <div id="ours-editor"></div>
+                </div>
+            </div>
+            <div class="diff-panel">
+                <div class="diff-panel-header">Theirs (源分支)</div>
+                <div class="editor-container">
+                    <div id="theirs-editor"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
+
+        const baseContent = /*[[${baseContent}]]*/ '';
+        const oursContent = /*[[${oursContent}]]*/ '';
+        const theirsContent = /*[[${theirsContent}]]*/ '';
+
+        require(['vs/editor/editor.main'], function() {
+            // 创建Base编辑器
+            var baseEditor = monaco.editor.create(document.getElementById('base-editor'), {
+                value: baseContent,
+                language: 'text',
+                readOnly: true,
+                lineNumbers: 'on',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                theme: 'vs-dark',
+                fontSize: 14,
+                fontFamily: 'Consolas, Monaco, "Courier New", monospace'
+            });
+
+            // 创建Ours编辑器
+            var oursEditor = monaco.editor.create(document.getElementById('ours-editor'), {
+                value: oursContent,
+                language: 'text',
+                readOnly: true,
+                lineNumbers: 'on',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                theme: 'vs-dark',
+                fontSize: 14,
+                fontFamily: 'Consolas, Monaco, "Courier New", monospace'
+            });
+
+            // 创建Theirs编辑器
+            var theirsEditor = monaco.editor.create(document.getElementById('theirs-editor'), {
+                value: theirsContent,
+                language: 'text',
+                readOnly: true,
+                lineNumbers: 'on',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                theme: 'vs-dark',
+                fontSize: 14,
+                fontFamily: 'Consolas, Monaco, "Courier New", monospace'
+            });
+
+            // 同步滚动
+            baseEditor.onDidScrollChange(function(e) {
+                oursEditor.setScrollTop(e.scrollTop);
+                oursEditor.setScrollLeft(e.scrollLeft);
+                theirsEditor.setScrollTop(e.scrollTop);
+                theirsEditor.setScrollLeft(e.scrollLeft);
+            });
+
+            oursEditor.onDidScrollChange(function(e) {
+                baseEditor.setScrollTop(e.scrollTop);
+                baseEditor.setScrollLeft(e.scrollLeft);
+                theirsEditor.setScrollTop(e.scrollTop);
+                theirsEditor.setScrollLeft(e.scrollLeft);
+            });
+
+            theirsEditor.onDidScrollChange(function(e) {
+                baseEditor.setScrollTop(e.scrollTop);
+                baseEditor.setScrollLeft(e.scrollLeft);
+                oursEditor.setScrollTop(e.scrollTop);
+                oursEditor.setScrollLeft(e.scrollLeft);
+            });
+
+            // 窗口大小变化时调整编辑器大小
+            window.addEventListener('resize', function() {
+                baseEditor.layout();
+                oursEditor.layout();
+                theirsEditor.layout();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -11,6 +11,8 @@ import com.feeltens.git.dto.conflict.ParsedConflict;
 import com.feeltens.git.service.ConflictParser;
 import com.feeltens.git.service.JGitService;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jgit.api.CloneCommand;
+import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -79,7 +81,7 @@ public class JGitServiceImpl implements JGitService {
             CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
                     credentials.getUsername(), credentials.getPassword());
 
-            Git.cloneRepository()
+            CloneCommand cloneCommand = Git.cloneRepository()
                     .setURI(repoUrl)
                     .setDirectory(localDir)
                     .setCredentialsProvider(credentialsProvider)
@@ -88,9 +90,15 @@ public class JGitServiceImpl implements JGitService {
                             "refs/heads/" + sourceBranch,
                             "refs/heads/" + targetBranch
                     ))
-                    .setTimeout(jgitConfig.getCloneTimeoutSeconds())
-                    .call()
-                    .close();
+                    .setTimeout(jgitConfig.getCloneTimeoutSeconds());
+
+            // 启用浅克隆优化
+            if (jgitConfig.isEnableShallowClone()) {
+                cloneCommand.setNoTags();
+                log.info("启用浅克隆优化（禁用标签下载）");
+            }
+
+            cloneCommand.call().close();
 
             log.info("仓库克隆成功: {}", localPath);
             return localPath;
@@ -157,15 +165,22 @@ public class JGitServiceImpl implements JGitService {
             log.info("稀疏检出配置已写入，模式数: {}", sparsePatterns.size());
 
             // 阶段3: Fetch远程分支（只拉取对象，不检出工作目录）
-            git.fetch()
+            FetchCommand fetchCommand = git.fetch()
                     .setRemote("origin")
                     .setRefSpecs(
                             new RefSpec("+refs/heads/" + sourceBranch + ":refs/remotes/origin/" + sourceBranch),
                             new RefSpec("+refs/heads/" + targetBranch + ":refs/remotes/origin/" + targetBranch)
                     )
                     .setCredentialsProvider(credentialsProvider)
-                    .setTimeout(jgitConfig.getCloneTimeoutSeconds())
-                    .call();
+                    .setTimeout(jgitConfig.getCloneTimeoutSeconds());
+
+            // 启用浅克隆优化
+            if (jgitConfig.isEnableShallowClone()) {
+                fetchCommand.setThin(true);
+                log.info("启用浅克隆优化（稀疏传输）");
+            }
+
+            fetchCommand.call();
             log.info("Fetch完成，对象已下载");
 
             // 阶段4: 创建本地分支（不检出）

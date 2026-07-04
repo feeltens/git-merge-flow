@@ -636,23 +636,111 @@
         .syntax-comment { color: #808080; font-style: italic; }
         .syntax-number { color: #0000ff; }
         .syntax-annotation { color: #808000; }
+
+        /* 初始化进度显示样式 */
+        .init-progress-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        .progress-card {
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .progress-content {
+            padding: 20px 0;
+        }
+
+        .progress-info {
+            margin-top: 20px;
+        }
+
+        .current-step {
+            font-size: 16px;
+            color: #606266;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .current-step i {
+            margin-right: 8px;
+        }
+
+        .file-count {
+            font-size: 14px;
+            color: #909399;
+            margin: 5px 0;
+        }
+
+        .connection-type {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 <div id="app" v-cloak>
-    <!-- 头部 -->
-    <div class="header">
-        <span class="header-title">🔧 代码冲突解决</span>
-        <span class="header-info">
-            <span>{{sourceBranch}}</span>
-            <i class="el-icon-right" style="margin: 0 8px;"></i>
-            <span>{{targetBranch}}</span>
-        </span>
-        <div class="header-actions">
-            <el-button size="small" @click="handleCancel">取消</el-button>
-            <el-button size="small" type="success" @click="handleCommit" :disabled="!allResolved" :loading="commitLoading">提交并推送</el-button>
-        </div>
+    <!-- 初始化中显示进度 -->
+    <div v-if="isInitializing" class="init-progress-container">
+        <el-card class="progress-card">
+            <div slot="header">
+                <span class="card-title">初始化冲突解决环境</span>
+            </div>
+            
+            <div class="progress-content">
+                <el-progress 
+                    :percentage="initProgress?.progress || 0" 
+                    :status="getProgressStatus()"
+                    :stroke-width="20"
+                />
+                
+                <div class="progress-info">
+                    <p class="current-step">
+                        <i class="el-icon-loading" v-if="isProcessing()"></i>
+                        {{ initProgress?.currentStep || '准备中...' }}
+                    </p>
+                    
+                    <p v-if="initProgress?.totalFiles" class="file-count">
+                        冲突文件数: {{ initProgress.totalFiles }}
+                    </p>
+                    
+                    <p v-if="usePolling" class="connection-type">
+                        <el-tag type="warning" size="small">轮询模式</el-tag>
+                    </p>
+                </div>
+                
+                <el-alert 
+                    v-if="initProgress?.status === 'FAILED'"
+                    :title="'初始化失败: ' + initProgress.errorMessage"
+                    type="error"
+                    :closable="false"
+                    show-icon
+                />
+            </div>
+        </el-card>
     </div>
+
+    <!-- 初始化完成后显示冲突解决界面 -->
+    <div v-else>
+        <!-- 头部 -->
+        <div class="header">
+            <span class="header-title">🔧 代码冲突解决</span>
+            <span class="header-info">
+                <span>{{sourceBranch}}</span>
+                <i class="el-icon-right" style="margin: 0 8px;"></i>
+                <span>{{targetBranch}}</span>
+            </span>
+            <div class="header-actions">
+                <el-button size="small" @click="handleCancel">取消</el-button>
+                <el-button size="small" type="success" @click="handleCommit" :disabled="!allResolved" :loading="commitLoading">提交并推送</el-button>
+            </div>
+        </div>
 
     <!-- 工具栏 -->
     <div class="toolbar">
@@ -871,6 +959,12 @@ new Vue({
         globalLoading: false,
         globalLoadingText: '处理中...',
         commitForm: { commitMessage: '', authorName: '', authorEmail: '' },
+        // 初始化进度相关
+        initProgress: null,
+        eventSource: null,
+        pollTimer: null,
+        isInitializing: true,
+        usePolling: false,
         // 原始内容
         oursContent: '',
         theirsContent: '',
@@ -954,7 +1048,7 @@ new Vue({
         this.sessionId = urlParams.get('sessionId');
         if (!this.sessionId) { this.$message.error('缺少会话ID参数'); return; }
         this.initBroadcastChannel();
-        this.loadConflictFiles();
+        this.initProgressListener();
         
         // 禁用合并列的滚轮事件，避免独立滚动
         this.$nextTick(() => {
@@ -970,6 +1064,7 @@ new Vue({
     beforeDestroy() {
         this.fileEditCache = {};
         if (this.broadcastChannel) this.broadcastChannel.close();
+        this.cleanupProgressListener();
         // 清理 Canvas 资源
         if (this._measureCanvas) {
             this._measureCanvas = null;
@@ -1006,6 +1101,142 @@ new Vue({
             if (typeof BroadcastChannel !== 'undefined') {
                 this.broadcastChannel = new BroadcastChannel('git_conflict_resolve_channel');
             }
+        },
+
+        /**
+         * 初始化进度监听
+         */
+        initProgressListener() {
+            // 检测浏览器是否支持SSE
+            if (typeof EventSource !== 'undefined') {
+                this.initSSEConnection();
+            } else {
+                console.warn('浏览器不支持SSE，降级到轮询');
+                this.usePolling = true;
+                this.initPolling();
+            }
+        },
+
+        /**
+         * 初始化SSE连接
+         */
+        initSSEConnection() {
+            try {
+                this.eventSource = new EventSource(`/api/conflict/${this.sessionId}/progress-stream`);
+                
+                // 监听进度事件
+                this.eventSource.addEventListener('progress', (event) => {
+                    const progress = JSON.parse(event.data);
+                    this.handleProgressUpdate(progress);
+                });
+                
+                // 监听连接打开
+                this.eventSource.onopen = () => {
+                    console.log('SSE连接已建立');
+                };
+                
+                // 监听错误
+                this.eventSource.onerror = (error) => {
+                    console.error('SSE连接错误', error);
+                    this.handleConnectionError();
+                };
+                
+            } catch (error) {
+                console.error('创建SSE连接失败', error);
+                this.handleConnectionError();
+            }
+        },
+
+        /**
+         * 初始化轮询（IE降级）
+         */
+        initPolling() {
+            this.pollTimer = setInterval(() => {
+                this.checkProgress();
+            }, 2000); // 每2秒轮询一次
+            this.checkProgress();
+        },
+
+        /**
+         * 轮询检查进度
+         */
+        async checkProgress() {
+            try {
+                const response = await axios.get(`/api/conflict/${this.sessionId}/progress`);
+                if (response.data.code === 200) {
+                    this.handleProgressUpdate(response.data.data);
+                }
+            } catch (error) {
+                console.error('获取进度失败', error);
+            }
+        },
+
+        /**
+         * 处理进度更新
+         */
+        handleProgressUpdate(progress) {
+            this.initProgress = progress;
+            
+            if (progress.status === 'READY') {
+                // 初始化完成
+                this.cleanupProgressListener();
+                this.isInitializing = false;
+                this.loadConflictFiles();
+                this.$message.success('初始化完成');
+            } else if (progress.status === 'FAILED') {
+                // 初始化失败
+                this.cleanupProgressListener();
+                this.$message.error('初始化失败: ' + progress.errorMessage);
+            }
+        },
+
+        /**
+         * 处理连接错误
+         */
+        handleConnectionError() {
+            if (this.eventSource) {
+                this.eventSource.close();
+                this.eventSource = null;
+            }
+            
+            // 降级到轮询
+            if (!this.usePolling) {
+                console.warn('SSE连接失败，降级到轮询');
+                this.usePolling = true;
+                this.initPolling();
+            }
+        },
+
+        /**
+         * 清理进度监听
+         */
+        cleanupProgressListener() {
+            if (this.eventSource) {
+                this.eventSource.close();
+                this.eventSource = null;
+            }
+            if (this.pollTimer) {
+                clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+        },
+
+        /**
+         * 获取进度状态
+         */
+        getProgressStatus() {
+            if (!this.initProgress) return null;
+            if (this.initProgress.status === 'FAILED') return 'exception';
+            if (this.initProgress.status === 'READY') return 'success';
+            return null;
+        },
+
+        /**
+         * 判断是否正在处理中
+         */
+        isProcessing() {
+            return this.initProgress && 
+                   ['CLONING', 'MERGING', 'LOADING_CONFLICTS'].includes(this.initProgress.status);
         },
         notifyConflictResolved() {
             const message = { type: 'conflict_resolved', sessionId: this.sessionId, timestamp: Date.now() };
