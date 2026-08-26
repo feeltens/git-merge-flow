@@ -1,3 +1,5 @@
+
+
 <div align="center">
   <h1>🌊 git-merge-flow</h1>
   <p><strong>Git 中间分支合流管理系统</strong></p>
@@ -119,7 +121,7 @@
 
 ```bash
 # 创建数据库
-mysql -u root -p -e "CREATE DATABASE git_merge_flow DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS git_merge_flow DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 导入表结构
 mysql -u root -p git_merge_flow < doc/sql/git_merge_flow.sql
